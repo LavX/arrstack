@@ -8,7 +8,6 @@ baseurl: "/arrstack"
 # this block is the belt to the underscore's suspenders.
 exclude:
   - _internal/
-  - superpowers/
   - README.md
   - _config.yml
 

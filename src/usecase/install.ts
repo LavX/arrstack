@@ -314,10 +314,27 @@ export async function runInstall(
     hostIp = await getHostIp();
   }
 
-  // Step 9: docker compose pull (timeout 10 min)
+  // Step 9a: docker compose build (locally-built images, e.g. custom Caddy
+  // with DNS plugins). Runs first so pull can skip buildables.
+  await runStep("docker compose build", onStep, log, async () => {
+    const result = await exec(
+      ["docker", "compose", "-f", join(installDir, "docker-compose.yml"), "build"],
+      { timeoutMs: 600_000 }
+    );
+    if (!result.ok) {
+      throw new Error(`docker compose build failed: ${result.stderr}`);
+    }
+  });
+
+  // Step 9b: docker compose pull (timeout 10 min). --ignore-buildable skips
+  // services with a build: block so we do not try to pull arrstack/caddy
+  // from a registry that does not host it.
   await runStep("docker compose pull", onStep, log, async () => {
     const result = await exec(
-      ["docker", "compose", "-f", join(installDir, "docker-compose.yml"), "pull"],
+      [
+        "docker", "compose", "-f", join(installDir, "docker-compose.yml"),
+        "pull", "--ignore-buildable",
+      ],
       { timeoutMs: 600_000 }
     );
     if (!result.ok) {

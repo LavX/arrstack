@@ -98,16 +98,17 @@ test("runUpdate writes update.log with ISO-8601 timestamps", async () => {
   expect(mode & 0o644).toBe(0o644);
 });
 
-test("runUpdate runs pull, up -d --remove-orphans, and prune in order", async () => {
+test("runUpdate runs build, pull --ignore-buildable, up -d --remove-orphans, and prune in order", async () => {
   const dir = makeInstallDir();
   const { deps, calls, pruneCalled } = makeDeps();
 
   await silently(() => runUpdate(dir, deps));
 
-  expect(calls.length).toBe(2);
+  expect(calls.length).toBe(3);
   expect(calls[0].argv.slice(0, 3)).toEqual(["docker", "compose", "-f"]);
-  expect(calls[0].argv.slice(-1)).toEqual(["pull"]);
-  expect(calls[1].argv.slice(-3)).toEqual(["up", "-d", "--remove-orphans"]);
+  expect(calls[0].argv.slice(-2)).toEqual(["build", "--pull"]);
+  expect(calls[1].argv.slice(-2)).toEqual(["pull", "--ignore-buildable"]);
+  expect(calls[2].argv.slice(-3)).toEqual(["up", "-d", "--remove-orphans"]);
 
   expect(pruneCalled.value).toBe(true);
 });

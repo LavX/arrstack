@@ -62,10 +62,24 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     const before = await d.captureImages(composeFile);
     phaseTimes["capture-before"] = d.now() - captureBeforeStart;
 
+    const buildStart = d.now();
+    logAndEcho("[update] docker compose build");
+    const build = await d.runStreaming(
+      ["docker", "compose", "-f", composeFile, "build", "--pull"],
+      (line) => {
+        writeLine(line);
+        process.stdout.write(`${line}\n`);
+      }
+    );
+    phaseTimes["build"] = d.now() - buildStart;
+    if (!build.ok) {
+      throw new Error(`docker compose build failed (exit ${build.code})`);
+    }
+
     const pullStart = d.now();
-    logAndEcho("[update] docker compose pull");
+    logAndEcho("[update] docker compose pull --ignore-buildable");
     const pull = await d.runStreaming(
-      ["docker", "compose", "-f", composeFile, "pull"],
+      ["docker", "compose", "-f", composeFile, "pull", "--ignore-buildable"],
       (line) => {
         writeLine(line);
         process.stdout.write(`${line}\n`);

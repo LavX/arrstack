@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>arrstack, one-command homelab installer for Sonarr, Radarr, Jellyfin</title>
-  <meta name="description" content="12 services. One binary. 90 seconds. Single-binary TUI that installs and wires qBittorrent, Prowlarr, Sonarr, Radarr, Bazarr, Jellyfin, and Jellyseerr on a clean Linux host. MIT, open source.">
+  <meta name="description" content="12 services. One binary. 90 seconds. Single-binary TUI that installs and wires qBittorrent, Prowlarr, Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr on a clean Linux host. MIT, open source.">
   <meta name="theme-color" content="#0D1117" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
   <meta name="color-scheme" content="dark light">
@@ -12,12 +12,12 @@
   <!-- Open Graph / Twitter (SEO agent: expand image + handles) -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="arrstack: 12 services. One binary. 90 seconds.">
-  <meta property="og:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Jellyfin/Jellyseerr homelab stack.">
+  <meta property="og:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Bazarr+/Jellyfin/Jellyseerr homelab stack.">
   <meta property="og:url" content="https://lavx.github.io/arrstack/">
   <meta property="og:image" content="https://lavx.github.io/arrstack/assets/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="arrstack: 12 services. One binary. 90 seconds.">
-  <meta name="twitter:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Jellyfin/Jellyseerr homelab stack.">
+  <meta name="twitter:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Bazarr+/Jellyfin/Jellyseerr homelab stack.">
   <meta name="twitter:image" content="https://lavx.github.io/arrstack/assets/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -41,7 +41,7 @@
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "license": "https://opensource.org/licenses/MIT",
     "author": { "@type": "Person", "name": "LavX", "url": "https://lavx.github.io" },
-    "description": "Single-binary TUI installer for a pre-wired Sonarr, Radarr, Jellyfin, and Jellyseerr Docker stack."
+    "description": "Single-binary TUI installer for a pre-wired Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr Docker stack."
   }
   </script>
 </head>
@@ -82,7 +82,7 @@
             One binary. 90 seconds.
           </h1>
           <p class="hero-sub">
-            The arr stack, pre-wired. Installs qBittorrent, Prowlarr, Sonarr, Radarr, Bazarr, Jellyfin, and Jellyseerr on a clean Linux host. No YAML to copy-paste, no wizard tour, no forum threads about Cloudflare tags.
+            The arr stack, pre-wired. Installs qBittorrent, Prowlarr, Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr on a clean Linux host. No YAML to copy-paste, no wizard tour, no forum threads about Cloudflare tags.
           </p>
 
           <div class="term" role="group" aria-label="Install command">
@@ -123,7 +123,7 @@
         </div>
         <div class="problem-card">
           <p class="counter">$ history | grep -E 'prowlarr|bazarr|jellyseerr' | wc -l &rarr; <strong>~400</strong></p>
-          <p>You pull the images. You open Prowlarr, generate an API key, paste it into Sonarr, paste it again into Radarr. You add five indexers, forget to tag <strong>FlareSolverr</strong> at create-time, and every Cloudflare-gated search 403s until you delete and recreate each one. You open Bazarr, hit its <strong>KeyError</strong> on <code>audio_exclude</code>, edit the language profile fields, then edit them again for every language. You click through the Jellyfin Startup Wizard. You click through <code>/setup</code> on Jellyseerr, paste a third API key, link libraries by hand. You hand-craft a Caddyfile, guess at the DNS-01 block, watch the cert fail, fix the block.</p>
+          <p>You pull the images. You open Prowlarr, generate an API key, paste it into Sonarr, paste it again into Radarr. You add eight indexers, forget to tag <strong>FlareSolverr</strong> at create-time, and every Cloudflare-gated search 403s until you delete and recreate each one. You open Bazarr+, hit its <strong>KeyError</strong> on <code>audio_exclude</code>, edit the language profile fields, then edit them again for every language. You click through the Jellyfin Startup Wizard. You click through <code>/setup</code> on Jellyseerr, paste a third API key, link libraries by hand. You hand-craft a Caddyfile, guess at the DNS-01 block, watch the cert fail, fix the block.</p>
           <p>By the time you request a movie, the evening is gone. arrstack is this weekend, compressed into one binary.</p>
         </div>
       </div>
@@ -166,7 +166,7 @@
         <div class="section-head">
           <span class="section-kicker">manifest</span>
           <h2 id="services-heading">The twelve services, grouped by role.</h2>
-          <p class="lead">Each one is pinned to a known-good image version, given a stable hostname on the internal Docker network, and handed credentials at bootstrap so nothing prompts you on first load.</p>
+          <p class="lead">Each one tracks its upstream <code>:latest</code> image, runs under a stable docker service name on the internal network, and gets credentials handed in at bootstrap so nothing prompts you on first load. Run <code>arrstack update</code> to pull the current tags.</p>
         </div>
 
         <div class="services-grid">
@@ -186,7 +186,7 @@
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/prowlarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Prowlarr <span class="svc-port">:9696</span></div>
             <span class="svc-chip required">required</span>
-            <p class="svc-desc"><span class="svc-role">indexer</span> Unified indexer manager, five public indexers pre-added and app-synced to Sonarr and Radarr.</p>
+            <p class="svc-desc"><span class="svc-role">indexer</span> Unified indexer manager, eight public indexers pre-added and app-synced to Sonarr and Radarr.</p>
           </article>
           <article class="svc">
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/flaresolverr.svg" alt="" width="48" height="48"></div>
@@ -210,7 +210,7 @@
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/bazarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Bazarr+ <span class="svc-port">:6767</span></div>
             <span class="svc-chip required">required</span>
-            <p class="svc-desc"><span class="svc-role">subtitles</span> <a href="https://github.com/lavx/bazarr">LavX fork</a>, shipped in place of upstream Bazarr, with OpenSubtitles scraper and OpenRouter translator. Language profiles ship with the fields it needs.</p>
+            <p class="svc-desc"><span class="svc-role">subtitles</span> <a href="https://lavx.github.io/bazarr/">LavX fork</a>, shipped in place of upstream Bazarr, with OpenSubtitles scraper and OpenRouter translator. Language profiles ship with the fields it needs.</p>
           </article>
           <article class="svc">
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/jellyfin.svg" alt="" width="48" height="48"></div>
@@ -233,14 +233,14 @@
           <article class="svc">
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/trailarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Trailarr <span class="svc-port">:7889</span></div>
-            <span class="svc-chip optional">optional</span>
+            <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">trailers</span> Pre-roll trailer fetcher linked to Radarr and Sonarr libraries.</p>
           </article>
           <article class="svc">
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/recyclarr.svg" alt="" width="48" height="48"></div>
-            <div class="svc-name">Recyclarr <span class="svc-port">cron</span></div>
-            <span class="svc-chip optional">optional</span>
-            <p class="svc-desc"><span class="svc-role">quality profiles</span> Syncs TRaSH-Guides profiles and custom formats into Sonarr and Radarr on a schedule.</p>
+            <div class="svc-name">Recyclarr <span class="svc-port">one-shot</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">quality profiles</span> One-shot container that syncs TRaSH-Guides profiles and custom formats into Sonarr and Radarr, run on a schedule.</p>
           </article>
         </div>
       </div>
@@ -261,12 +261,12 @@
             <p>Prowlarr gets the FlareSolverr tag when each indexer is created, not retroactively. Cloudflare-gated sites route on the first search.</p>
           </article>
           <article class="wire">
-            <h3>Bazarr language profiles</h3>
-            <p>Every profile ships with <code>audio_exclude</code>, <code>audio_only_include</code>, <code>hi</code>, and <code>forced</code>. Bazarr does not crash on a KeyError the first time it scans a library.</p>
+            <h3>Bazarr+ language profiles</h3>
+            <p>Every profile ships with <code>audio_exclude</code>, <code>audio_only_include</code>, <code>hi</code>, and <code>forced</code>. Bazarr+ does not crash on a KeyError the first time it scans a library.</p>
           </article>
           <article class="wire">
             <h3>Jellyseerr 4-step bootstrap</h3>
-            <p>Admin user, Jellyfin link, libraries, and permissions written over the API before the container is exposed. The <code>/setup</code> wizard never appears.</p>
+            <p>Four <code>POST</code>s to Jellyseerr&rsquo;s internal API: admin + Jellyfin auth (<code>serverType: 2</code>), library sync, library enable, initialize. The <code>/setup</code> wizard never appears.</p>
           </article>
           <article class="wire">
             <h3>Jellyfin hardware transcode</h3>

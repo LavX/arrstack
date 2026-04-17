@@ -581,14 +581,36 @@ export async function runInstall(
     writeState(installDir, finalState);
   });
 
-  // Build result URLs
+  // Build result URLs to match what's actually reachable for the chosen mode.
+  // - duckdns/cloudflare: services bind to 127.0.0.1, only Caddy is public;
+  //   access goes through https://{svc}.{domain}, so hostIp:port is unreachable
+  //   from outside the host and advertising it confuses the user.
+  // - LAN + local DNS: Caddy serves http://{svc}.{tld} via the hostname
+  //   vhost; services still bind to 0.0.0.0 so hostIp:port also works, but
+  //   the vhost is the canonical URL the user just opted into.
+  // - LAN without local DNS: direct hostIp:port is the only route.
+  // Caddy itself is the router in hostname/remote modes, so listing it as a
+  // destination adds noise with no browser endpoint (the previous build
+  // emitted "http://{ip}:443" which wasn't valid anywhere).
+  const mode = state.remote_access.mode;
+  const domain = state.remote_access.domain;
+  const localDnsEnabled = state.local_dns.enabled;
+  const localDnsTld = state.local_dns.tld;
+
   const urls: Array<{ name: string; url: string; description: string }> = services
     .filter((svc) => svc.adminPort !== undefined)
-    .map((svc) => ({
-      name: svc.name,
-      url: `http://${hostIp}:${svc.adminPort}`,
-      description: svc.description,
-    }));
+    .filter((svc) => !((mode !== "none" || localDnsEnabled) && svc.id === "caddy"))
+    .map((svc) => {
+      let url: string;
+      if ((mode === "duckdns" || mode === "cloudflare") && domain) {
+        url = `https://${svc.id}.${domain}`;
+      } else if (localDnsEnabled && localDnsTld) {
+        url = `http://${svc.id}.${localDnsTld}`;
+      } else {
+        url = `http://${hostIp}:${svc.adminPort}`;
+      }
+      return { name: svc.name, url, description: svc.description };
+    });
 
   return {
     urls,

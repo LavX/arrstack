@@ -22,23 +22,36 @@ describe("renderCaddyfile", () => {
     expect(output).not.toContain("dns cloudflare");
   });
 
-  test("cloudflare mode includes domain and dns challenge", () => {
+  test("cloudflare mode issues ONE wildcard cert, not a cert per service", () => {
     const output = renderCaddyfile(services, {
       mode: "cloudflare",
       domain: "example.com",
     });
-    expect(output).toContain("sonarr.example.com");
+    expect(output).toContain("*.example.com {");
+    // Exactly one tls block (= one cert). Per-service vhosts would produce
+    // one tls block per service.
+    expect(output.match(/tls \{/g)?.length ?? 0).toBe(1);
     expect(output).toContain("dns cloudflare {env.CF_API_TOKEN}");
-    expect(output).toContain("tls");
+    // Host matchers + handle blocks for each service.
+    expect(output).toContain("@sonarr host sonarr.example.com");
+    expect(output).toContain("reverse_proxy sonarr:8989");
+    expect(output).toContain("@radarr host radarr.example.com");
+    expect(output).toContain("reverse_proxy radarr:7878");
+    // Unknown subdomains should 404 instead of leaking a random upstream.
+    expect(output).toContain("respond 404");
   });
 
-  test("duckdns mode uses duckdns domain and token", () => {
+  test("duckdns mode issues ONE wildcard cert via duckdns DNS-01", () => {
     const output = renderCaddyfile(services, {
       mode: "duckdns",
       domain: "myhome.duckdns.org",
     });
-    expect(output).toContain("sonarr.myhome.duckdns.org");
+    expect(output).toContain("*.myhome.duckdns.org {");
+    expect(output.match(/tls \{/g)?.length ?? 0).toBe(1);
     expect(output).toContain("dns duckdns {env.DUCKDNS_TOKEN}");
+    expect(output).toContain("@sonarr host sonarr.myhome.duckdns.org");
+    expect(output).toContain("reverse_proxy sonarr:8989");
+    expect(output).toContain("respond 404");
   });
 
   test("duckdns mode has no CF_API_TOKEN reference", () => {

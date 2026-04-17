@@ -1,27 +1,55 @@
+{{#if (eq mode "none")}}
+{{#if localDnsEnabled}}
 {{#each services}}
-{{#if (eq ../mode "none")}}
-{{#if ../localDnsEnabled}}
 # Hostname vhost on HTTP. Resolved via dnsmasq if installed, otherwise add
 # "HOST_IP {{id}}.{{../localDnsTld}}" to the client's /etc/hosts.
 http://{{id}}.{{../localDnsTld}} {
 	reverse_proxy {{id}}:{{port}}
 }
+{{/each}}
 {{/if}}
 {{/if}}
-{{#if (eq ../mode "cloudflare")}}
-{{id}}.{{../domain}} {
+{{#if (eq mode "cloudflare")}}
+# One wildcard cert for *.{{domain}} instead of per-service certs. Each POST
+# to Let's Encrypt DNS-01 costs a challenge round-trip, and LE rate-limits
+# at 50 certificates per registered domain per week — issuing N certs for
+# N services burns through that budget fast and slows the install. A single
+# *.{{domain}} cert covers every subdomain we host and renews once.
+*.{{domain}} {
 	tls {
 		dns cloudflare {env.CF_API_TOKEN}
 	}
-	reverse_proxy {{id}}:{{port}}
+{{#each services}}
+	@{{id}} host {{id}}.{{../domain}}
+	handle @{{id}} {
+		reverse_proxy {{id}}:{{port}}
+	}
+{{/each}}
+	# Unknown subdomain: don't leak a random service, just 404.
+	handle {
+		respond 404
+	}
 }
 {{/if}}
-{{#if (eq ../mode "duckdns")}}
-{{id}}.{{../domain}} {
+{{#if (eq mode "duckdns")}}
+# One wildcard cert for *.{{domain}} instead of per-service certs. DuckDNS
+# auto-resolves any subdomain of a registered name to the same A record,
+# so *.{{domain}} covers every {id}.{{domain}} we route here. Each
+# per-service cert would otherwise cost its own DNS-01 round-trip and
+# chip away at Let's Encrypt's 50-certs-per-registered-domain weekly cap.
+*.{{domain}} {
 	tls {
 		dns duckdns {env.DUCKDNS_TOKEN}
 	}
-	reverse_proxy {{id}}:{{port}}
+{{#each services}}
+	@{{id}} host {{id}}.{{../domain}}
+	handle @{{id}} {
+		reverse_proxy {{id}}:{{port}}
+	}
+{{/each}}
+	# Unknown subdomain: don't leak a random service, just 404.
+	handle {
+		respond 404
+	}
 }
 {{/if}}
-{{/each}}

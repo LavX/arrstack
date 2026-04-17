@@ -50,6 +50,7 @@ export interface WizardState {
   puid: number;
   pgid: number;
   vpnMode: "none" | "gluetun";
+  subtitleLanguages: string; // user-entered, comma-separated "en, hu"
 
   // Meta
   hostname: string;
@@ -130,6 +131,10 @@ export function buildStateFromWizard(ws: WizardState): State {
     timezone: ws.timezone,
     puid: ws.puid,
     pgid: ws.pgid,
+    subtitle_languages: (ws.subtitleLanguages ?? "en")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => /^[a-z]{2}$/.test(s)),
     api_keys: apiKeys,
   };
 }
@@ -226,6 +231,9 @@ export function useWizardState(existingState?: Partial<State> | null) {
       ? ((existingState.vpn.provider ?? "gluetun") as WizardState["vpnMode"])
       : "none";
   });
+  const [subtitleLanguages, setSubtitleLanguages] = useState<string>(
+    existingState?.subtitle_languages?.join(", ") ?? "en",
+  );
 
   const [hostname] = useState(() => {
     try {
@@ -363,6 +371,7 @@ export function useWizardState(existingState?: Partial<State> | null) {
       puid: puidState,
       pgid: pgidState,
       vpnMode,
+      subtitleLanguages,
       hostname,
       loading,
       caddyHttpPort,
@@ -425,6 +434,8 @@ export function useWizardState(existingState?: Partial<State> | null) {
     setPgid,
     vpnMode,
     setVpnMode,
+    subtitleLanguages,
+    setSubtitleLanguages,
 
     // Meta
     hostname,

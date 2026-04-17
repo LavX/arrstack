@@ -28,7 +28,7 @@ const SEC_GPU = 2;        // 1 field (radio): gpu vendor
 const SEC_SERVICES = 3;   // n fields (checkbox grid): services
 const SEC_REMOTE = 4;     // 3 fields: mode radio, domain, token
 const SEC_LOCALDNS = 5;   // 2 fields: enabled toggle, tld
-const SEC_SYSTEM = 6;     // 3 fields: timezone, puid/pgid, vpn radio
+const SEC_SYSTEM = 6;     // 4 fields: timezone, puid/pgid, subtitle langs, vpn radio
 const SEC_FOOTER = 7;     // 2 items: Install, Cancel
 
 // Field counts per section
@@ -46,7 +46,7 @@ function sectionFieldCount(
       // mode radio + domain + token (only if duckdns/cloudflare)
       return remoteMode !== "none" ? 3 : 1;
     case SEC_LOCALDNS: return 2;
-    case SEC_SYSTEM:   return 3;
+    case SEC_SYSTEM:   return 4;
     case SEC_FOOTER:   return 2; // Install, Cancel
     default:           return 1;
   }
@@ -340,12 +340,14 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         puid={ws.puid}
         pgid={ws.pgid}
         vpnMode={ws.vpnMode}
+        subtitleLanguages={ws.subtitleLanguages}
         onTimezoneChange={ws.setTimezone}
         onPuidChange={(v) => {
           const [p, g] = v.split("/").map(Number);
           if (!isNaN(p)) ws.setPuid(p);
           if (!isNaN(g)) ws.setPgid(g);
         }}
+        onSubtitleLanguagesChange={ws.setSubtitleLanguages}
         isFocused={activeSectionIndex === SEC_SYSTEM}
         focusedField={systemFocusedField}
       />

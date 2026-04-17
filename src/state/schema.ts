@@ -24,6 +24,9 @@ export const StateSchema = z.object({
   timezone: z.string(),
   puid: z.number(),
   pgid: z.number(),
+  // ISO 639-1 codes (e.g. "en", "hu"). Bazarr seeds a default language profile
+  // from this list. English-only is the safest out-of-the-box default.
+  subtitle_languages: z.array(z.string().length(2)).default(["en"]),
   api_keys: z.record(z.string(), z.string()),
   install_started_at: z.string().datetime().optional(),
   install_completed_at: z.string().datetime().optional(),

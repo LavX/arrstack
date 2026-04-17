@@ -22,6 +22,7 @@ const VALID_STATE: State = {
   timezone: "Europe/London",
   puid: 1000,
   pgid: 1000,
+  subtitle_languages: ["en"],
   api_keys: {},
 };
 

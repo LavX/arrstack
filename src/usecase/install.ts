@@ -27,6 +27,7 @@ import { configureArr } from "../wiring/sonarr-radarr.js";
 import { configureQbit } from "../wiring/qbittorrent.js";
 import { setupJellyfin } from "../wiring/jellyfin.js";
 import { linkJellyseerr } from "../wiring/jellyseerr.js";
+import { configureBazarrLanguages } from "../wiring/bazarr.js";
 import { runRecyclarrSync } from "../wiring/recyclarr.js";
 
 export type StepStatus = "pending" | "running" | "done" | "failed";
@@ -219,10 +220,14 @@ export async function runInstall(
     if (bazarrSvc) {
       const configDir = join(installDir, "config", "bazarr");
       mkdirSync(configDir, { recursive: true });
+      // Generate Bazarr's own API key once and keep it in apiKeys so both the
+      // config.yaml and the post-install wiring call (configureBazarrLanguages)
+      // use the same value.
+      if (!apiKeys["bazarr"]) apiKeys["bazarr"] = generateApiKey();
       const yaml = renderBazarrConfig({
         username: state.admin.username,
         passwordHash: bazarrHash,
-        bazarrApiKey: generateApiKey(),
+        bazarrApiKey: apiKeys["bazarr"],
         flaskSecretKey: generateApiKey(),
         sonarrApiKey: apiKeys["sonarr"] ?? "",
         radarrApiKey: apiKeys["radarr"] ?? "",
@@ -337,6 +342,16 @@ export async function runInstall(
   if (has("jellyseerr")) {
     await runStep("Linking Jellyseerr to Jellyfin", onStep, log, async () => {
       await linkJellyseerr(state.admin.username, adminPassword);
+    });
+  }
+
+  // Step 12b2: Bazarr languages + default profile
+  if (has("bazarr")) {
+    await runStep("Configuring Bazarr languages and profile", onStep, log, async () => {
+      await configureBazarrLanguages({
+        apiKey: apiKeys["bazarr"] ?? "",
+        languages: state.subtitle_languages,
+      });
     });
   }
 

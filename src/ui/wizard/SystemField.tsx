@@ -11,10 +11,12 @@ interface SystemFieldProps {
   puid: number;
   pgid: number;
   vpnMode: "none" | "gluetun";
+  subtitleLanguages: string; // comma-separated ISO 639-1 codes, e.g. "en, hu"
   onTimezoneChange: (val: string) => void;
   onPuidChange: (val: string) => void;
+  onSubtitleLanguagesChange: (val: string) => void;
   isFocused: boolean;
-  focusedField: number; // 0 = timezone, 1 = puid/pgid, 2 = vpn radio
+  focusedField: number; // 0=tz, 1=uid/gid, 2=subs langs, 3=vpn radio
 }
 
 const VPN_OPTIONS: RadioOption[] = [
@@ -27,8 +29,10 @@ export function SystemField({
   puid,
   pgid,
   vpnMode,
+  subtitleLanguages,
   onTimezoneChange,
   onPuidChange,
+  onSubtitleLanguagesChange,
   isFocused,
   focusedField,
 }: SystemFieldProps) {
@@ -53,13 +57,22 @@ export function SystemField({
         />
       </Box>
       <Box>
-        <Text color={focusedField === 2 ? colors.accent : "white"}>
+        <TextInput
+          label="Subtitle langs"
+          value={subtitleLanguages}
+          onChange={onSubtitleLanguagesChange}
+          hint="comma-separated ISO codes (e.g. en,hu)"
+          isFocused={focusedField === 2}
+        />
+      </Box>
+      <Box>
+        <Text color={focusedField === 3 ? colors.accent : "white"}>
           {"VPN".padEnd(LABEL_WIDTH)}
         </Text>
         <Radio
           options={VPN_OPTIONS}
           selected={vpnMode}
-          focusedIndex={focusedField === 2 ? VPN_OPTIONS.findIndex((o) => o.value === vpnMode) : -1}
+          focusedIndex={focusedField === 3 ? VPN_OPTIONS.findIndex((o) => o.value === vpnMode) : -1}
           inline
         />
       </Box>

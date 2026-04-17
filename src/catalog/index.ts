@@ -1,16 +1,12 @@
-import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { CatalogSchema, type Service } from "./schema.js";
+// @ts-ignore: Bun text import
+import servicesYaml from "./services.yaml" with { type: "text" };
 
 let cachedServices: Service[] | null = null;
 
 function parseCatalog(): Service[] {
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-  const yamlPath = join(__dirname, "services.yaml");
-  const raw = readFileSync(yamlPath, "utf-8");
-  const data = parse(raw);
+  const data = parse(servicesYaml);
   const catalog = CatalogSchema.parse(data);
   return catalog.services;
 }

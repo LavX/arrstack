@@ -16,6 +16,11 @@ export async function linkJellyseerr(
         port: 8096,
         useSsl: false,
         urlBase: "",
+        // MediaServerType.JELLYFIN from seerr-team/seerr's TS enum (PLEX=1,
+        // JELLYFIN=2, EMBY=3). The route rejects the bootstrap with
+        // NO_ADMIN_USER when this field is missing or not jellyfin/emby.
+        serverType: 2,
+        email: jellyfinUser,
       }),
     })
   );

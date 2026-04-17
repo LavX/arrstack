@@ -1,0 +1,17 @@
+sonarr:
+  default:
+    base_url: http://sonarr:8989
+    api_key: {{sonarrApiKey}}
+    quality_definition:
+      type: series
+    quality_profiles:
+      - name: WEB-1080p
+      - name: WEB-2160p
+
+radarr:
+  default:
+    base_url: http://radarr:7878
+    api_key: {{radarrApiKey}}
+    quality_profiles:
+      - name: HD Bluray + WEB
+      - name: UHD Bluray + WEB

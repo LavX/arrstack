@@ -1,0 +1,28 @@
+auth:
+  type: basic
+  username: {{username}}
+  password: {{bcryptPassword}}
+
+general:
+  use_sonarr: true
+  use_radarr: true
+
+sonarr:
+  ip: sonarr
+  port: 8989
+  apikey: {{sonarrApiKey}}
+  ssl: false
+  base_url: /
+
+radarr:
+  ip: radarr
+  port: 7878
+  apikey: {{radarrApiKey}}
+  ssl: false
+  base_url: /
+
+subtitles:
+  providers:
+    - opensubtitles
+    - podnapisi
+    - embeddedsubtitles

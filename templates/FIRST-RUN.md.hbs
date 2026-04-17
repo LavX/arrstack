@@ -1,0 +1,22 @@
+# First Run Guide
+
+Welcome to your Arrstack installation. Below are the URLs for all your services.
+
+## Service URLs
+
+{{#each services}}
+- **{{name}}**: http://{{../hostIp}}:{{port}}
+{{/each}}
+
+## Admin Credentials
+
+Your admin username is **{{adminUsername}}**. Set your password during the first login
+for each service that requires it.
+
+## Remaining Manual Steps
+
+1. Open Jellyseerr at the URL above and complete the initial setup wizard.
+2. Connect Jellyseerr to your Jellyfin server.
+3. Request a movie or TV show to verify the full pipeline is working.
+4. In Prowlarr, add your preferred indexers and sync them to Sonarr and Radarr.
+5. In qBittorrent, verify the download categories match what Sonarr and Radarr expect.

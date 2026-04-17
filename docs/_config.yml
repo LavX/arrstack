@@ -1,0 +1,19 @@
+title: arrstack
+description: "Single-binary TUI installer for the arr stack plus Jellyfin and Jellyseerr. 90 seconds on a clean Linux host."
+url: "https://lavx.github.io"
+baseurl: "/arrstack"
+
+# Exclude internal, maintainer-only trees from the published site.
+# Jekyll also excludes anything whose name starts with _ by default,
+# this block is the belt to the underscore's suspenders.
+exclude:
+  - _internal/
+  - superpowers/
+  - README.md
+  - _config.yml
+
+# Include guide/, troubleshooting/, about/, assets/ implicitly via
+# Jekyll defaults. No plugins, no theme, raw HTML landing page
+# served as-is from docs/index.html.
+markdown: kramdown
+theme: null

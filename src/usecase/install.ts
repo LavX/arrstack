@@ -183,6 +183,7 @@ export async function runInstall(
       apiKeys,
       gpu: state.gpu,
       vpn: state.vpn,
+      remoteMode: state.remote_access.mode,
     });
     writeFileSync(join(installDir, "docker-compose.yml"), content);
   });

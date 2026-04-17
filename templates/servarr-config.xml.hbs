@@ -1,6 +1,13 @@
 <Config>
   <ApiKey>{{apiKey}}</ApiKey>
   <AuthenticationMethod>Forms</AuthenticationMethod>
-  <AuthenticationRequired>Enabled</AuthenticationRequired>
+  <!--
+    DisabledForLocalAddresses: skip the login form when the request comes from
+    a private range (LAN / docker network). External access via Caddy with a
+    real domain still requires a login. On first visit Sonarr/Radarr/Prowlarr
+    would otherwise force a setup wizard, which is why users coming straight
+    to the IP couldn't log in.
+  -->
+  <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
   <UrlBase></UrlBase>
 </Config>

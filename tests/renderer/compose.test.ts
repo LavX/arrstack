@@ -16,6 +16,7 @@ const baseOpts = {
   },
   gpu: { vendor: "none" as const },
   vpn: { enabled: false },
+  remoteMode: "none" as const,
 };
 
 function getServices(ids: string[]) {
@@ -73,9 +74,15 @@ describe("renderCompose", () => {
     expect(output).toContain("/home/user/arrstack/config/sonarr");
   });
 
-  test("admin ports are bound to 127.0.0.1 by default", () => {
+  test("in LAN mode every admin port is bound to 0.0.0.0 for host-ip access", () => {
     const services = getServices(["sonarr"]);
     const output = renderCompose(services, baseOpts);
+    expect(output).toContain("0.0.0.0:8989:8989");
+  });
+
+  test("with a remote-access mode, admin ports fall back to loopback behind Caddy", () => {
+    const services = getServices(["sonarr"]);
+    const output = renderCompose(services, { ...baseOpts, remoteMode: "cloudflare" });
     expect(output).toContain("127.0.0.1:8989:8989");
   });
 

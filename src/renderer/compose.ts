@@ -19,6 +19,9 @@ export interface ComposeOptions {
     enabled: boolean;
     provider?: string;
   };
+  // LAN-only when "none"; reverse-proxy-fronted otherwise. Controls whether
+  // admin ports bind to 0.0.0.0 (LAN) or 127.0.0.1 (behind Caddy).
+  remoteMode: "none" | "duckdns" | "cloudflare";
 }
 
 interface DataMount {
@@ -51,10 +54,11 @@ interface ServiceContext {
   vpnNetwork: boolean;
 }
 
-// Services that need to be reachable from outside the host by default.
-// Everyone else is bound to loopback so Caddy (or the VPN gateway) is the
-// only external surface.
-const PUBLIC_SERVICES = new Set(["caddy", "gluetun"]);
+// Services that always need to be reachable from outside the host.
+// In LAN mode (no remote access) we open every service so users can hit
+// http://<host-ip>:<port>. In duckdns/cloudflare mode we lock admin ports
+// to loopback so Caddy is the only external surface.
+const ALWAYS_PUBLIC = new Set(["caddy", "gluetun"]);
 
 interface ComposeContext {
   installDir: string;
@@ -133,7 +137,10 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       value,
     }));
 
-    const bindHost = PUBLIC_SERVICES.has(svc.id) ? "0.0.0.0" : "127.0.0.1";
+    const bindHost =
+      ALWAYS_PUBLIC.has(svc.id) || opts.remoteMode === "none"
+        ? "0.0.0.0"
+        : "127.0.0.1";
     const ports: PortBinding[] = vpnNetwork
       ? []
       : svc.ports.map((p) => ({ binding: `${bindHost}:${p}:${p}` }));

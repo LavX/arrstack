@@ -55,12 +55,17 @@ export async function configureBazarrLanguages(
   await waitForBazarrApiReady(base, opts.apiKey);
 
   // Build the profile items. ids must be 1-indexed, unique per item.
-  // audio_exclude/hi/forced are stringified booleans ("False") in Bazarr's DB
-  // (see app/database.py migration code).
+  // Bazarr+ stores these flags as stringified booleans ("True"/"False") and
+  // reads all four in subtitles/indexer/{movies,series}.py. Omitting
+  // audio_only_include raises KeyError during the first missing-subtitles
+  // index pass (verified against /home/lavx/bazarr/bazarr/subtitles/indexer
+  // /movies.py:183 and app/database.py:564-568 which defaults both audio_*
+  // keys to "False" during migration).
   const items = languages.map((lang, i) => ({
     id: i + 1,
     language: lang,
     audio_exclude: "False",
+    audio_only_include: "False",
     hi: "False",
     forced: "False",
   }));

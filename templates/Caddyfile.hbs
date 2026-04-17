@@ -1,0 +1,23 @@
+{{#each services}}
+{{#if (eq ../mode "none")}}
+:{{port}} {
+	reverse_proxy {{id}}:{{port}}
+}
+{{/if}}
+{{#if (eq ../mode "cloudflare")}}
+{{id}}.{{../domain}} {
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+	}
+	reverse_proxy {{id}}:{{port}}
+}
+{{/if}}
+{{#if (eq ../mode "duckdns")}}
+{{id}}.{{../domain}} {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	reverse_proxy {{id}}:{{port}}
+}
+{{/if}}
+{{/each}}

@@ -34,11 +34,18 @@ async function isStartupComplete(base: string): Promise<boolean> {
   }
 }
 
+interface AuthResult {
+  token: string;
+  authHeader: string;
+  userId: string;
+  policy: Record<string, unknown>;
+}
+
 async function authenticate(
   base: string,
   adminUser: string,
   adminPass: string,
-): Promise<{ token: string; authHeader: string }> {
+): Promise<AuthResult> {
   const authHeader =
     'MediaBrowser Client="arrstack", Device="installer", DeviceId="arrstack", Version="1.0.0"';
   const authRes = await withRetry(() =>
@@ -54,8 +61,38 @@ async function authenticate(
   if (!authRes.ok) {
     throw new Error(`AuthenticateByName failed: HTTP ${authRes.status}\n${await readBody(authRes)}`);
   }
-  const authData = (await authRes.json()) as { AccessToken: string };
-  return { token: authData.AccessToken, authHeader };
+  const authData = (await authRes.json()) as {
+    AccessToken: string;
+    User: { Id: string; Policy: Record<string, unknown> };
+  };
+  return {
+    token: authData.AccessToken,
+    authHeader,
+    userId: authData.User.Id,
+    policy: authData.User.Policy,
+  };
+}
+
+// Some Jellyfin 10.11 setups leave the Startup-created user without the
+// IsAdministrator flag, which breaks Jellyseerr bootstrap ("Failed login
+// attempt from user without admin permissions"). Promote explicitly.
+async function ensureAdmin(
+  base: string,
+  auth: AuthResult,
+  authedHeaders: Record<string, string>,
+): Promise<void> {
+  if (auth.policy.IsAdministrator === true) return;
+  const nextPolicy = { ...auth.policy, IsAdministrator: true };
+  const res = await fetch(`${base}/Users/${auth.userId}/Policy`, {
+    method: "POST",
+    headers: authedHeaders,
+    body: JSON.stringify(nextPolicy),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Failed to grant admin to "${auth.userId}": HTTP ${res.status}\n${await readBody(res)}`,
+    );
+  }
 }
 
 export async function setupJellyfin(
@@ -96,11 +133,13 @@ export async function setupJellyfin(
   }
 
   // Authenticate with the (now-existing) admin user
-  const { token, authHeader } = await authenticate(base, adminUser, adminPass);
+  const auth = await authenticate(base, adminUser, adminPass);
   const authedHeaders = {
     "Content-Type": "application/json",
-    "X-Emby-Authorization": `${authHeader}, Token="${token}"`,
+    "X-Emby-Authorization": `${auth.authHeader}, Token="${auth.token}"`,
   };
+
+  await ensureAdmin(base, auth, authedHeaders);
 
   // Fetch existing libraries so we can decide create-vs-add-path per library.
   const existingRes = await fetch(`${base}/Library/VirtualFolders`, { headers: authedHeaders });

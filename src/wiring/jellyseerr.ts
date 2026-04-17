@@ -21,6 +21,8 @@ export async function linkJellyseerr(
   );
 
   if (!res.ok) {
-    throw new Error(`Jellyseerr auth failed: HTTP ${res.status}`);
+    let body = "";
+    try { body = (await res.text()).slice(0, 2000); } catch { /* ignore */ }
+    throw new Error(`Jellyseerr auth failed: HTTP ${res.status}\n${body}`);
   }
 }

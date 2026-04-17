@@ -44,6 +44,7 @@ describe("AdminField", () => {
         password="test-pass"
         onUsernameChange={() => {}}
         onPasswordChange={() => {}}
+        onRegenerate={() => {}}
         focusedField={-1}
       />
     );
@@ -58,6 +59,7 @@ describe("AdminField", () => {
         password="test-pass"
         onUsernameChange={() => {}}
         onPasswordChange={() => {}}
+        onRegenerate={() => {}}
         focusedField={1}
       />
     );
@@ -71,6 +73,7 @@ describe("AdminField", () => {
         password="test-pass"
         onUsernameChange={() => {}}
         onPasswordChange={() => {}}
+        onRegenerate={() => {}}
         focusedField={-1}
       />
     );

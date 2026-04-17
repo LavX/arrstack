@@ -299,6 +299,10 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         password={ws.adminPassword}
         onUsernameChange={ws.setAdminUsername}
         onPasswordChange={ws.setAdminPassword}
+        onRegenerate={() => {
+          const { generatePassword } = require("../../lib/random.js");
+          ws.setAdminPassword(generatePassword());
+        }}
         focusedField={adminFocusedField}
       />
 

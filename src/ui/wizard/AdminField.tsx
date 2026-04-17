@@ -1,9 +1,9 @@
 /** @jsxImportSource react */
 import React from "react";
 import { Box, Text } from "ink";
-import InkTextInput from "ink-text-input";
 import { SectionBox } from "../shared/SectionBox.js";
 import { TextInput } from "../shared/TextInput.js";
+import { PasswordInput } from "../shared/PasswordInput.js";
 import { colors, LABEL_WIDTH } from "../shared/theme.js";
 
 interface AdminFieldProps {
@@ -11,6 +11,7 @@ interface AdminFieldProps {
   password: string;
   onUsernameChange: (val: string) => void;
   onPasswordChange: (val: string) => void;
+  onRegenerate: () => void;
   focusedField: number; // 0 = username, 1 = password, -1 = none
 }
 
@@ -19,6 +20,7 @@ export function AdminField({
   password,
   onUsernameChange,
   onPasswordChange,
+  onRegenerate,
   focusedField,
 }: AdminFieldProps) {
   const maskedPassword = "\u25CF".repeat(password.length);
@@ -37,11 +39,16 @@ export function AdminField({
           {"Password".padEnd(LABEL_WIDTH)}
         </Text>
         {isPasswordFocused ? (
-          <InkTextInput value={password} onChange={onPasswordChange} />
+          <PasswordInput
+            value={password}
+            onChange={onPasswordChange}
+            onRegenerate={onRegenerate}
+            isFocused={isPasswordFocused}
+          />
         ) : (
           <>
             <Text color={colors.value}>{maskedPassword}</Text>
-            <Text color={colors.muted}>{"  (" + password.length + " chars)  (r to regenerate)"}</Text>
+            <Text color={colors.muted}>{"  (" + password.length + " chars)  (Ctrl+R regenerate)"}</Text>
           </>
         )}
       </Box>

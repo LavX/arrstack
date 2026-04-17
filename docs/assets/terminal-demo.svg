@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-label="Terminal preview of arrstack installer output">
+  <style>
+    .bg { fill: #0D1117; }
+    .chrome { fill: #161B22; }
+    .dot-r { fill: #F85149; }
+    .dot-y { fill: #D29922; }
+    .dot-g { fill: #3FB950; }
+    .path { fill: #8B949E; font: 12px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .prompt { fill: #3FB950; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .user { fill: #58A6FF; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .host { fill: #D2A8FF; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .cmd { fill: #E6EDF3; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .ok { fill: #3FB950; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .mut { fill: #8B949E; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .warn { fill: #D29922; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+    .title { fill: #56D4DC; font: 13px "JetBrains Mono", ui-monospace, Menlo, monospace; }
+  </style>
+  <rect class="bg" width="720" height="420" rx="10"/>
+  <rect class="chrome" x="0" y="0" width="720" height="34" rx="10"/>
+  <rect class="chrome" x="0" y="24" width="720" height="10"/>
+  <circle class="dot-r" cx="18" cy="17" r="6"/>
+  <circle class="dot-y" cx="38" cy="17" r="6"/>
+  <circle class="dot-g" cx="58" cy="17" r="6"/>
+  <text class="path" x="360" y="21" text-anchor="middle">lavx@homelab: ~/arrstack</text>
+
+  <g transform="translate(18,60)">
+    <text y="0"><tspan class="prompt">$ </tspan><tspan class="cmd">curl -fsSL https://lavx.github.io/arrstack/install.sh | bash</tspan></text>
+
+    <text y="26" class="mut">==&gt; detecting platform ... linux x86_64, docker 28.0, compose v2.35</text>
+    <text y="46" class="mut">==&gt; writing ~/arrstack, rendering docker-compose.yml</text>
+
+    <text y="74" class="title">services</text>
+    <text y="94"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">qbittorrent</tspan><tspan class="mut">     up  </tspan><tspan class="mut">:8080</tspan></text>
+    <text y="112"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">prowlarr</tspan><tspan class="mut">        up  </tspan><tspan class="mut">:9696  </tspan><tspan class="warn">flaresolverr-tag</tspan></text>
+    <text y="130"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">flaresolverr</tspan><tspan class="mut">    up  </tspan><tspan class="mut">:8191</tspan></text>
+    <text y="148"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">sonarr</tspan><tspan class="mut">          up  </tspan><tspan class="mut">:8989  </tspan><tspan class="mut">root=/data/media/tv</tspan></text>
+    <text y="166"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">radarr</tspan><tspan class="mut">          up  </tspan><tspan class="mut">:7878  </tspan><tspan class="mut">root=/data/media/movies</tspan></text>
+    <text y="184"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">bazarr</tspan><tspan class="mut">          up  </tspan><tspan class="mut">:6767  </tspan><tspan class="mut">lang=en+forced+hi</tspan></text>
+    <text y="202"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">jellyfin</tspan><tspan class="mut">        up  </tspan><tspan class="mut">:8096  </tspan><tspan class="warn">hwaccel=intel/vaapi</tspan></text>
+    <text y="220"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">jellyseerr</tspan><tspan class="mut">      up  </tspan><tspan class="mut">:5055  </tspan><tspan class="mut">wizard pre-linked</tspan></text>
+    <text y="238"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">caddy</tspan><tspan class="mut">           up  </tspan><tspan class="mut">:80,:443</tspan></text>
+    <text y="256"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">trailarr</tspan><tspan class="mut">        up  </tspan><tspan class="mut">:7889</tspan></text>
+    <text y="274"><tspan class="ok">  [ok]</tspan><tspan class="mut"> </tspan><tspan class="cmd">recyclarr</tspan><tspan class="mut">       run </tspan><tspan class="mut">sync  </tspan><tspan class="mut">TRaSH profiles</tspan></text>
+
+    <text y="304" class="mut">==&gt; admin written to ~/arrstack/admin.txt (mode 0600)</text>
+    <text y="322" class="mut">==&gt; 12 services wired in 00:01:27</text>
+
+    <text y="350"><tspan class="prompt">$ </tspan><tspan class="cmd">open http://homelab.local:5055</tspan><tspan class="mut"> </tspan><tspan class="ok">&#9615;</tspan></text>
+  </g>
+</svg>

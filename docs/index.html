@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>arrstack, one-command homelab installer for Sonarr, Radarr, Jellyfin</title>
+  <meta name="description" content="12 services. One binary. 90 seconds. Single-binary TUI that installs and wires qBittorrent, Prowlarr, Sonarr, Radarr, Bazarr, Jellyfin, and Jellyseerr on a clean Linux host. MIT, open source.">
+  <meta name="theme-color" content="#0D1117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="color-scheme" content="dark light">
+
+  <!-- Open Graph / Twitter (SEO agent: expand image + handles) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="arrstack: 12 services. One binary. 90 seconds.">
+  <meta property="og:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Jellyfin/Jellyseerr homelab stack.">
+  <meta property="og:url" content="https://lavx.github.io/arrstack/">
+  <meta property="og:image" content="https://lavx.github.io/arrstack/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="arrstack: 12 services. One binary. 90 seconds.">
+  <meta name="twitter:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Jellyfin/Jellyseerr homelab stack.">
+  <meta name="twitter:image" content="https://lavx.github.io/arrstack/assets/og-image.png">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="canonical" href="https://lavx.github.io/arrstack/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- JSON-LD: SoftwareApplication. SEO agent: expand with aggregateRating, screenshot, releaseNotes, offers. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "arrstack",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux",
+    "url": "https://lavx.github.io/arrstack/",
+    "downloadUrl": "https://github.com/lavx/arrstack-installer/releases",
+    "softwareVersion": "1.0",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "license": "https://opensource.org/licenses/MIT",
+    "author": { "@type": "Person", "name": "LavX", "url": "https://lavx.github.io" },
+    "description": "Single-binary TUI installer for a pre-wired Sonarr, Radarr, Jellyfin, and Jellyseerr Docker stack."
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top" aria-label="arrstack home">
+        <img class="logo" src="logo.svg" alt="" width="28" height="28">
+        <span class="brand-name">arrstack</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul class="nav-links">
+          <li><a href="#services">services</a></li>
+          <li><a href="#wiring">auto-wiring</a></li>
+          <li><a href="#remote">remote</a></li>
+          <li><a href="#faq">faq</a></li>
+          <li><a href="https://github.com/lavx/arrstack-installer" rel="noopener">github</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- 1. HERO -->
+    <section class="hero" id="top" aria-labelledby="hero-heading">
+      <div id="hero-sketch" class="hero-bg" aria-hidden="true"></div>
+      <div class="container hero-grid hero-content">
+        <div>
+          <span class="eyebrow" aria-label="Build status: stable">
+            <span class="dot" aria-hidden="true"></span>
+            v1.0 stable, linux x86_64 and arm64
+          </span>
+          <h1 id="hero-heading">
+            <span class="accent">12 services.</span><br>
+            One binary. 90 seconds.
+          </h1>
+          <p class="hero-sub">
+            The arr stack, pre-wired. Installs qBittorrent, Prowlarr, Sonarr, Radarr, Bazarr, Jellyfin, and Jellyseerr on a clean Linux host. No YAML to copy-paste, no wizard tour, no forum threads about Cloudflare tags.
+          </p>
+
+          <div class="term" role="group" aria-label="Install command">
+            <div class="term-chrome">
+              <span class="term-dots" aria-hidden="true"><span class="r"></span><span class="y"></span><span class="g"></span></span>
+              <span class="term-path">lavx@homelab: ~</span>
+              <button class="copy-btn" type="button" data-copy-target="#install-cmd" aria-label="Copy install command">copy</button>
+            </div>
+            <div class="term-body">
+<pre aria-hidden="true"><span class="term-line"><span class="term-mut"># paste in any shell, no sudo needed for the installer itself</span></span></pre>
+<pre id="install-cmd"><span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">curl -fsSL https://lavx.github.io/arrstack/install.sh | bash</span><span class="caret" aria-hidden="true"></span></span></pre>
+            </div>
+          </div>
+
+          <div class="cta-row" style="margin-top: var(--s-5);">
+            <a class="btn btn-primary" href="https://github.com/lavx/arrstack-installer" rel="noopener">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.77-.2-3.64-.89-3.64-3.95 0-.87.31-1.58.82-2.14-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.6 7.6 0 0 1 8 3.92c.68 0 1.36.09 2 .27 1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.14 0 3.07-1.87 3.74-3.65 3.94.29.25.54.74.54 1.49v2.21c0 .21.15.46.55.38A8 8 0 0 0 8 0z"/></svg>
+              GitHub
+            </a>
+            <a class="btn btn-secondary" href="https://github.com/lavx/arrstack-installer#readme" rel="noopener">Read the docs</a>
+          </div>
+        </div>
+
+        <div aria-hidden="false">
+          <img src="assets/terminal-demo.svg" alt="Terminal showing twelve services booting and admin credentials written to disk in 87 seconds.">
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PROBLEM -->
+    <section class="section" aria-labelledby="problem-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">the thing nobody writes on the repo</span>
+          <h2 id="problem-heading">A working arr stack is roughly 400 clicks.</h2>
+        </div>
+        <div class="problem-card">
+          <p class="counter">$ history | grep -E 'prowlarr|bazarr|jellyseerr' | wc -l &rarr; <strong>~400</strong></p>
+          <p>You pull the images. You open Prowlarr, generate an API key, paste it into Sonarr, paste it again into Radarr. You add five indexers, forget to tag <strong>FlareSolverr</strong> at create-time, and every Cloudflare-gated search 403s until you delete and recreate each one. You open Bazarr, hit its <strong>KeyError</strong> on <code>audio_exclude</code>, edit the language profile fields, then edit them again for every language. You click through the Jellyfin Startup Wizard. You click through <code>/setup</code> on Jellyseerr, paste a third API key, link libraries by hand. You hand-craft a Caddyfile, guess at the DNS-01 block, watch the cert fail, fix the block.</p>
+          <p>By the time you request a movie, the evening is gone. arrstack is this weekend, compressed into one binary.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SOLUTION -->
+    <section class="section" aria-labelledby="solution-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">what the installer actually does</span>
+          <h2 id="solution-heading">Three guarantees.</h2>
+        </div>
+        <div class="solution-grid">
+          <div class="solution-card">
+            <div class="num">01 /</div>
+            <h3>One command</h3>
+            <p>A TUI wizard asks the three questions it cannot guess (storage root, remote access mode, optional extras), then runs unattended.</p>
+          </div>
+          <div class="solution-card">
+            <div class="num">02 /</div>
+            <h3>Twelve services</h3>
+            <p>Download, indexers, arr apps, subtitles, media, requests, proxy, trailers, quality sync. Wired to each other at create-time, not via post-hoc scripts.</p>
+          </div>
+          <div class="solution-card">
+            <div class="num">03 /</div>
+            <h3>Ninety seconds</h3>
+            <p>From <code>bash</code> to a Jellyseerr tab where the setup wizard has already been bypassed and your account logs in with the admin password in <code>admin.txt</code>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SERVICES -->
+    <section class="section" id="services" aria-labelledby="services-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">manifest</span>
+          <h2 id="services-heading">The twelve services, grouped by role.</h2>
+          <p class="lead">Each one is pinned to a known-good image version, given a stable hostname on the internal Docker network, and handed credentials at bootstrap so nothing prompts you on first load.</p>
+        </div>
+
+        <div class="services-grid">
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">qB</div>
+            <div class="svc-name">qBittorrent <span class="svc-port">:8080</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">download</span> Client with tv/movies/music/books categories pre-matched to TRaSH paths.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Gt</div>
+            <div class="svc-name">Gluetun <span class="svc-port">network</span></div>
+            <span class="svc-chip optional">optional</span>
+            <p class="svc-desc"><span class="svc-role">vpn</span> Wraps the download client in a killswitched VPN tunnel. Enabled if you provide WireGuard or OpenVPN credentials.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Pr</div>
+            <div class="svc-name">Prowlarr <span class="svc-port">:9696</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">indexer</span> Unified indexer manager, five public indexers pre-added and app-synced to Sonarr and Radarr.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Fl</div>
+            <div class="svc-name">FlareSolverr <span class="svc-port">:8191</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">indexer</span> Headless browser that solves Cloudflare challenges, tagged onto gated indexers at create-time.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">So</div>
+            <div class="svc-name">Sonarr <span class="svc-port">:8989</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">arr</span> TV manager. Root folder, download client, quality profile wired on first boot.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Ra</div>
+            <div class="svc-name">Radarr <span class="svc-port">:7878</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">arr</span> Movie manager, same wiring as Sonarr, pointed at <code>/data/media/movies</code>.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Bz</div>
+            <div class="svc-name">Bazarr+ <span class="svc-port">:6767</span></div>
+            <span class="svc-chip optional">optional</span>
+            <p class="svc-desc"><span class="svc-role">subtitles</span> LavX fork with OpenSubtitles scraper and AI translator. Language profiles ship with the fields it needs.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Jf</div>
+            <div class="svc-name">Jellyfin <span class="svc-port">:8096</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">media server</span> Intel, AMD, or NVIDIA hardware transcoding wired from <code>/dev/dri</code> and <code>nvidia-smi</code>.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Js</div>
+            <div class="svc-name">Jellyseerr <span class="svc-port">:5055</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">requests</span> Request portal. The four-step bootstrap pre-links Jellyfin so no <code>/setup</code> wizard appears.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Cd</div>
+            <div class="svc-name">Caddy <span class="svc-port">:80 :443</span></div>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">reverse proxy</span> Virtual hosts generated per mode (LAN, DuckDNS, Cloudflare) with optional local DNS block.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Tr</div>
+            <div class="svc-name">Trailarr <span class="svc-port">:7889</span></div>
+            <span class="svc-chip optional">optional</span>
+            <p class="svc-desc"><span class="svc-role">trailers</span> Pre-roll trailer fetcher linked to Radarr and Sonarr libraries.</p>
+          </article>
+          <article class="svc">
+            <div class="svc-icon" aria-hidden="true">Rc</div>
+            <div class="svc-name">Recyclarr <span class="svc-port">cron</span></div>
+            <span class="svc-chip optional">optional</span>
+            <p class="svc-desc"><span class="svc-role">quality profiles</span> Syncs TRaSH-Guides profiles and custom formats into Sonarr and Radarr on a schedule.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. AUTO-WIRING -->
+    <section class="section" id="wiring" aria-labelledby="wiring-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">the small things that break homelabs</span>
+          <h2 id="wiring-heading">What the installer handles so you do not.</h2>
+        </div>
+        <div class="wiring-grid">
+          <article class="wire">
+            <h3>FlareSolverr at create-time</h3>
+            <p>Prowlarr gets the FlareSolverr tag when each indexer is created, not retroactively. Cloudflare-gated sites route on the first search.</p>
+          </article>
+          <article class="wire">
+            <h3>Bazarr language profiles</h3>
+            <p>Every profile ships with <code>audio_exclude</code>, <code>audio_only_include</code>, <code>hi</code>, and <code>forced</code>. Bazarr does not crash on a KeyError the first time it scans a library.</p>
+          </article>
+          <article class="wire">
+            <h3>Jellyseerr 4-step bootstrap</h3>
+            <p>Admin user, Jellyfin link, libraries, and permissions written over the API before the container is exposed. The <code>/setup</code> wizard never appears.</p>
+          </article>
+          <article class="wire">
+            <h3>Jellyfin hardware transcode</h3>
+            <p>Intel VA-API, AMD VA-API, or NVIDIA NVENC auto-detected from <code>/dev/dri</code> and <code>nvidia-smi</code>, and wired into the Jellyfin transcoding config.</p>
+          </article>
+          <article class="wire">
+            <h3>TRaSH-aligned /data mount</h3>
+            <p>One shared <code>/data</code> mount across qBittorrent and the arr services, so hardlinks work and seeding torrents do not duplicate disk.</p>
+          </article>
+          <article class="wire">
+            <h3>Caddy vhosts per mode</h3>
+            <p>LAN (plain http), DuckDNS (Let&rsquo;s Encrypt HTTP-01 or DNS-01), or Cloudflare (wildcard Let&rsquo;s Encrypt DNS-01 against your domain) with an optional local DNS block.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. REMOTE ACCESS MATRIX -->
+    <section class="section" id="remote" aria-labelledby="remote-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">remote access</span>
+          <h2 id="remote-heading">Three modes. Pick the one that matches what you own.</h2>
+        </div>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <caption class="visually-hidden" style="position:absolute;left:-9999px">Remote access comparison across LAN, DuckDNS, and Cloudflare modes. Cloudflare mode uses Cloudflare DNS plus Caddy wildcard Let&rsquo;s Encrypt via DNS-01, not Cloudflare Tunnel.</caption>
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">LAN only</th>
+                <th scope="col">DuckDNS</th>
+                <th scope="col">Cloudflare</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Who it is for</th>
+                <td>You never leave the house, or you VPN in.</td>
+                <td>You want real HTTPS without buying a domain.</td>
+                <td>You already own a domain and want pretty URLs.</td>
+              </tr>
+              <tr>
+                <th scope="row">Prereqs</th>
+                <td>None.</td>
+                <td>Free DuckDNS account + token.</td>
+                <td>Your domain + Cloudflare API token with <code>Zone:DNS:Edit</code>.</td>
+              </tr>
+              <tr>
+                <th scope="row">What you get</th>
+                <td><code>http://host-ip:port</code><br>e.g. <code>http://192.168.1.20:8096</code></td>
+                <td><code>https://sub.duckdns.org</code><br>e.g. <code>jellyfin.myhome.duckdns.org</code></td>
+                <td><code>https://sub.yourdomain.tld</code><br>e.g. <code>jellyfin.yourdomain.net</code></td>
+              </tr>
+              <tr>
+                <th scope="row">TLS</th>
+                <td>None.</td>
+                <td>Let&rsquo;s Encrypt (HTTP-01 or DNS-01).</td>
+                <td>Wildcard Let&rsquo;s Encrypt (DNS-01 via Cloudflare DNS).</td>
+              </tr>
+              <tr>
+                <th scope="row">Cost</th>
+                <td>Free.</td>
+                <td>Free.</td>
+                <td>Domain registration only.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. LAN HOSTNAMES -->
+    <section class="section" aria-labelledby="hosts-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">pretty LAN urls, three options</span>
+          <h2 id="hosts-heading">Typing <code>:8096</code> forever, or not.</h2>
+        </div>
+        <div class="hosts-grid">
+          <article class="host-card">
+            <h3>none (default)</h3>
+            <p>Reach services by host IP and port. Zero setup, zero magic.</p>
+            <pre class="snippet">http://192.168.1.20:8096
+http://192.168.1.20:5055
+<span class="c"># boring, but never breaks</span></pre>
+          </article>
+          <article class="host-card">
+            <h3>dnsmasq</h3>
+            <p>Installer writes a dnsmasq snippet your router can load, so every LAN device resolves <code>*.homelab</code>.</p>
+            <pre class="snippet">address=/homelab/192.168.1.20
+address=/jellyfin.homelab/192.168.1.20
+<span class="c"># drop into /etc/dnsmasq.d/arrstack.conf</span></pre>
+          </article>
+          <article class="host-card">
+            <h3>hosts-file</h3>
+            <p>No router access? The installer emits a <code>hosts</code> block you paste into each client machine.</p>
+            <pre class="snippet">192.168.1.20  jellyfin.homelab
+192.168.1.20  sonarr.homelab
+<span class="c"># /etc/hosts or C:\Windows\System32\drivers\etc\hosts</span></pre>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. REQUIREMENTS -->
+    <section class="section" aria-labelledby="req-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">requirements</span>
+          <h2 id="req-heading">What the host machine needs.</h2>
+        </div>
+        <ul class="req-list">
+          <li>Linux: Ubuntu 22.04+, Debian 12+, Fedora 43+</li>
+          <li>Docker + Docker Compose v2</li>
+          <li>10 GB free disk, plus your media storage</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 9. FAQ -->
+    <section class="section" id="faq" aria-labelledby="faq-heading">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">faq</span>
+          <h2 id="faq-heading">Honest answers.</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>Is this a fork of the linuxserver stack?</summary>
+            <div class="a">No. arrstack uses the same upstream images (linuxserver.io and vendor images for Jellyfin, Jellyseerr, Caddy), but adds the TUI, the cross-wiring, and the opinionated defaults. The heavy lifting of container maintenance is still done by those teams, and we thank them for it.</div>
+          </details>
+          <details>
+            <summary>Does it work on ARM?</summary>
+            <div class="a">Yes. An <code>arrstack-linux-arm64</code> binary is shipped alongside x86_64. Tested on Raspberry Pi 5 (8 GB) and a handful of small-form-factor ARM boxes.</div>
+          </details>
+          <details>
+            <summary>Will it run on my Synology or Unraid?</summary>
+            <div class="a">Not a supported target. arrstack assumes a Linux host where it owns <code>docker-compose.yml</code> generation. On Synology or Unraid you should keep using their app stores, or SSH into a Linux VM running on the NAS.</div>
+          </details>
+          <details>
+            <summary>Where does media go?</summary>
+            <div class="a">Under your chosen storage root, at <code>/data/media/tv</code>, <code>/data/media/movies</code>, and <code>/data/media/music</code>. The layout follows TRaSH-Guides so hardlinks between <code>/data/torrents</code> and <code>/data/media</code> work, without doubling disk usage.</div>
+          </details>
+          <details>
+            <summary>Can I bring my existing Jellyfin config?</summary>
+            <div class="a">Not yet. A clean install is recommended. Importing an existing Jellyfin database is on the roadmap but the edge cases (user IDs, device IDs, orphaned metadata) are not trivial to migrate safely.</div>
+          </details>
+          <details>
+            <summary>Is the admin password stored on disk?</summary>
+            <div class="a">Yes, twice, both with mode <code>0600</code>. Plain text in <code>${installDir}/admin.txt</code> for you, and inside <code>${installDir}/state.json</code> which the installer reads on updates. If that tradeoff is not acceptable, delete <code>admin.txt</code> after you have logged in once and store the password in your password manager.</div>
+          </details>
+          <details>
+            <summary>Does Cloudflare mode use Cloudflare Tunnel?</summary>
+            <div class="a">No. Cloudflare mode uses Cloudflare as your authoritative DNS and a Cloudflare API token scoped to <code>Zone:DNS:Edit</code>. Caddy then issues a wildcard Let&rsquo;s Encrypt certificate via the DNS-01 challenge. No tunnel daemon, no <code>cloudflared</code> container, no WARP. Port 443 on your box faces the internet directly.</div>
+          </details>
+          <details>
+            <summary>How do I update?</summary>
+            <div class="a"><code>arrstack update</code> pulls the latest images for every service and restarts the stack. Configs are preserved. Run it from any shell; it finds its install directory from <code>state.json</code>.</div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 10. FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-col">
+        <div class="footer-brand mono">arrstack</div>
+        <p class="footer-tag">The arr stack, pre-wired.<br>MIT licensed, open source.</p>
+      </div>
+      <nav class="footer-col" aria-label="Links">
+        <h4 class="footer-h">Links</h4>
+        <ul class="footer-list mono">
+          <li><a href="https://github.com/lavx/arrstack-installer" rel="noopener">GitHub repo</a></li>
+          <li><a href="https://github.com/lavx/arrstack-installer#readme" rel="noopener">Docs index</a></li>
+          <li><a href="https://github.com/lavx/arrstack-installer/blob/main/LICENSE" rel="noopener">MIT LICENSE</a></li>
+          <li><a href="https://lavx.github.io" rel="noopener">lavx.github.io</a></li>
+        </ul>
+      </nav>
+      <nav class="footer-col" aria-label="Navigate">
+        <h4 class="footer-h">On this page</h4>
+        <ul class="footer-list mono">
+          <li><a href="#services">Services</a></li>
+          <li><a href="#wiring">Auto-wiring</a></li>
+          <li><a href="#remote">Remote access</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="container footer-bottom mono">
+      <span>&copy; 2026 <a href="https://lavx.github.io" rel="noopener">LavX</a>.</span>
+      <span>Built with vanilla HTML+CSS.</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.2/lib/p5.min.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="app-sketch.js" defer></script>
+</body>
+</html>

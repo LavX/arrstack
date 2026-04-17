@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="arrstack logomark">
+  <title>arrstack</title>
+  <desc>A terminal prompt chevron and underscore caret next to three stacked bars representing a rack.</desc>
+  <g fill="none" stroke="#3FB950" stroke-width="16" stroke-linecap="square" stroke-linejoin="miter">
+    <polyline points="56,80 104,128 56,176" />
+    <line x1="72" y1="200" x2="128" y2="200" />
+    <line x1="152" y1="92"  x2="216" y2="92"  />
+    <line x1="152" y1="128" x2="216" y2="128" />
+    <line x1="152" y1="164" x2="216" y2="164" />
+  </g>
+</svg>

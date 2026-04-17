@@ -1,0 +1,61 @@
+networks:
+  arrstack:
+    driver: bridge
+
+services:
+{{#each services}}
+  {{id}}:
+    container_name: {{id}}
+    image: {{image}}:{{tag}}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+{{#if vpnNetwork}}
+    network_mode: "service:gluetun"
+{{else}}
+    networks:
+      - arrstack
+{{/if}}
+{{#if ports}}
+    ports:
+{{#each ports}}
+      - "{{this}}:{{this}}"
+{{/each}}
+{{/if}}
+    environment:
+      - PUID={{../puid}}
+      - PGID={{../pgid}}
+      - TZ={{../timezone}}
+{{#if apiKeyEnv}}
+      - {{apiKeyEnv}}={{apiKey}}
+{{/if}}
+{{#each extraEnv}}
+      - {{key}}={{value}}
+{{/each}}
+    volumes:
+      - {{../storageRoot}}/config/{{id}}:{{configPath}}
+{{#each dataMounts}}
+      - {{src}}:{{dst}}
+{{/each}}
+{{#if devices}}
+    devices:
+{{#each devices}}
+      - {{this}}
+{{/each}}
+{{/if}}
+{{#if groupAdd}}
+    group_add:
+{{#each groupAdd}}
+      - "{{this}}"
+{{/each}}
+{{/if}}
+{{#if dependsOn}}
+    depends_on:
+{{#each dependsOn}}
+      - {{this}}
+{{/each}}
+{{/if}}
+{{/each}}

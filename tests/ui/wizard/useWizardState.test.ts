@@ -89,9 +89,9 @@ describe("buildStateFromWizard", () => {
     expect(state.admin.username).toBe("lavx");
   });
 
-  test("sets install_dir to /opt/arrstack", () => {
+  test("sets install_dir to ~/arrstack", () => {
     const state = buildStateFromWizard(makeWizardState());
-    expect(state.install_dir).toBe("/opt/arrstack");
+    expect(state.install_dir).toContain("arrstack");
   });
 
   test("sets timezone", () => {

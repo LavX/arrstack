@@ -39,7 +39,7 @@ export function AdminField({
         {isPasswordFocused ? (
           <>
             <InkTextInput value={password} onChange={onPasswordChange} />
-            <Text color={colors.muted}>{"  (r to regenerate)"}</Text>
+            <Text color={colors.muted}>{"  Ctrl+R regenerate"}</Text>
           </>
         ) : (
           <>

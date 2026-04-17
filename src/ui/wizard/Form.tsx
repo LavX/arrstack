@@ -251,8 +251,9 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // "r" regenerates password when on username field (not password, where InkTextInput captures it)
-    if (activeSectionIndex === SEC_ADMIN && activeFieldIndex === 0 && input === "r") {
+    // Ctrl+R regenerates password (Ctrl+R = ASCII 18, \x12)
+    // InkTextInput does NOT capture control characters, so this works even when password is focused
+    if (activeSectionIndex === SEC_ADMIN && input === "\x12") {
       const { generatePassword } = require("../../lib/random.js");
       ws.setAdminPassword(generatePassword());
       return;

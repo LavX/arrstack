@@ -1,0 +1,86 @@
+import { exec } from "../lib/exec.js";
+import { isDockerInstalled, isDockerRunning, isComposeV2 } from "./docker.js";
+import { checkPortFree } from "./ports.js";
+
+export interface CheckResult {
+  name: string;
+  ok: boolean;
+  message: string;
+  blocking: boolean;
+}
+
+async function checkDiskSpace(path: string, minGb: number): Promise<CheckResult> {
+  const result = await exec(`df -BG --output=avail "${path}" 2>/dev/null | tail -1`, { timeoutMs: 5000 });
+  const name = `Disk space on ${path}`;
+
+  if (!result.ok) {
+    return { name, ok: false, message: `Could not check disk space on ${path}`, blocking: true };
+  }
+
+  const match = result.stdout.trim().match(/(\d+)/);
+  if (!match) {
+    return { name, ok: false, message: `Could not parse disk space output`, blocking: true };
+  }
+
+  const availGb = parseInt(match[1], 10);
+  const ok = availGb >= minGb;
+  return {
+    name,
+    ok,
+    message: ok
+      ? `${availGb}GB available (need ${minGb}GB)`
+      : `Only ${availGb}GB available, need at least ${minGb}GB`,
+    blocking: true,
+  };
+}
+
+export async function runPreflight(storageRoot: string): Promise<CheckResult[]> {
+  const results: CheckResult[] = [];
+
+  // 1. Docker installed
+  const dockerInstalled = await isDockerInstalled();
+  results.push({
+    name: "Docker installed",
+    ok: dockerInstalled,
+    message: dockerInstalled ? "Docker is installed" : "Docker is not installed",
+    blocking: true,
+  });
+
+  // 2. Docker running
+  const dockerRunning = await isDockerRunning();
+  results.push({
+    name: "Docker running",
+    ok: dockerRunning,
+    message: dockerRunning ? "Docker daemon is running" : "Docker daemon is not running",
+    blocking: true,
+  });
+
+  // 3. Compose v2
+  const composeV2 = await isComposeV2();
+  results.push({
+    name: "Docker Compose v2",
+    ok: composeV2,
+    message: composeV2 ? "Docker Compose v2 is available" : "Docker Compose v2 is not available",
+    blocking: true,
+  });
+
+  // 4. Disk space on / and storage root
+  results.push(await checkDiskSpace("/", 10));
+
+  if (storageRoot !== "/") {
+    results.push(await checkDiskSpace(storageRoot, 10));
+  }
+
+  // 5. Ports 80 and 443 free
+  for (const port of [80, 443]) {
+    const free = await checkPortFree(port);
+    results.push({
+      name: `Port ${port} free`,
+      ok: free,
+      message: free ? `Port ${port} is available` : `Port ${port} is already in use`,
+      blocking: true,
+    });
+  }
+
+  return results;
+}

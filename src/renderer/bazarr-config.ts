@@ -11,6 +11,11 @@ export interface BazarrConfigOptions {
   flaskSecretKey: string;
   sonarrApiKey: string;
   radarrApiKey: string;
+  // AES-GCM key shared with ai-subtitle-translator. Must match the
+  // ENCRYPTION_KEY env var the translator container reads from .env,
+  // otherwise the translator returns 401 "Service returned 401" in
+  // Bazarr's AI Translator settings panel.
+  translatorEncryptionKey: string;
 }
 
 export function renderBazarrConfig(opts: BazarrConfigOptions): string {

@@ -123,6 +123,9 @@ export async function runInstall(
   let pbkdf2Hash = "";
   let bazarrHash = "";
   let hostIp = "localhost";
+  // Generated once, shared between the .env (-> ai-subtitle-translator) and
+  // Bazarr's config.yaml so AES-GCM encryption between the two matches.
+  const translatorEncryptionKey = randomBytes(32).toString("hex");
 
   // Step 1: Create storage layout (primary root + tv/movies subdirs inside each
   // extra path so reconfigures that add drives also get their layout).
@@ -167,7 +170,7 @@ export async function runInstall(
         state.remote_access.mode === "duckdns"
           ? state.remote_access.token
           : undefined,
-      encryptionKey: randomBytes(32).toString("hex"),
+      encryptionKey: translatorEncryptionKey,
     });
     writeFileSync(join(installDir, ".env"), content, { mode: 0o600 });
   });
@@ -239,6 +242,7 @@ export async function runInstall(
         flaskSecretKey: generateApiKey(),
         sonarrApiKey: apiKeys["sonarr"] ?? "",
         radarrApiKey: apiKeys["radarr"] ?? "",
+        translatorEncryptionKey,
       });
       writeFileSync(join(bazarrConfigDir, "config.yaml"), yaml);
     }

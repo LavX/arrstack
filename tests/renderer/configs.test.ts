@@ -29,8 +29,11 @@ describe("bazarr config.yaml", () => {
   const opts = {
     username: "admin",
     passwordHash: "pbkdf2:deadbeef:cafef00d",
+    bazarrApiKey: "bazarr-key",
+    flaskSecretKey: "flask-secret",
     sonarrApiKey: "sonarr-key",
     radarrApiKey: "radarr-key",
+    translatorEncryptionKey: "abcdef0123456789",
   };
 
   test("contains auth section with username and pbkdf2 password", () => {
@@ -62,6 +65,11 @@ describe("bazarr config.yaml", () => {
     expect(output).toContain("opensubtitles");
     expect(output).toContain("podnapisi");
     expect(output).toContain("embeddedsubtitles");
+  });
+
+  test("AI translator encryption key is written so it matches the .env", () => {
+    const output = renderBazarrConfig(opts);
+    expect(output).toContain("openrouter_encryption_key: 'abcdef0123456789'");
   });
 });
 

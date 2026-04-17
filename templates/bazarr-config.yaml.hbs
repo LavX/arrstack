@@ -74,7 +74,7 @@ radarr:
   use_ffprobe_cache: true
 translator:
   openrouter_api_key: ''
-  openrouter_encryption_key: ''
+  openrouter_encryption_key: '{{translatorEncryptionKey}}'
   openrouter_model: google/gemini-2.5-flash-lite-preview-09-2025
   openrouter_parallel_batches: 4
   openrouter_max_concurrent: 2

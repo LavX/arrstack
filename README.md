@@ -27,7 +27,7 @@ arrstack is a single-binary TUI installer that sets up and cross-wires 12 self-h
 
 ## What problem it solves
 
-Spinning up a self-hosted media stack is a click-fest. You write the compose file. Then you open 10 admin panels, click through auth prompts, paste API keys between tabs, add root folders in Sonarr, paste the same paths into Radarr, add Prowlarr as an indexer source, create download categories in qBittorrent, sync them back to Sonarr, add Bazarr as a Sonarr connection, point Jellyseerr at Jellyfin, accept the TLS cert, wait, retry, realize you forgot FlareSolverr, start again.
+Spinning up a self-hosted media stack is a click-fest. You write the compose file. Then you open 10 admin panels, click through auth prompts, paste API keys between tabs, add root folders in Sonarr, paste the same paths into Radarr, add Prowlarr as an indexer source, create download categories in qBittorrent, sync them back to Sonarr, add Bazarr+ as a Sonarr connection, point Jellyseerr at Jellyfin, accept the TLS cert, wait, retry, realize you forgot FlareSolverr, start again.
 
 TRaSH-Guides has an excellent writeup of what "correct" looks like. Following it by hand takes most of a Saturday, and any mistake shows up two weeks later when a release fails to hardlink and your seed ratio falls off a cliff.
 
@@ -59,7 +59,7 @@ The README is a tour. The full user guide lives under `docs/`.
 - Prowlarr gets 8 public indexers pushed, plus a FlareSolverr proxy tag applied at indexer create-time
 - Sonarr and Radarr registered as Prowlarr apps with round-tripped API keys
 - qBittorrent gets TRaSH download categories (`tv`, `movies`, `music`, `books`) and is wired as the download client in both Arrs
-- Bazarr+ linked to Sonarr and Radarr with language profiles pre-built using `audio_exclude` + `audio_only_include` + `hi` + seeded `forced` (avoids the vanilla-Bazarr KeyError that bites most first-time users)
+- Bazarr+ linked to Sonarr and Radarr with language profiles pre-built using `audio_exclude` + `audio_only_include` + `hi` + seeded `forced` (avoids the KeyError that bites most first-time installs)
 - Jellyseerr bootstrapped in four steps (auth, library sync, library enable, initialize) so the `/setup` page never appears
 - Trailarr reads its Sonarr and Radarr API keys from `/config/.env` at startup, no manual key paste
 - Recyclarr pre-populated with TRaSH profiles for Sonarr v4 and Radarr v5
@@ -245,7 +245,7 @@ The project is Bun-native: `Bun.serve`, `Bun.file`, `Bun.$`, and `bun:sqlite` fo
 
 Built on the shoulders of the projects that do the actual work:
 
-- [Sonarr](https://sonarr.tv), [Radarr](https://radarr.video), [Prowlarr](https://prowlarr.com), [Bazarr](https://www.bazarr.media)
+- [Sonarr](https://sonarr.tv), [Radarr](https://radarr.video), [Prowlarr](https://prowlarr.com), [Bazarr+](https://lavx.github.io/bazarr/)
 - [Jellyfin](https://jellyfin.org), [Jellyseerr](https://github.com/Fallenbagel/jellyseerr)
 - [qBittorrent](https://www.qbittorrent.org), [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr)
 - [Caddy](https://caddyserver.com), [Recyclarr](https://recyclarr.dev), [Trailarr](https://github.com/nandyalu/trailarr)

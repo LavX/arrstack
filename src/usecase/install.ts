@@ -30,6 +30,7 @@ import {
 } from "../wiring/prowlarr-flaresolverr.js";
 import { linkJellyseerrToArrs } from "../wiring/jellyseerr-arr.js";
 import { seedArrAdmin } from "../wiring/arr-auth.js";
+import { configureTrailarr } from "../wiring/trailarr.js";
 import { configureArr } from "../wiring/sonarr-radarr.js";
 import { configureQbit } from "../wiring/qbittorrent.js";
 import { setupJellyfin } from "../wiring/jellyfin.js";
@@ -478,6 +479,20 @@ export async function runInstall(
   if (has("jellyseerr") && (has("sonarr") || has("radarr"))) {
     await runStep("Linking Jellyseerr to Sonarr and Radarr", onStep, log, async () => {
       await linkJellyseerrToArrs({
+        adminUser: state.admin.username,
+        adminPass: adminPassword,
+        sonarrApiKey: apiKeys.sonarr ?? "",
+        radarrApiKey: apiKeys.radarr ?? "",
+      });
+    });
+  }
+
+  // Step 12g3: Trailarr login + Sonarr/Radarr connections. Runs after arrs
+  // are fully configured so connection tests pass on the first try.
+  if (has("trailarr") && (has("sonarr") || has("radarr"))) {
+    await runStep("Linking Trailarr to Sonarr and Radarr", onStep, log, async () => {
+      await configureTrailarr({
+        installDir: state.install_dir,
         adminUser: state.admin.username,
         adminPass: adminPassword,
         sonarrApiKey: apiKeys.sonarr ?? "",

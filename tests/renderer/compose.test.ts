@@ -80,10 +80,15 @@ describe("renderCompose", () => {
     expect(output).toContain("0.0.0.0:8989:8989");
   });
 
-  test("with a remote-access mode, admin ports fall back to loopback behind Caddy", () => {
+  test("even with a remote-access mode, admin ports still bind 0.0.0.0 for LAN direct access", () => {
+    // Whether a port is reachable from the public internet is governed by
+    // the user's router port-forwards, not by the bindHost. Binding 0.0.0.0
+    // gives LAN clients http://{hostIp}:{port} access in every mode; Caddy
+    // remains the only service the user would forward to the internet.
     const services = getServices(["sonarr"]);
     const output = renderCompose(services, { ...baseOpts, remoteMode: "cloudflare" });
-    expect(output).toContain("127.0.0.1:8989:8989");
+    expect(output).toContain("0.0.0.0:8989:8989");
+    expect(output).not.toContain("127.0.0.1:8989:8989");
   });
 
   test("caddy ports are bound to 0.0.0.0 so the reverse proxy is reachable", () => {

@@ -63,11 +63,17 @@ interface ServiceContext {
   vpnNetwork: boolean;
 }
 
-// Services that always need to be reachable from outside the host.
-// In LAN mode (no remote access) we open every service so users can hit
-// http://<host-ip>:<port>. In duckdns/cloudflare mode we lock admin ports
-// to loopback so Caddy is the only external surface.
-const ALWAYS_PUBLIC = new Set(["caddy", "gluetun"]);
+// All services bind to 0.0.0.0 in every mode. On the LAN, users can always
+// reach services via both http://{hostIp}:{port} AND (if enabled) the local
+// DNS vhost http://{svc}.{tld}. In duckdns/cloudflare mode, Caddy additionally
+// exposes https://{svc}.{domain} on 80/443 — which is the ONLY surface the
+// user should port-forward to the public internet. Keeping port bindings on
+// 0.0.0.0 (rather than loopback-only) does not weaken that boundary: whether
+// the LAN port map is reachable from the internet is governed by the router's
+// port-forwarding rules, not by the container's bindHost. Forwarding only
+// 80/443 keeps every admin port LAN-only; forwarding nothing keeps the whole
+// stack LAN-only. Binding to 127.0.0.1 would just make LAN access impossible
+// too, which was the bug the user reported.
 
 // Caddy needs DNS plugins (caddy-dns/cloudflare, caddy-dns/duckdns) only for
 // DNS-01 ACME challenges, i.e. duckdns and cloudflare remote modes. In LAN
@@ -197,13 +203,9 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       extraEnv.push(...buildGluetunEnv(opts.vpn));
     }
 
-    const bindHost =
-      ALWAYS_PUBLIC.has(svc.id) || opts.remoteMode === "none"
-        ? "0.0.0.0"
-        : "127.0.0.1";
     const ports: PortBinding[] = vpnNetwork
       ? []
-      : svc.ports.map((p) => ({ binding: `${bindHost}:${p}:${p}` }));
+      : svc.ports.map((p) => ({ binding: `0.0.0.0:${p}:${p}` }));
 
     const caddyImage = resolveCaddyImage(svc, opts.remoteMode);
 

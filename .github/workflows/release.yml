@@ -1,0 +1,41 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-linux-x64
+            artifact: arrstack-linux-x64
+          - target: bun-linux-arm64
+            artifact: arrstack-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun test
+      - run: bun build --compile --minify --target=${{ matrix.target }} src/cli.ts --outfile dist/${{ matrix.artifact }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: |
+          sha256sum arrstack-linux-x64/arrstack-linux-x64 arrstack-linux-arm64/arrstack-linux-arm64 > checksums.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            arrstack-linux-x64/arrstack-linux-x64
+            arrstack-linux-arm64/arrstack-linux-arm64
+            checksums.txt

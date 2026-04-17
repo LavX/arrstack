@@ -7,8 +7,9 @@
   },
   "scripts": {
     "dev": "bun run src/cli.ts",
-    "build": "bun build --compile --minify --target=bun-linux-x64 src/cli.ts --outfile dist/arrstack-linux-x64",
-    "build:arm64": "bun build --compile --minify --target=bun-linux-arm64 src/cli.ts --outfile dist/arrstack-linux-arm64",
+    "prepare": "mkdir -p node_modules/react-devtools-core && echo '{\"name\":\"react-devtools-core\",\"version\":\"0.0.0\",\"main\":\"index.js\",\"type\":\"module\"}' > node_modules/react-devtools-core/package.json && echo 'export default { initialize(){}, connectToDevTools(){} };' > node_modules/react-devtools-core/index.js",
+    "build": "bun run prepare && bun build --compile --minify --target=bun-linux-x64 src/cli.ts --outfile dist/arrstack-linux-x64",
+    "build:arm64": "bun run prepare && bun build --compile --minify --target=bun-linux-arm64 src/cli.ts --outfile dist/arrstack-linux-arm64",
     "test": "bun test",
     "lint": "eslint src/",
     "format": "prettier --write 'src/**/*.{ts,tsx}'"

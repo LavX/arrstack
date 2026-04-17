@@ -19,11 +19,9 @@ describe("servarr-config.xml", () => {
     expect(output).toContain("<AuthenticationMethod>Forms</AuthenticationMethod>");
   });
 
-  test("AuthenticationRequired is DisabledForLocalAddresses for LAN ease", () => {
+  test("AuthenticationRequired is Enabled — admin is seeded post-boot via API", () => {
     const output = renderServarrConfig({ apiKey: "key" });
-    expect(output).toContain(
-      "<AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>",
-    );
+    expect(output).toContain("<AuthenticationRequired>Enabled</AuthenticationRequired>");
   });
 });
 

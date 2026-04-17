@@ -73,6 +73,14 @@ export async function addProwlarrIndexers(
       name: indexer.name,
       implementation: indexer.implementation,
       configContract: indexer.configContract,
+      // Prowlarr rejects POST /api/v1/indexer unless both of these are set:
+      //   - appProfileId must be > 0; 1 is the default "Standard" profile
+      //     that Prowlarr seeds on first boot.
+      //   - priority must be between 1 and 50; 25 is a neutral middle.
+      // Verified live: without either, Prowlarr returns 400 with
+      // GreaterThanValidator / InclusiveBetweenValidator messages.
+      appProfileId: 1,
+      priority: 25,
       fields: indexer.fields,
       enableRss: true,
       enableAutomaticSearch: true,

@@ -9,6 +9,7 @@ interface AppDefinition {
   name: string;
   implementation: string;
   configContract: string;
+  syncLevel: "fullSync" | "addOnly" | "disabled";
   fields: AppField[];
 }
 
@@ -20,6 +21,9 @@ function buildSonarrApp(prowlarrUrl: string, apiKey: string): AppDefinition {
     name: "Sonarr",
     implementation: "Sonarr",
     configContract: "SonarrSettings",
+    // Prowlarr requires syncLevel on POST /api/v1/applications.
+    // fullSync pushes indexers to the app automatically.
+    syncLevel: "fullSync",
     fields: [
       { name: "prowlarrUrl", value: prowlarrUrl },
       { name: "baseUrl", value: "http://sonarr:8989" },
@@ -34,6 +38,7 @@ function buildRadarrApp(prowlarrUrl: string, apiKey: string): AppDefinition {
     name: "Radarr",
     implementation: "Radarr",
     configContract: "RadarrSettings",
+    syncLevel: "fullSync",
     fields: [
       { name: "prowlarrUrl", value: prowlarrUrl },
       { name: "baseUrl", value: "http://radarr:7878" },

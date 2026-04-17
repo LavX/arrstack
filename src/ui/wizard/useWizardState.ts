@@ -176,7 +176,7 @@ export function useWizardState(existingState?: Partial<State> | null) {
     existingState?.local_dns?.enabled ?? false
   );
   const [localDnsTld, setLocalDnsTld] = useState(
-    existingState?.local_dns?.tld ?? "local"
+    existingState?.local_dns?.tld ?? "arrstack.local"
   );
 
   const [tz, setTz] = useState(existingState?.timezone ?? timezone);

@@ -89,11 +89,17 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
     if (key.downArrow || (key.tab && !key.shift)) {
       // In radio sections Left/Right handles cycling, so Up/Down always navigates
       if (key.downArrow) {
-        // Services section: Up/Down moves between rows
+        // Services section: Up/Down moves between rows; exit to next section at bottom
         if (activeSectionIndex === SEC_SERVICES) {
           const cols = 3;
-          const newIdx = Math.min(activeFieldIndex + cols, ws.services.length - 1);
-          setActiveFieldIndex(newIdx);
+          const newIdx = activeFieldIndex + cols;
+          if (newIdx >= ws.services.length) {
+            // At bottom of grid, move to next section
+            setActiveSectionIndex(SEC_REMOTE);
+            setActiveFieldIndex(0);
+          } else {
+            setActiveFieldIndex(newIdx);
+          }
           return;
         }
         advance();
@@ -106,11 +112,17 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
 
     if (key.upArrow || (key.tab && key.shift)) {
       if (key.upArrow) {
-        // Services section: Up/Down moves between rows
+        // Services section: Up/Down moves between rows; exit to prev section at top
         if (activeSectionIndex === SEC_SERVICES) {
           const cols = 3;
-          const newIdx = Math.max(activeFieldIndex - cols, 0);
-          setActiveFieldIndex(newIdx);
+          const newIdx = activeFieldIndex - cols;
+          if (newIdx < 0) {
+            // At top of grid, move to previous section
+            setActiveSectionIndex(SEC_GPU);
+            setActiveFieldIndex(0);
+          } else {
+            setActiveFieldIndex(newIdx);
+          }
           return;
         }
         retreat();
@@ -159,6 +171,11 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
           ? Math.min(activeFieldIndex + 1, ws.services.length - 1)
           : Math.max(activeFieldIndex - 1, 0);
         setActiveFieldIndex(newIdx);
+        return;
+      }
+      // Left/Right in footer: switch between Install and Cancel
+      if (activeSectionIndex === SEC_FOOTER) {
+        setActiveFieldIndex(isForward ? 1 : 0);
         return;
       }
     }

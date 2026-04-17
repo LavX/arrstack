@@ -18,7 +18,7 @@ interface Props {
   columns?: number;
 }
 
-const COL_WIDTH = 20;
+const COL_WIDTH = 24;
 
 export function CheckboxGrid({ items, focusedIndex, columns = 3 }: Props) {
   const rows: CheckboxItem[][] = [];
@@ -42,7 +42,6 @@ export function CheckboxGrid({ items, focusedIndex, columns = 3 }: Props) {
                 <Text color={focused ? colors.accent : undefined} bold={focused}>
                   {focused ? `▸${cellText}` : ` ${cellText}`}
                 </Text>
-                {item.checked && <Text> </Text>}
               </Box>
             );
           })}

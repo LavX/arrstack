@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and help
+    url: https://github.com/lavx/arrstack-installer/discussions
+    about: Ask a question, share a setup, or get help in Discussions.
+  - name: Documentation
+    url: https://lavx.github.io/arrstack/
+    about: Install guide, day-two commands, and troubleshooting.

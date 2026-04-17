@@ -314,21 +314,33 @@ export async function runInstall(
     hostIp = await getHostIp();
   }
 
-  // Step 9a: docker compose build (locally-built images, e.g. custom Caddy
-  // with DNS plugins). Runs first so pull can skip buildables.
-  await runStep("docker compose build", onStep, log, async () => {
-    const result = await exec(
-      ["docker", "compose", "-f", join(installDir, "docker-compose.yml"), "build"],
-      { timeoutMs: 600_000 }
-    );
-    if (!result.ok) {
-      throw new Error(`docker compose build failed: ${result.stderr}`);
-    }
-  });
+  // Step 9a: Prepare custom Caddy image (only when remote mode needs DNS
+  // plugins). Try the prebuilt ghcr image first, fall back to local xcaddy
+  // build when the pull fails or returns unauthorized.
+  if (state.remote_access.mode !== "none") {
+    await runStep("Prepare Caddy image", onStep, log, async () => {
+      const prebuiltRef = "ghcr.io/lavx/arrstack-caddy:latest";
+      log.info("caddy", `trying ${prebuiltRef}`);
+      const pull = await exec(["docker", "pull", prebuiltRef], { timeoutMs: 300_000 });
+      if (pull.ok) {
+        log.info("caddy", `fetched ${prebuiltRef} from ghcr`);
+        return;
+      }
+      log.info("caddy", "ghcr pull failed, falling back to local xcaddy build");
+      const build = await exec(
+        ["docker", "compose", "-f", join(installDir, "docker-compose.yml"), "build", "caddy"],
+        { timeoutMs: 600_000 }
+      );
+      if (!build.ok) {
+        throw new Error(`caddy build fallback failed: ${build.stderr}`);
+      }
+    });
+  }
 
-  // Step 9b: docker compose pull (timeout 10 min). --ignore-buildable skips
-  // services with a build: block so we do not try to pull arrstack/caddy
-  // from a registry that does not host it.
+  // Step 9b: docker compose pull. --ignore-buildable skips services that
+  // have a build: block (caddy in remote modes) since we already handled
+  // that above. In LAN mode nothing has a build block and everything pulls
+  // normally.
   await runStep("docker compose pull", onStep, log, async () => {
     const result = await exec(
       [

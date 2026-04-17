@@ -69,6 +69,27 @@ interface ServiceContext {
 // to loopback so Caddy is the only external surface.
 const ALWAYS_PUBLIC = new Set(["caddy", "gluetun"]);
 
+// Caddy needs DNS plugins (caddy-dns/cloudflare, caddy-dns/duckdns) only for
+// DNS-01 ACME challenges, i.e. duckdns and cloudflare remote modes. In LAN
+// mode the stock image is enough and ~80 MB lighter. For remote modes we
+// prefer a prebuilt image on ghcr; the build: block is the fallback when
+// that pull fails.
+const CADDY_PREBUILT_IMAGE = "ghcr.io/lavx/arrstack-caddy";
+const CADDY_PREBUILT_TAG = "latest";
+function resolveCaddyImage(svc: Service, remoteMode: ComposeOptions["remoteMode"]) {
+  if (svc.id !== "caddy") {
+    return { image: svc.image, tag: svc.tag, build: svc.build };
+  }
+  if (remoteMode === "none") {
+    return { image: "caddy", tag: "latest", build: undefined };
+  }
+  return {
+    image: CADDY_PREBUILT_IMAGE,
+    tag: CADDY_PREBUILT_TAG,
+    build: svc.build,
+  };
+}
+
 interface ComposeContext {
   installDir: string;
   storageRoot: string;
@@ -184,11 +205,13 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       ? []
       : svc.ports.map((p) => ({ binding: `${bindHost}:${p}:${p}` }));
 
+    const caddyImage = resolveCaddyImage(svc, opts.remoteMode);
+
     return {
       id: svc.id,
-      image: svc.image,
-      tag: svc.tag,
-      build: svc.build,
+      image: caddyImage.image,
+      tag: caddyImage.tag,
+      build: caddyImage.build,
       configPath: svc.configPath,
       ports,
       apiKeyEnv,

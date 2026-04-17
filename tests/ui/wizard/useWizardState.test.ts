@@ -79,7 +79,9 @@ describe("buildStateFromWizard", () => {
         ],
       })
     );
-    expect(state.services_enabled).toEqual(["prowlarr"]);
+    expect(state.services_enabled).toContain("prowlarr");
+    expect(state.services_enabled).toContain("caddy"); // always auto-added
+    expect(state.services_enabled).not.toContain("jellyfin"); // unchecked
   });
 
   test("sets admin username", () => {

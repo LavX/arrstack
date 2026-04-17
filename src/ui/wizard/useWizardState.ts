@@ -65,6 +65,13 @@ export function buildStateFromWizard(ws: WizardState): State {
   const catalog = loadCatalog();
   const enabledIds = ws.services.filter((s) => s.checked).map((s) => s.id);
 
+  // Auto-add infrastructure services based on user choices
+  enabledIds.push("caddy"); // always included
+  if (ws.remoteMode === "cloudflare") enabledIds.push("cloudflare-ddns");
+  if (ws.remoteMode === "duckdns") enabledIds.push("duckdns-updater");
+  if (ws.localDnsEnabled) enabledIds.push("dnsmasq");
+  if (ws.vpnMode === "gluetun" && !enabledIds.includes("gluetun")) enabledIds.push("gluetun");
+
   const extraPaths = ws.extraPaths
     .split(",")
     .map((p) => p.trim())
@@ -123,18 +130,23 @@ function detectTimezone(): string {
   }
 }
 
+// Services managed automatically by the installer, hidden from the user grid
+const AUTO_MANAGED_SERVICES = new Set(["caddy", "cloudflare-ddns", "duckdns-updater", "dnsmasq"]);
+
 function buildInitialServices(existingEnabled?: string[]): WizardServiceItem[] {
   const catalog = loadCatalog();
   const defaultIds = new Set(getDefaultServices().map((s) => s.id));
   const existingSet = existingEnabled ? new Set(existingEnabled) : null;
 
-  return catalog.map((svc) => ({
-    id: svc.id,
-    name: svc.name,
-    checked: existingSet ? existingSet.has(svc.id) : defaultIds.has(svc.id),
-    port: svc.adminPort ?? svc.ports[0],
-    description: svc.description,
-  }));
+  return catalog
+    .filter((svc) => !AUTO_MANAGED_SERVICES.has(svc.id))
+    .map((svc) => ({
+      id: svc.id,
+      name: svc.name,
+      checked: existingSet ? existingSet.has(svc.id) : defaultIds.has(svc.id),
+      port: svc.adminPort ?? svc.ports[0],
+      description: svc.description,
+    }));
 }
 
 export function useWizardState(existingState?: Partial<State> | null) {

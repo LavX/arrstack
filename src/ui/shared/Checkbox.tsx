@@ -9,6 +9,7 @@ export interface CheckboxItem {
   checked: boolean;
   port?: number;
   description?: string;
+  locked?: boolean;
 }
 
 interface Props {
@@ -33,13 +34,17 @@ export function CheckboxGrid({ items, focusedIndex, columns = 3 }: Props) {
           {row.map((item) => {
             const idx = items.indexOf(item);
             const focused = idx === focusedIndex;
-            const mark = item.checked ? "\u25A0" : "\u25A1";
+            const mark = item.locked ? "\u25A0" : item.checked ? "\u25A0" : "\u25A1";
             const portStr = item.port ? `:${item.port}` : "";
             const cellText = `${mark} ${item.label}${portStr}`;
-            // x marker kept in output for test compatibility
+            const dimmed = item.locked;
             return (
               <Box key={item.id} width={COL_WIDTH}>
-                <Text color={focused ? colors.accent : undefined} bold={focused}>
+                <Text
+                  color={focused ? colors.accent : dimmed ? colors.muted : undefined}
+                  bold={focused}
+                  dimColor={dimmed && !focused}
+                >
                   {focused ? `▸${cellText}` : ` ${cellText}`}
                 </Text>
               </Box>

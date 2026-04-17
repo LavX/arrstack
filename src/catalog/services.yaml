@@ -114,6 +114,10 @@ services:
       data: /data
     envVars:
       OPENSUBTITLES_SCRAPER_URL: "http://opensubtitles-scraper:8000"
+      # Read from .env at compose time. Shared with ai-subtitle-translator
+      # so API keys can be AES-GCM-encrypted in transit between them.
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
     dependsOn: [sonarr, radarr, flaresolverr, opensubtitles-scraper]
     health:
       type: http
@@ -150,7 +154,9 @@ services:
     ports: [8765]
     configPath: /app/data
     mounts: {}
-    envVars: {}
+    envVars:
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
     dependsOn: [bazarr]
     health:
       type: http

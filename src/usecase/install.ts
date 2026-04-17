@@ -1,5 +1,6 @@
 import { writeFileSync, mkdirSync, chownSync } from "node:fs";
 import { join } from "node:path";
+import { randomBytes } from "node:crypto";
 
 import type { State } from "../state/schema.js";
 import type { Logger } from "../lib/log.js";
@@ -7,7 +8,7 @@ import { createLogger } from "../lib/log.js";
 import { exec } from "../lib/exec.js";
 import { createStorageLayout } from "../storage/layout.js";
 import { generateApiKey } from "../lib/random.js";
-import { bcryptHash, qbitPbkdf2Hash } from "../auth/hash.js";
+import { bcryptHash, qbitPbkdf2Hash, bazarrPbkdf2Hash } from "../auth/hash.js";
 import { renderEnvFile } from "../renderer/env.js";
 import { renderCompose } from "../renderer/compose.js";
 import { renderCaddyfile } from "../renderer/caddy.js";
@@ -116,6 +117,7 @@ export async function runInstall(
   const apiKeys: Record<string, string> = { ...state.api_keys };
   let bcryptPassword = "";
   let pbkdf2Hash = "";
+  let bazarrHash = "";
   let hostIp = "localhost";
 
   // Step 1: Create storage layout (primary root + tv/movies subdirs inside each
@@ -139,6 +141,7 @@ export async function runInstall(
       bcryptHash(adminPassword),
       Promise.resolve(qbitPbkdf2Hash(adminPassword)),
     ]);
+    bazarrHash = bazarrPbkdf2Hash(adminPassword);
   });
 
   // Step 4: Write .env (mode 600)
@@ -160,6 +163,7 @@ export async function runInstall(
         state.remote_access.mode === "duckdns"
           ? state.remote_access.token
           : undefined,
+      encryptionKey: randomBytes(32).toString("hex"),
     });
     writeFileSync(join(installDir, ".env"), content, { mode: 0o600 });
   });
@@ -217,7 +221,9 @@ export async function runInstall(
       mkdirSync(configDir, { recursive: true });
       const yaml = renderBazarrConfig({
         username: state.admin.username,
-        bcryptPassword,
+        passwordHash: bazarrHash,
+        bazarrApiKey: generateApiKey(),
+        flaskSecretKey: generateApiKey(),
         sonarrApiKey: apiKeys["sonarr"] ?? "",
         radarrApiKey: apiKeys["radarr"] ?? "",
       });

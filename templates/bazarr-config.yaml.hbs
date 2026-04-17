@@ -1,28 +1,94 @@
+---
 auth:
+  apikey: {{bazarrApiKey}}
   type: basic
   username: {{username}}
-  password: {{bcryptPassword}}
-
+  password: {{passwordHash}}
 general:
-  use_sonarr: true
+  auto_update: false
+  base_url: ''
+  branch: master
+  concurrent_jobs: 4
+  days_to_upgrade_subs: 7
+  debug: false
+  embedded_subs_show_desired: false
+  embedded_subtitles_parser: ffprobe
+  enabled_providers:
+  - opensubtitlescom
+  - opensubtitles
+  - embeddedsubtitles
+  - podnapisi
+  flask_secret_key: {{flaskSecretKey}}
+  hi_extension: hi
+  ip: '*'
+  minimum_score: 75
+  minimum_score_movie: 70
+  movie_default_enabled: true
+  movie_default_profile: 1
+  multithreading: true
+  page_size: 50
+  port: 6767
+  serie_default_enabled: true
+  serie_default_profile: 1
+  single_language: false
+  theme: auto
+  upgrade_frequency: 12
+  upgrade_subs: true
+  use_embedded_subs: false
+  use_provider_priority: true
   use_radarr: true
-
+  use_sonarr: true
+  utf8_encode: true
+  wanted_search_frequency: 6
+  wanted_search_frequency_movie: 6
+opensubtitles:
+  scraper_service_url: opensubtitles-scraper:8000
+  use_web_scraper: true
+  ssl: false
+  timeout: 15
 sonarr:
+  apikey: '{{sonarrApiKey}}'
+  base_url: '/'
+  full_update: Daily
+  http_timeout: 60
   ip: sonarr
+  only_monitored: false
   port: 8989
-  apikey: {{sonarrApiKey}}
+  series_sync: 60
+  series_sync_on_live: true
   ssl: false
-  base_url: /
-
+  use_ffprobe_cache: true
 radarr:
+  apikey: '{{radarrApiKey}}'
+  base_url: '/'
+  full_update: Daily
+  http_timeout: 60
   ip: radarr
+  movies_sync: 60
+  movies_sync_on_live: true
+  only_monitored: false
   port: 7878
-  apikey: {{radarrApiKey}}
   ssl: false
-  base_url: /
-
-subtitles:
-  providers:
-    - opensubtitles
-    - podnapisi
-    - embeddedsubtitles
+  use_ffprobe_cache: true
+translator:
+  openrouter_api_key: ''
+  openrouter_encryption_key: ''
+  openrouter_model: google/gemini-2.5-flash-lite-preview-09-2025
+  openrouter_parallel_batches: 4
+  openrouter_max_concurrent: 2
+  openrouter_temperature: 0.3
+  openrouter_url: 'http://ai-subtitle-translator:8765'
+  translator_type: openrouter
+subsync:
+  gss: true
+  max_offset_seconds: 60
+  no_fix_framerate: true
+  use_subsync: true
+analytics:
+  enabled: false
+backup:
+  day: 6
+  folder: /config/backup
+  frequency: Weekly
+  hour: 3
+  retention: 31

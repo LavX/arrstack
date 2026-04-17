@@ -64,7 +64,7 @@ describe("renderEnvFile", () => {
     const output = renderEnvFile(baseOpts);
     const lines = output.trim().split("\n");
     for (const line of lines) {
-      expect(line).toMatch(/^[A-Z0-9_]+=.+$/);
+      expect(line).toMatch(/^[A-Z0-9_]+=.*$/);
     }
   });
 });

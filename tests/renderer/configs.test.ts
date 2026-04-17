@@ -28,15 +28,15 @@ describe("servarr-config.xml", () => {
 describe("bazarr config.yaml", () => {
   const opts = {
     username: "admin",
-    bcryptPassword: "$2b$10$hashedpassword",
+    passwordHash: "pbkdf2:deadbeef:cafef00d",
     sonarrApiKey: "sonarr-key",
     radarrApiKey: "radarr-key",
   };
 
-  test("contains auth section with username and bcrypt password", () => {
+  test("contains auth section with username and pbkdf2 password", () => {
     const output = renderBazarrConfig(opts);
     expect(output).toContain("username: admin");
-    expect(output).toContain("password: $2b$10$hashedpassword");
+    expect(output).toContain("password: pbkdf2:deadbeef:cafef00d");
   });
 
   test("use_sonarr and use_radarr are true", () => {

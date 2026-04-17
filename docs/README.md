@@ -29,13 +29,6 @@ When something is wrong:
 
 - [Landing page](index.html)
 
-## For maintainers
-
-Architecture notes, contributor playbooks, brand internals, and
-launch-prep material live in `_internal/`. That tree is intentionally
-excluded from the public site. Start at
-[`_internal/README.md`](_internal/README.md).
-
 ## License
 
 MIT. See [LICENSE](../LICENSE) at the repo root.

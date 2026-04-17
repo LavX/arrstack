@@ -3,3 +3,5 @@ dist/
 .superpowers/
 *.log
 bun.lock
+docs/_internal/
+docs/superpowers/

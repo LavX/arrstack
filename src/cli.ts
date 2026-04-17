@@ -10,6 +10,10 @@ import { runUpdate } from "./usecase/update.js";
 import { showPassword } from "./usecase/show-password.js";
 import { runUninstall } from "./usecase/uninstall.js";
 import { tailLogs } from "./usecase/logs.js";
+import { purgeInstallDir } from "./usecase/cleanup.js";
+import { exec } from "./lib/exec.js";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 const program = new Command();
 
@@ -28,6 +32,23 @@ program
   .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (opts) => {
     const installDir = opts.installDir ?? `${process.env.HOME}/arrstack`;
+    if (opts.fresh) {
+      const composeFile = join(installDir, "docker-compose.yml");
+      if (existsSync(composeFile)) {
+        console.log("Stopping and removing existing containers...");
+        const down = await exec(
+          `docker compose -f "${composeFile}" down --remove-orphans`,
+          { timeoutMs: 120_000 }
+        );
+        if (!down.ok) {
+          console.warn(`docker compose down returned an error: ${down.stderr}`);
+        }
+      }
+      const removed = await purgeInstallDir(installDir);
+      for (const path of removed) {
+        console.log(`Removed: ${path}`);
+      }
+    }
     const existing = opts.fresh ? null : readState(installDir);
     const { waitUntilExit } = render(React.createElement(App, { existingState: existing }));
     await waitUntilExit();

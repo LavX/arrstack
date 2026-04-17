@@ -100,6 +100,7 @@ export function App({ existingState }: AppProps) {
           urls={installResult.urls}
           password={installResult.password}
           adminUser={installResult.adminUser}
+          publicAccess={installResult.publicAccess}
         />
       )}
     </Box>

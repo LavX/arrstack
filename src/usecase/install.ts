@@ -51,6 +51,15 @@ export interface InstallResult {
   urls: Array<{ name: string; url: string; description: string }>;
   password: string;
   adminUser: string;
+  // Populated only when remote_access.mode is duckdns or cloudflare. Drives
+  // the "open 80/443 on router + firewall" block on the done screen so users
+  // don't wonder why https://{svc}.{domain} loads locally but not from a
+  // phone on cellular.
+  publicAccess?: {
+    mode: "duckdns" | "cloudflare";
+    domain: string;
+    hostIp: string;
+  };
 }
 
 async function runStep(
@@ -612,9 +621,15 @@ export async function runInstall(
       return { name: svc.name, url, description: svc.description };
     });
 
+  const publicAccess =
+    (mode === "duckdns" || mode === "cloudflare") && domain
+      ? { mode, domain, hostIp }
+      : undefined;
+
   return {
     urls,
     password: adminPassword,
     adminUser: state.admin.username,
+    publicAccess,
   };
 }

@@ -2,8 +2,8 @@ import { test, expect } from "bun:test";
 import { PUBLIC_INDEXERS, addProwlarrIndexers } from "../../src/wiring/prowlarr-indexers.js";
 import { registerProwlarrApps } from "../../src/wiring/prowlarr-apps.js";
 
-test("PUBLIC_INDEXERS has 5 entries with required fields", () => {
-  expect(PUBLIC_INDEXERS).toHaveLength(5);
+test("PUBLIC_INDEXERS has 8 entries with required fields", () => {
+  expect(PUBLIC_INDEXERS).toHaveLength(8);
   for (const indexer of PUBLIC_INDEXERS) {
     expect(typeof indexer.name).toBe("string");
     expect(indexer.name.length).toBeGreaterThan(0);
@@ -27,7 +27,7 @@ test("each PUBLIC_INDEXER uses Cardigann implementation with a definitionFile fi
 test("addProwlarrIndexers is exported as async function", () => {
   expect(typeof addProwlarrIndexers).toBe("function");
   // Verify it returns a Promise (i.e. it's async) by checking the constructor name
-  const result = addProwlarrIndexers("dummy-key", "http://localhost:9696");
+  const result = addProwlarrIndexers("dummy-key", undefined, "http://localhost:9696");
   expect(result).toBeInstanceOf(Promise);
   // Avoid unhandled rejection from the dummy call
   result.catch(() => {});

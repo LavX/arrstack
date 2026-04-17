@@ -19,9 +19,15 @@ async function readBody(res: Response): Promise<string> {
 interface TagDto { id: number; label: string }
 interface IndexerDto { id: number; name: string; tags?: number[]; [k: string]: unknown }
 
+// Creates the FlareSolverr tag + proxy (idempotent) and returns the tag id.
+// Indexers must carry this tag at CREATE time — if you add the tag via PUT
+// after the indexer was created untagged, Prowlarr has already failed its
+// test without the proxy and sticks the indexer into a cooldown that the PUT
+// does not clear. Verified live: create-with-tag passes 1337x test in ~20s,
+// create-without-tag followed by tag-PUT stays blocked by CloudFlare.
 export async function configureProwlarrFlaresolverr(
   opts: ProwlarrFlareOptions,
-): Promise<void> {
+): Promise<number> {
   const base = opts.baseUrl ?? "http://localhost:9696";
   const flareUrl = opts.flaresolverrUrl ?? "http://flaresolverr:8191/";
   const headers = { "X-Api-Key": opts.apiKey, "Content-Type": "application/json" };
@@ -73,28 +79,32 @@ export async function configureProwlarrFlaresolverr(
     }
   }
 
-  // 3. Tag every indexer so it routes through FlareSolverr.
-  const ixRes = await withRetry(() => fetch(`${base}/api/v1/indexer`, { headers }));
-  if (!ixRes.ok) throw new Error(`GET /indexer failed: HTTP ${ixRes.status}`);
+  return tagId;
+}
+
+// Reconfigure path: if indexers already exist without the tag (e.g. from a
+// previous install before this fix landed), delete and recreate them so the
+// tag is present at CREATE time. Used by repushProwlarrIndexersToApps only
+// on a reconfigure, not on a fresh install.
+export async function tagExistingProwlarrIndexers(
+  apiKey: string,
+  tagId: number,
+  baseUrl = "http://localhost:9696",
+): Promise<void> {
+  const headers = { "X-Api-Key": apiKey, "Content-Type": "application/json" };
+  const ixRes = await withRetry(() => fetch(`${baseUrl}/api/v1/indexer`, { headers }));
+  if (!ixRes.ok) return;
   const indexers = (await ixRes.json()) as IndexerDto[];
   for (const ix of indexers) {
     const existing = new Set(ix.tags ?? []);
     if (existing.has(tagId)) continue;
     existing.add(tagId);
     const updated = { ...ix, tags: [...existing] };
-    const put = await withRetry(() =>
-      fetch(`${base}/api/v1/indexer/${ix.id}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(updated),
-      }),
-    );
-    if (!put.ok && put.status !== 202) {
-      // Don't abort for one bad indexer — just log and move on.
-      console.error(
-        `[prowlarr] tag-indexer "${ix.name}" HTTP ${put.status}: ${await readBody(put)}`,
-      );
-    }
+    await fetch(`${baseUrl}/api/v1/indexer/${ix.id}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(updated),
+    }).catch(() => { /* best-effort */ });
   }
 }
 

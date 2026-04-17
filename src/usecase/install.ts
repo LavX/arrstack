@@ -23,7 +23,11 @@ import { getServicesByIds } from "../catalog/index.js";
 import { writeState } from "../state/store.js";
 import { addProwlarrIndexers } from "../wiring/prowlarr-indexers.js";
 import { registerProwlarrApps } from "../wiring/prowlarr-apps.js";
-import { configureProwlarrFlaresolverr, repushProwlarrIndexersToApps } from "../wiring/prowlarr-flaresolverr.js";
+import {
+  configureProwlarrFlaresolverr,
+  tagExistingProwlarrIndexers,
+  repushProwlarrIndexersToApps,
+} from "../wiring/prowlarr-flaresolverr.js";
 import { linkJellyseerrToArrs } from "../wiring/jellyseerr-arr.js";
 import { seedArrAdmin } from "../wiring/arr-auth.js";
 import { configureArr } from "../wiring/sonarr-radarr.js";
@@ -411,16 +415,29 @@ export async function runInstall(
       await registerProwlarrApps(apiKeys.prowlarr, apiKeys.sonarr ?? "", apiKeys.radarr ?? "");
     });
 
-    // Wire FlareSolverr so CF-gated trackers can be probed.
+    // Wire FlareSolverr so CF-gated trackers can be probed. The tag id
+    // returned here is stamped into every indexer we add next — the tag
+    // must be on the indexer at CREATE time or Prowlarr's first test fires
+    // without the proxy, fails to CloudFlare, and sticks the indexer into
+    // a cooldown that a later PUT cannot clear.
+    let flaresolverrTagId: number | undefined;
     if (has("flaresolverr")) {
       await runStep("Wiring FlareSolverr into Prowlarr", onStep, log, async () => {
-        await configureProwlarrFlaresolverr({ apiKey: apiKeys.prowlarr });
+        flaresolverrTagId = await configureProwlarrFlaresolverr({ apiKey: apiKeys.prowlarr });
+        // Tag any indexers left over from a previous install as well —
+        // they can't retroactively shed the cooldown but they'll use the
+        // proxy on next scheduled refresh.
+        if (flaresolverrTagId !== undefined) {
+          await tagExistingProwlarrIndexers(apiKeys.prowlarr, flaresolverrTagId);
+        }
       });
     }
 
-    // Now add indexers — each one auto-pushes to the registered apps.
+    // Now add indexers — each one is born with the FlareSolverr tag so the
+    // first test already routes through the proxy, and auto-push to the
+    // arr apps fires on creation.
     await runStep("Adding Prowlarr public indexers", onStep, log, async () => {
-      await addProwlarrIndexers(apiKeys.prowlarr);
+      await addProwlarrIndexers(apiKeys.prowlarr, flaresolverrTagId);
     });
 
     // Safety net: re-PUT every indexer so any that were present before apps

@@ -1,0 +1,33 @@
+import { z } from "zod";
+
+export const StateSchema = z.object({
+  schema_version: z.literal(1),
+  installer_version: z.string(),
+  install_dir: z.string(),
+  storage_root: z.string(),
+  extra_paths: z.array(z.string()).default([]),
+  admin: z.object({ username: z.string() }),
+  services_enabled: z.array(z.string()),
+  gpu: z.object({
+    vendor: z.enum(["intel", "amd", "nvidia", "none"]),
+    device_name: z.string().optional(),
+    render_gid: z.number().optional(),
+    video_gid: z.number().optional(),
+  }),
+  remote_access: z.object({
+    mode: z.enum(["none", "duckdns", "cloudflare"]),
+    domain: z.string().optional(),
+    token: z.string().optional(),
+  }),
+  local_dns: z.object({ enabled: z.boolean(), tld: z.string() }),
+  vpn: z.object({ enabled: z.boolean(), provider: z.string().optional() }),
+  timezone: z.string(),
+  puid: z.number(),
+  pgid: z.number(),
+  api_keys: z.record(z.string(), z.string()),
+  install_started_at: z.string().datetime().optional(),
+  install_completed_at: z.string().datetime().optional(),
+  last_updated_at: z.string().datetime().optional(),
+});
+
+export type State = z.infer<typeof StateSchema>;

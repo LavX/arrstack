@@ -4,7 +4,7 @@ import { statfsSync } from "node:fs";
 import { detectGpus, type GpuInfo } from "../../platform/gpu.js";
 import { resolveRenderVideoGids } from "../../platform/groups.js";
 import { isDockerInstalled, isDockerRunning, isComposeV2 } from "../../platform/docker.js";
-import { checkPortFree } from "../../platform/ports.js";
+import { checkPortFree, findFreePort } from "../../platform/ports.js";
 import { getDefaultServices, loadCatalog } from "../../catalog/index.js";
 import { generatePassword, generateApiKey } from "../../lib/random.js";
 import { VERSION } from "../../version.js";
@@ -55,10 +55,15 @@ export interface WizardState {
   hostname: string;
   loading: boolean;
 
+  // Caddy ports (user-editable if 80/443 are taken)
+  caddyHttpPort: number;
+  caddyHttpsPort: number;
+
   // Status (for status strip)
   dockerOk: boolean;
   portsOk: boolean;
   diskInfo: Array<{ path: string; freeGb: number }>;
+  portConflicts: string[]; // human-readable conflict messages
 }
 
 export function buildStateFromWizard(ws: WizardState): State {
@@ -232,6 +237,9 @@ export function useWizardState(existingState?: Partial<State> | null) {
   const [dockerOk, setDockerOk] = useState(false);
   const [portsOk, setPortsOk] = useState(false);
   const [diskInfo, setDiskInfo] = useState<Array<{ path: string; freeGb: number }>>([]);
+  const [portConflicts, setPortConflicts] = useState<string[]>([]);
+  const [caddyHttpPort, setCaddyHttpPort] = useState(80);
+  const [caddyHttpsPort, setCaddyHttpsPort] = useState(443);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,6 +268,35 @@ export function useWizardState(existingState?: Partial<State> | null) {
       } catch {
         setDiskInfo([]);
       }
+
+      // Check Caddy ports (80/443) and suggest alternatives if taken
+      if (!port80) {
+        const alt = await findFreePort(8080);
+        setCaddyHttpPort(alt);
+      }
+      if (!port443) {
+        const alt = await findFreePort(8443);
+        setCaddyHttpsPort(alt);
+      }
+
+      // Check and auto-remap service ports
+      const conflicts: string[] = [];
+      const catalog = loadCatalog();
+      const updatedServices = [...services];
+      let changed = false;
+      for (let i = 0; i < updatedServices.length; i++) {
+        const svc = updatedServices[i];
+        if (!svc.port || svc.port === 80 || svc.port === 443) continue;
+        const free = await checkPortFree(svc.port);
+        if (!free) {
+          const alt = await findFreePort(svc.port + 1);
+          conflicts.push(`${svc.name}:${svc.port} in use, remapped to ${alt}`);
+          updatedServices[i] = { ...svc, port: alt };
+          changed = true;
+        }
+      }
+      if (changed) setServices(updatedServices);
+      if (conflicts.length > 0) setPortConflicts(conflicts);
 
       if (cancelled) return;
 
@@ -390,6 +427,13 @@ export function useWizardState(existingState?: Partial<State> | null) {
     dockerOk,
     portsOk,
     diskInfo,
+    portConflicts,
+
+    // Caddy ports
+    caddyHttpPort,
+    setCaddyHttpPort,
+    caddyHttpsPort,
+    setCaddyHttpsPort,
 
     // Converter
     toState,

@@ -251,9 +251,8 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // Shift+R (capital R) regenerates password when on the password field
-    // Lowercase "r" is consumed by InkTextInput for typing
-    if (activeSectionIndex === SEC_ADMIN && input === "R") {
+    // Ctrl+R regenerates password when in admin section
+    if (activeSectionIndex === SEC_ADMIN && key.ctrl && (input === "r" || input === "R")) {
       const { generatePassword } = require("../../lib/random.js");
       ws.setAdminPassword(generatePassword());
       return;
@@ -365,6 +364,9 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
           dockerOk={ws.dockerOk}
           portsOk={ws.portsOk}
           gpuName={ws.detectedGpus.find((g) => g.vendor === ws.gpuVendor)?.name}
+          caddyHttpPort={ws.caddyHttpPort}
+          caddyHttpsPort={ws.caddyHttpsPort}
+          portConflicts={ws.portConflicts}
         />
       </Box>
 

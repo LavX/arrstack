@@ -7,6 +7,15 @@ export async function checkPortFree(port: number): Promise<boolean> {
   return !result.ok;
 }
 
+export async function findFreePort(preferred: number, maxAttempts = 20): Promise<number> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const candidate = preferred + i;
+    if (candidate > 65535) break;
+    if (await checkPortFree(candidate)) return candidate;
+  }
+  return preferred; // fallback, will fail at compose up with a clear error
+}
+
 export async function getPortUser(port: number): Promise<string | null> {
   // ss -lntup includes process info
   const result = await exec(`ss -lntup 2>/dev/null | grep -E ':${port}( |$)'`, { timeoutMs: 5000 });

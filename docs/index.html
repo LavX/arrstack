@@ -216,7 +216,7 @@
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/jellyfin.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Jellyfin <span class="svc-port">:8096</span></div>
             <span class="svc-chip required">required</span>
-            <p class="svc-desc"><span class="svc-role">media server</span> Intel, AMD, or NVIDIA hardware transcoding wired from <code>/dev/dri</code> and <code>nvidia-smi</code>.</p>
+            <p class="svc-desc"><span class="svc-role">media server</span> Intel, AMD, or NVIDIA hardware transcoding wired from <code>lspci -nn</code>, <code>/dev/dri/renderD128</code>, and <code>nvidia-ctk</code>.</p>
           </article>
           <article class="svc">
             <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/jellyseerr.svg" alt="" width="48" height="48"></div>
@@ -270,7 +270,7 @@
           </article>
           <article class="wire">
             <h3>Jellyfin hardware transcode</h3>
-            <p>Intel VA-API, AMD VA-API, or NVIDIA NVENC auto-detected from <code>/dev/dri</code> and <code>nvidia-smi</code>, and wired into the Jellyfin transcoding config.</p>
+            <p>Intel VA-API, AMD VA-API, or NVIDIA NVENC auto-detected by parsing <code>lspci -nn</code>, checking <code>/dev/dri/renderD128</code>, and probing <code>nvidia-ctk --version</code>, then wired into the Jellyfin transcoding config.</p>
           </article>
           <article class="wire">
             <h3>TRaSH-aligned /data mount</h3>
@@ -278,7 +278,7 @@
           </article>
           <article class="wire">
             <h3>Caddy vhosts per mode</h3>
-            <p>LAN (plain http), DuckDNS (Let&rsquo;s Encrypt HTTP-01 or DNS-01), or Cloudflare (wildcard Let&rsquo;s Encrypt DNS-01 against your domain) with an optional local DNS block.</p>
+            <p>LAN (plain http), DuckDNS (Let&rsquo;s Encrypt DNS-01 via the DuckDNS plugin), or Cloudflare (wildcard Let&rsquo;s Encrypt DNS-01 via the Cloudflare plugin, against your domain) with an optional local DNS block. Remote-access modes require a Caddy image that carries the matching DNS plugin.</p>
           </article>
         </div>
       </div>
@@ -314,8 +314,8 @@
               <tr>
                 <th scope="row">Prereqs</th>
                 <td>None.</td>
-                <td>Free DuckDNS account + token.</td>
-                <td>Your domain + Cloudflare API token with <code>Zone:DNS:Edit</code>.</td>
+                <td>Free DuckDNS account + token, Caddy image with the DuckDNS plugin.</td>
+                <td>Your domain + Cloudflare API token (<code>Zone:DNS:Edit</code> and <code>Zone:Zone:Read</code>), Caddy image with the Cloudflare plugin.</td>
               </tr>
               <tr>
                 <th scope="row">What you get</th>
@@ -325,9 +325,9 @@
               </tr>
               <tr>
                 <th scope="row">TLS</th>
-                <td>None.</td>
-                <td>Let&rsquo;s Encrypt (HTTP-01 or DNS-01).</td>
-                <td>Wildcard Let&rsquo;s Encrypt (DNS-01 via Cloudflare DNS).</td>
+                <td>None (plain HTTP).</td>
+                <td>Let&rsquo;s Encrypt via DNS-01 (DuckDNS plugin).</td>
+                <td>Wildcard Let&rsquo;s Encrypt via DNS-01 (Cloudflare plugin).</td>
               </tr>
               <tr>
                 <th scope="row">Cost</th>
@@ -360,16 +360,16 @@ http://192.168.1.20:5055
           </article>
           <article class="host-card">
             <h3>dnsmasq</h3>
-            <p>Installer writes a dnsmasq snippet your router can load, so every LAN device resolves <code>*.homelab</code>.</p>
-            <pre class="snippet">address=/homelab/192.168.1.20
-address=/jellyfin.homelab/192.168.1.20
-<span class="c"># drop into /etc/dnsmasq.d/arrstack.conf</span></pre>
+            <p>The installer runs a dnsmasq container that serves your LAN, so every device resolves <code>*.&lt;your TLD&gt;</code> (wizard default <code>arrstack.local</code>).</p>
+            <pre class="snippet">address=/arrstack.local/192.168.1.20
+address=/jellyfin.arrstack.local/192.168.1.20
+<span class="c"># rendered to &lt;install-dir&gt;/config/dnsmasq/dnsmasq.conf</span></pre>
           </article>
           <article class="host-card">
             <h3>hosts-file</h3>
-            <p>No router access? The installer emits a <code>hosts</code> block you paste into each client machine.</p>
-            <pre class="snippet">192.168.1.20  jellyfin.homelab
-192.168.1.20  sonarr.homelab
+            <p>No router access? The installer emits a <code>hosts</code> block in <code>FIRST-RUN.md</code> that you paste into each client machine.</p>
+            <pre class="snippet">192.168.1.20  jellyfin.arrstack.local
+192.168.1.20  sonarr.arrstack.local
 <span class="c"># /etc/hosts or C:\Windows\System32\drivers\etc\hosts</span></pre>
           </article>
         </div>
@@ -427,15 +427,15 @@ address=/jellyfin.homelab/192.168.1.20
           </details>
           <details>
             <summary>Is the admin password stored on disk?</summary>
-            <div class="a">Yes, twice, both with mode <code>0600</code>. Plain text in <code>${installDir}/admin.txt</code> for you, and inside <code>${installDir}/state.json</code> which the installer reads on updates. If that tradeoff is not acceptable, delete <code>admin.txt</code> after you have logged in once and store the password in your password manager.</div>
+            <div class="a">Yes, in two places with mode <code>0600</code>: plain text in <code>${installDir}/admin.txt</code> for <code>arrstack show-password</code> to read, and in <code>${installDir}/.env</code> so containers can pick it up on restart. <code>state.json</code> does <strong>not</strong> contain the password; it only holds API keys, paths, and wizard settings. If the tradeoff is unacceptable, delete <code>admin.txt</code> after first login and store the password in your password manager. Services keep working because their config files already hold the hashed form.</div>
           </details>
           <details>
             <summary>Does Cloudflare mode use Cloudflare Tunnel?</summary>
-            <div class="a">No. Cloudflare mode uses Cloudflare as your authoritative DNS and a Cloudflare API token scoped to <code>Zone:DNS:Edit</code>. Caddy then issues a wildcard Let&rsquo;s Encrypt certificate via the DNS-01 challenge. No tunnel daemon, no <code>cloudflared</code> container, no WARP. Port 443 on your box faces the internet directly.</div>
+            <div class="a">No. Cloudflare mode uses Cloudflare as your authoritative DNS and a Cloudflare API token scoped to <code>Zone:DNS:Edit</code> and <code>Zone:Zone:Read</code> on the single zone. Caddy then issues a wildcard Let&rsquo;s Encrypt certificate via the DNS-01 challenge. No tunnel daemon, no <code>cloudflared</code> container, no WARP. Port 443 on your box faces the internet directly. For the Caddy <code>caddy-dns/cloudflare</code> plugin to be available, the image is swapped to a build that includes it (the stock <code>caddy:latest</code> image does not).</div>
           </details>
           <details>
             <summary>How do I update?</summary>
-            <div class="a"><code>arrstack update</code> pulls the latest images for every service and restarts the stack. Configs are preserved. Run it from any shell; it finds its install directory from <code>state.json</code>.</div>
+            <div class="a"><code>arrstack update</code> runs <code>docker compose pull</code> then <code>docker compose up -d</code> against <code>&lt;install-dir&gt;/docker-compose.yml</code>. Configs, media, and <code>state.json</code> are all untouched. Pass <code>--install-dir</code> if you used a non-default path; otherwise it looks under <code>~/arrstack</code>.</div>
           </details>
           </div>
           <img class="bracket bracket-right" src="assets/ornaments/bracket-right.svg" alt="" role="presentation" aria-hidden="true">

@@ -16,7 +16,8 @@ sudo mount -a
 # 2. Re-run wizard, add the path to Extra scan paths
 arrstack install --resume
 
-# 3. arrstack mounts it at /data/extra-1 inside every container
+# 3. arrstack mounts it at /data/extra-0 inside every content container
+#    (second extra drive becomes /data/extra-1, third /data/extra-2, and so on)
 ```
 
 ## How arrstack handles extra drives
@@ -27,13 +28,15 @@ When you add an Extra scan path at `/mnt/movies2`, arrstack bind-mounts it into 
 
 | Container   | Host path        | Container path  |
 |-------------|------------------|-----------------|
-| Jellyfin    | `/mnt/movies2`   | `/data/extra-1` |
-| Sonarr      | `/mnt/movies2`   | `/data/extra-1` |
-| Radarr      | `/mnt/movies2`   | `/data/extra-1` |
-| Bazarr+     | `/mnt/movies2`   | `/data/extra-1` |
-| Trailarr    | `/mnt/movies2`   | `/data/extra-1` |
+| Jellyfin    | `/mnt/movies2`   | `/data/extra-0` |
+| Sonarr      | `/mnt/movies2`   | `/data/extra-0` |
+| Radarr      | `/mnt/movies2`   | `/data/extra-0` |
+| Bazarr+     | `/mnt/movies2`   | `/data/extra-0` |
+| qBittorrent | `/mnt/movies2`   | `/data/extra-0` |
 
-Add a second one, it becomes `/data/extra-2`. Third is `/data/extra-3`. The numbering is stable across restarts because it is stored in `state.json`.
+Numbering is zero-indexed in the order the paths are listed in the wizard. Add a second one, it becomes `/data/extra-1`. Third is `/data/extra-2`. The order is stable across restarts because it is stored as `extra_paths` in `state.json`.
+
+Only services that already carry a `/data` mount (the media and download pipeline) get extra drives bound in; utility services such as Recyclarr, Prowlarr, and Jellyseerr do not.
 
 ## Step 1. Prepare the drive on the host
 
@@ -84,7 +87,7 @@ Navigate to the Storage screen. Under Extra scan paths, press `a` to add, paste 
 Verify inside a container:
 
 ```bash
-docker exec -it radarr ls /data/extra-1
+docker exec -it radarr ls /data/extra-0
 ```
 
 You should see the contents of the drive.
@@ -97,7 +100,7 @@ This is the part most users miss. Adding the mount does not automatically add li
 
 1. Settings, Media Management.
 2. Root Folders, Add Root Folder.
-3. Enter `/data/extra-1/tv` (create it inside the container first if needed: `docker exec -it sonarr mkdir -p /data/extra-1/tv`).
+3. Enter `/data/extra-0/tv` (create it inside the container first if needed: `docker exec -it sonarr mkdir -p /data/extra-0/tv`).
 4. Save.
 
 Existing series keep their old root folder. New series are placed on whichever root folder you pick at add time, or whatever default Jellyseerr sends.
@@ -105,21 +108,21 @@ Existing series keep their old root folder. New series are placed on whichever r
 To move existing shows to the new drive:
 
 1. Sonarr, Series, select multiple.
-2. Mass Editor, Root Folder, pick `/data/extra-1/tv`, Save.
+2. Mass Editor, Root Folder, pick `/data/extra-0/tv`, Save.
 3. Sonarr moves files, updates its DB. Expect hours for large libraries.
 
 ### Radarr, same idea
 
-Settings, Media Management, Root Folders, add `/data/extra-1/movies`. Move existing movies via Movies, Mass Editor.
+Settings, Media Management, Root Folders, add `/data/extra-0/movies`. Move existing movies via Movies, Mass Editor.
 
 ### Jellyfin, adding a library folder
 
 1. Dashboard, Libraries.
 2. Click your Movies library, Manage Library.
-3. Add Folder, `/data/extra-1/movies`.
+3. Add Folder, `/data/extra-0/movies`.
 4. Save. Scan.
 
-Jellyfin now indexes both `/data/media/movies` and `/data/extra-1/movies` under one Movies library. Users see a single, combined list.
+Jellyfin now indexes both `/data/media/movies` and `/data/extra-0/movies` under one Movies library. Users see a single, combined list.
 
 ## Common layouts
 
@@ -129,7 +132,7 @@ Primary storage full, new drive holds overflow. Files split across drives in the
 
 ```
 /data/media/movies/          <- filling up
-/data/extra-1/movies/        <- new additions go here
+/data/extra-0/movies/        <- new additions go here
 ```
 
 ### Pattern B: separate library by content type
@@ -138,7 +141,7 @@ Keep 4K releases on the fast drive, 1080p on the big HDD.
 
 ```
 /data/media/movies/          <- 1080p Radarr instance default
-/data/extra-1/movies-4k/     <- 4K Radarr instance (if you set one up)
+/data/extra-0/movies-4k/     <- 4K Radarr instance (if you set one up)
 ```
 
 ### Pattern C: archive
@@ -147,7 +150,7 @@ Rarely-touched content on a spinning disk.
 
 ```
 /data/media/movies/          <- active
-/data/extra-1/archive/       <- cold movies, still playable
+/data/extra-0/archive/       <- cold movies, still playable
 ```
 
 ## What not to do
@@ -171,7 +174,7 @@ Rarely-touched content on a spinning disk.
 
 ```bash
 # Bind mount is live
-docker exec -it radarr ls /data/extra-1/movies
+docker exec -it radarr ls /data/extra-0/movies
 
 # Sonarr/Radarr see the root folder
 curl -s -H "X-Api-Key: $(cat ~/arrstack/config/radarr/api_key.txt)" \
@@ -182,7 +185,7 @@ curl -s -H "X-Emby-Token: $(cat ~/arrstack/config/jellyfin/data/api_key.txt)" \
   http://localhost:8096/Library/VirtualFolders | jq '.[] | {Name, Locations}'
 ```
 
-If all three return the `extra-1` path, you are done.
+If all three return the `extra-0` path, you are done.
 
 ## Next steps
 

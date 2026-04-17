@@ -44,9 +44,9 @@ If searches return nothing, the most common causes, in order:
 
 ### 3. qBittorrent downloads
 
-Radarr hands the chosen release to qBittorrent. Category is `radarr`, save path is `/data/torrents/movies` (inside the container, which is `~/arrstack/data/torrents/movies` on the host).
+Radarr hands the chosen release to qBittorrent. Category is `movies`, save path is `/data/torrents/movies` (inside the container, which is `~/arrstack/data/torrents/movies` on the host).
 
-Open http://localhost:8080 to watch progress. Sonarr uses category `sonarr` with `/data/torrents/tv`. Music goes to `/data/torrents/music`.
+Open http://localhost:8080 to watch progress. Sonarr uses category `tv` with `/data/torrents/tv`. The installer also creates `music` and `books` categories for manual use; automatic routing is only wired for Sonarr and Radarr.
 
 If a download sits at 0% forever:
 
@@ -110,11 +110,13 @@ Jellyfin reads that folder automatically and shows a Play Trailer button on the 
 
 Jellyfin scans libraries every 60 minutes by default, and on-demand when you click Scan All Libraries. Open http://localhost:8096, go to Movies, the new title should appear with a poster within one scan cycle.
 
-Force a scan without waiting:
+Force a scan without waiting (the API token lives in Jellyfin's SQLite database, not a plain-text file):
 
 ```bash
+TOKEN=$(docker exec arrstack-jellyfin-1 sqlite3 /config/data/jellyfin.db \
+  "SELECT AccessToken FROM ApiKeys LIMIT 1;")
 curl -X POST "http://localhost:8096/Library/Refresh" \
-  -H "X-Emby-Token: $(cat ~/arrstack/config/jellyfin/data/api_key.txt)"
+  -H "X-Emby-Token: $TOKEN"
 ```
 
 ## TV shows

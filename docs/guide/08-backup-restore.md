@@ -172,13 +172,14 @@ docker compose -f ~/arrstack/docker-compose.yml start sonarr
 
 ## `--fresh` vs `--resume`, exactly
 
-| Flag         | Touches `state.json`  | Touches `~/arrstack/config/` | Touches `~/arrstack/data/` | When to use |
-|--------------|-----------------------|------------------------------|----------------------------|-------------|
-| `--resume`   | Reads it, may update  | Leaves alone                 | Leaves alone               | Continue, change settings, restore |
-| `--fresh`    | Deletes and rebuilds  | Deletes configs, regenerates | Leaves alone               | Corrupted wiring, start over without losing media |
-| `uninstall`  | Deletes on confirm    | Deletes on confirm           | Prompts, default keep      | Removing arrstack |
+| Flag                | Touches `state.json`                 | Touches `~/arrstack/config/`                                  | Touches `~/arrstack/data/` | When to use |
+|---------------------|--------------------------------------|---------------------------------------------------------------|----------------------------|-------------|
+| `--resume`          | Reads existing, rewrites at the end  | Leaves existing files, re-creates missing dirs and seed files | Leaves alone               | Continue after a partial install, restore, or repair missing config |
+| `--fresh`           | Ignores existing, writes fresh       | Overwrites seeded files (`.env`, Caddyfile, `config.xml`, `config.yaml`, dnsmasq.conf, etc.) in place; does not delete existing service DBs | Leaves alone               | Start over from a clean wizard without re-creating media |
+| `uninstall`         | Preserves                            | Preserves                                                     | Preserves                  | Stop running, keep everything (`docker compose down`) |
+| `uninstall --purge` | Preserves                            | **Deletes** `~/arrstack/config/`                              | Preserves                  | Wipe service state but keep media |
 
-`--fresh` never touches `data/media` or `data/torrents`. Your media is safe. Your configs are not, so run a Tier 1 backup right before using `--fresh`.
+`--fresh` never deletes anything under `~/arrstack`. It simply re-renders every file the installer owns, which means existing service databases survive and may conflict with the fresh seed. If you want a truly clean slate, run `arrstack uninstall --purge` first, then `arrstack install --fresh`. Your media (`data/media`, `data/torrents`) is never touched by either flag.
 
 ## Testing your backup
 

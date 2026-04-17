@@ -8,15 +8,15 @@ When something is wrong enough that re-running the wizard is the fastest fix. Th
 
 | You want to... | Command | Media | state.json | Configs | admin.txt | Named volumes |
 |---|---|---|---|---|---|---|
-| Fix a half-finished install | `arrstack install --resume` | keep | keep | keep | keep | keep |
-| Start completely over, same machine | `arrstack install --fresh` | keep | overwrite | reused | overwrite | keep |
+| Fix a half-finished install | `arrstack install --resume` | keep | rewritten at end | rewritten in place | rewritten | keep |
+| Start completely over, same machine | `arrstack install --fresh` | keep | rewritten at end | rewritten in place (existing DBs survive) | rewritten | keep |
 | Stop running, keep everything | `arrstack uninstall` | keep | keep | keep | keep | keep |
-| Remove config but keep media | `arrstack uninstall --purge` | keep | **removed** | **removed** | **removed** | removed (compose down) |
+| Remove config but keep media | `arrstack uninstall --purge` | keep | keep | **deleted** (entire `config/` tree) | keep | keep (compose down only removes network) |
 | Nuke the media too | See "full wipe" below | manual | manual | manual | manual | manual |
 
-"Keep" means the file is untouched on disk. "Overwrite" means the command will create a new one from your wizard answers. "Removed" means the file is deleted.
+"Keep" means the file is untouched on disk. "Rewritten" means the installer overwrites the file with freshly rendered content. "Deleted" means the file or directory is removed by `rm -rf`.
 
-Media (your storage root: torrents/, media/, extra paths) is **never** touched by the installer. You delete media yourself, deliberately, with `rm`.
+Media (your storage root: torrents/, media/, extra paths) is **never** touched by the installer. You delete media yourself, deliberately, with `rm`. `state.json` and `admin.txt` also survive `uninstall --purge`; the only thing `--purge` actually removes is `<install-dir>/config/`.
 
 ---
 
@@ -66,24 +66,33 @@ docker compose -f ~/arrstack/docker-compose.yml up -d
 
 ### arrstack uninstall --purge
 
-Runs `docker compose down`, then deletes `~/arrstack/config/`. Everything else survives. This is the right choice when a service's config is unrecoverable but your media is fine.
+Runs `docker compose down`, then recursively deletes `<install-dir>/config/`. Everything else survives: `state.json`, `admin.txt`, `docker-compose.yml`, and your media under `storage_root`. This is the right choice when a service's config tree is unrecoverable but your media is fine.
 
 ```bash
 arrstack uninstall --purge
 arrstack install --fresh        # rebuild from a clean config tree
 ```
 
-Note: `--purge` preserves `storage_root` by design. The uninstall command prints exactly what it kept.
+`--purge` preserves `storage_root` by design. The uninstall command prints the preserved storage-root path before it exits.
 
 ### Full wipe (install dir + media)
 
 The installer never does this for you. If you truly want every byte gone:
 
 ```bash
+# 1. Capture the storage root BEFORE deleting state.json
+STORAGE_ROOT=$(jq -r .storage_root < ~/arrstack/state.json)
+
+# 2. Stop containers and remove the config tree
 arrstack uninstall --purge
-rm -rf ~/arrstack                                 # state.json, compose file, admin.txt
-rm -rf "$(jq -r .storage_root < ~/arrstack/state.json 2>/dev/null)"   # if state still existed
-# or just: rm -rf ~/arrstack/data                  # the wizard default
+
+# 3. Delete everything that survived purge (state.json, .env, admin.txt, compose file)
+rm -rf ~/arrstack
+
+# 4. Delete the media root you saved in step 1
+rm -rf "$STORAGE_ROOT"
+
+# 5. Remove any arrstack-scoped named volumes
 docker volume ls -q | grep ^arrstack_ | xargs -r docker volume rm
 ```
 

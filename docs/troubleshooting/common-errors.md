@@ -137,7 +137,7 @@ See `src/wiring/prowlarr-indexers.ts` for the full shape.
 
 ---
 
-### Bazarr shows a browser basic-auth dialog instead of the login form
+### Bazarr+ shows a browser basic-auth dialog instead of the login form
 
 **Symptom.** Opening `http://<host>:6767` pops a native username/password dialog.
 **Cause.** `auth.type` defaults to `basic`. Bazarr+ expects `form`.
@@ -152,7 +152,7 @@ Or: `arrstack install --resume`.
 
 ---
 
-### Bazarr crash: KeyError 'audio_only_include'
+### Bazarr+ crash: KeyError 'audio_only_include'
 
 **Symptom.** `bazarr | KeyError: 'audio_only_include'` followed by exit 1.
 **Cause.** Language profiles require `audio_exclude`, `audio_only_include`, `hi`, and `forced` on every item.
@@ -168,7 +168,7 @@ items:
 
 ---
 
-### Bazarr config edits do not stick
+### Bazarr+ config edits do not stick
 
 **Symptom.** You edit `config/bazarr/config.yaml` and nothing changes after restart.
 **Cause.** The Bazarr+ image reads `/config/config/config.yaml` (double `config`), not `/config/config.yaml`.
@@ -176,11 +176,11 @@ items:
 
 ---
 
-### Bazarr subtitle editor says "Failed to parse subtitle file"
+### Bazarr+ subtitle editor says "Failed to parse subtitle file"
 
 **Symptom.** The editor errors, even though the subtitle downloads and plays fine.
 **Cause.** The Bazarr+ frontend uses `crypto.randomUUID()`, which browsers only expose in a secure context (HTTPS or localhost). Plain HTTP on a LAN IP breaks the editor.
-**Fix.** Access Bazarr via the Caddy HTTPS vhost (e.g. `https://bazarr.arrstack.local`) or `http://localhost:6767` from the Docker host.
+**Fix.** Access Bazarr+ via the Caddy HTTPS vhost (e.g. `https://bazarr.arrstack.local`) or `http://localhost:6767` from the Docker host.
 **Prevention.** Enable local DNS + Caddy in the wizard so every service has an HTTPS URL.
 
 ---

@@ -4,17 +4,20 @@ The installer ships with 8 public indexers and a Bazarr+ config, but several ser
 
 ## TL;DR
 
-| Provider         | Where to configure          | Cost | Needed for |
-|------------------|-----------------------------|------|------------|
-| OpenSubtitles.com | Bazarr+, Settings, Providers | Free tier OK, VIP better | Most subtitle results |
-| Addic7ed         | Bazarr+, Settings, Providers | Free account             | English/Spanish TV subs |
-| Subf2m           | Bazarr+, Settings, Providers | No login                 | Indie languages |
-| OpenRouter       | Bazarr+, Settings, Translator | Pay per token           | AI subtitle translation |
-| Private indexers | Prowlarr, Add Indexer        | Depends                  | Private trackers in Sonarr/Radarr |
+| Provider             | Where to configure            | Cost                      | Needed for |
+|----------------------|-------------------------------|---------------------------|------------|
+| OpenSubtitles.com    | Bazarr+, Settings, Providers  | Free tier OK, VIP better  | Most subtitle results |
+| OpenSubtitles.org    | Bazarr+, Settings, Providers  | Free                      | Fallback catalogue, legacy site |
+| Embedded Subtitles   | Bazarr+, Settings, Providers  | No login                  | Pulls subs already muxed into the file |
+| Podnapisi            | Bazarr+, Settings, Providers  | No login                  | Slavic + European languages |
+| Addic7ed             | Bazarr+, Settings, Providers  | Free account              | English/Spanish TV subs |
+| YIFY Subtitles       | Bazarr+, Settings, Providers  | No login                  | Movie subs, wide language coverage |
+| OpenRouter           | Bazarr+, Settings, Translator | Free tier + pay per token | AI subtitle translation (LavX fork) |
+| Private indexers     | Prowlarr, Add Indexer         | Depends                   | Private trackers in Sonarr/Radarr |
 
 ## Bazarr+ subtitle providers
 
-Open Bazarr+ at http://localhost:6767, log in (admin credentials from `~/arrstack/admin.txt`), go to Settings, Providers. The defaults enabled by the installer are OpenSubtitles.com, Addic7ed, Subf2m. You still need to provide credentials for the first two.
+Open Bazarr+ at http://localhost:6767, log in (admin credentials from `~/arrstack/admin.txt`), go to Settings, Providers. The defaults enabled by the installer are the six providers listed under `general.enabled_providers` in `config.yaml`: `opensubtitlescom`, `opensubtitles`, `embeddedsubtitles`, `podnapisi`, `addic7ed`, `yifysubtitles`. OpenSubtitles.com and Addic7ed need you to paste credentials, the other four work without a login.
 
 ### OpenSubtitles.com (free tier vs VIP)
 
@@ -38,19 +41,19 @@ If you run a large library, VIP at a few dollars a month saves hours of "missing
 
 Addic7ed limits you to 10 downloads per day without a VIP upgrade. Good for English and Spanish TV, weaker for movies. Keep it enabled as a fallback.
 
-### Subf2m
+### Embedded Subtitles, Podnapisi, YIFY Subtitles
 
-No login. Enable it and forget about it. Decent coverage for Farsi, Arabic, Turkish, and smaller European languages.
+No login required for any of the three. They are enabled by default alongside OpenSubtitles and Addic7ed. Leave them on: Embedded rips subs already muxed into the file, Podnapisi is strong on Slavic and European titles, and YIFY Subtitles is a solid free fallback for movies.
 
 ### OpenSubtitles.org (legacy)
 
-Different site from OpenSubtitles.com. Do not enable both. The `.com` version is the maintained one.
+Different site from OpenSubtitles.com and also enabled by default as the `opensubtitles` provider. Free, no account needed. The `.com` version is the maintained one and should be preferred when it has a match; the legacy one is kept on as a fallback.
 
 ## OpenRouter AI translator (LavX fork feature)
 
-The LavX fork of Bazarr+ ships an OpenRouter-backed translator that fills gaps where no human subtitle exists in your target language. Configure once, it runs automatically on any failed search.
+The LavX fork of Bazarr+ ships an OpenRouter-backed translator that fills gaps where no human subtitle exists in your target language. It runs as a sidecar container (`ai-subtitle-translator`) that Bazarr+ calls over the internal Docker network. Configure once, it runs automatically on any failed search.
 
-> **Bring your own key.** OpenRouter has a free tier with rate-limited models, so you can test the translator at zero cost before putting a card on file. Paid models run a few cents per movie. arrstack never proxies your key anywhere, the request goes directly from your Bazarr+ container to OpenRouter.
+> **Bring your own key.** OpenRouter has a free tier with rate-limited models, so you can test the translator at zero cost before putting a card on file. Paid models run a few cents per movie. arrstack never proxies your key anywhere, the request goes directly from your `ai-subtitle-translator` container to OpenRouter.
 
 ### Get a key
 
@@ -59,19 +62,25 @@ The LavX fork of Bazarr+ ships an OpenRouter-backed translator that fills gaps w
 3. Copy the key, it starts with `sk-or-`.
 4. Optional: add a few dollars of credit if you want paid models. Translations cost cents per movie.
 
-### Configure Bazarr+
+### Paste the key
 
-Bazarr+, Settings, Translator (LavX-only section):
+Two options, same effect:
 
-| Field              | Suggested value |
-|--------------------|-----------------|
-| Enable translator  | on |
-| Provider           | OpenRouter |
-| API key            | `sk-or-...` |
-| Default model      | `anthropic/claude-3-haiku` or `openai/gpt-4o-mini` |
-| Source language    | Auto-detect |
-| Target languages   | same list as your Bazarr+ language profile |
-| Cost cap per file  | `0.05` (USD, optional safety cap) |
+1. Edit `~/arrstack/.env` and set `OPENROUTER_API_KEY=sk-or-...`, then `arrstack update` (the variable is shared between the Bazarr+ container and the `ai-subtitle-translator` sidecar, both wired in via `envVars` in `src/catalog/services.yaml`). The AES-GCM `ENCRYPTION_KEY` the two containers use to talk to each other is auto-generated by the installer and pinned in `.env`.
+2. Or in the UI: Bazarr+, Settings, Translator, paste the key into `openrouter_api_key`. This writes to `config.yaml` only, and you still want `.env` set so the sidecar has it too.
+
+### Defaults shipped in `config.yaml`
+
+The installer seeds the `translator` block with these values (see `templates/bazarr-config.yaml.hbs`):
+
+| Key                           | Default |
+|-------------------------------|---------|
+| `translator_type`             | `openrouter` |
+| `openrouter_model`            | `google/gemini-2.5-flash-lite-preview-09-2025` |
+| `openrouter_parallel_batches` | `4` |
+| `openrouter_max_concurrent`   | `2` |
+| `openrouter_temperature`      | `0.3` |
+| `openrouter_url`              | `http://ai-subtitle-translator:8765` |
 
 Trigger a manual translation on one item first. Open a movie in Bazarr+, Actions, Translate to test cost and quality. Then turn on automatic.
 
@@ -147,18 +156,21 @@ rm ~/arrstack/data/media/movies/"Some Movie (2024)"/*.srt
 # Watch History for provider responses and scores
 ```
 
-You should see Bazarr+ try OpenSubtitles.com first (highest score), then fall back to Addic7ed and Subf2m. If all three fail and OpenRouter is configured, the AI translator kicks in.
+You should see Bazarr+ try the enabled providers in priority order: OpenSubtitles.com first (highest score), then OpenSubtitles.org, Embedded, Podnapisi, Addic7ed, and YIFY Subtitles. If everything misses and OpenRouter is configured, the AI translator fills the gap.
 
 ## Rate limit budgets at a glance
 
-| Provider           | Free cap        | Paid cap      |
-|--------------------|-----------------|---------------|
-| OpenSubtitles.com  | 20/day          | 1000/day (VIP) |
-| Addic7ed           | 10/day          | Higher with VIP |
-| Subf2m             | No official cap | N/A |
-| OpenRouter         | Pay per token   | Your card     |
+| Provider               | Free cap        | Paid cap         |
+|------------------------|-----------------|------------------|
+| OpenSubtitles.com      | 20/day          | 1000/day (VIP)   |
+| OpenSubtitles.org      | Small daily cap | Higher with VIP  |
+| Embedded Subtitles     | N/A (local)     | N/A              |
+| Podnapisi              | No official cap | N/A              |
+| Addic7ed               | 10/day          | Higher with VIP  |
+| YIFY Subtitles         | No official cap | N/A              |
+| OpenRouter             | Free-tier models, rate-limited | Pay per token on your card |
 
-Plan for about 3 providers at a time. Adding too many slows searches down because each one is queried sequentially.
+Bazarr+ queries providers sequentially, so the default 6-provider fan-out already adds a couple of seconds per search. If you want faster searches, disable the providers you never hit in your target languages.
 
 ## Next steps
 

@@ -73,7 +73,7 @@ arrstack install --resume Continue from last saved step
 arrstack doctor           Health check existing install
 arrstack update           Pull latest images and restart
 arrstack show-password    Print admin credentials
-arrstack logs [service]   Tail logs (all services or one)
+arrstack logs <service>   Tail logs for a single service
 arrstack uninstall        Remove containers and optionally data
 ```
 
@@ -148,11 +148,11 @@ Auto-detected. Override if you want to force one.
 
 | Mode              | What it does |
 |-------------------|--------------|
-| LAN               | Bind Caddy to your LAN IP, no public exposure |
-| DuckDNS           | Free dynamic DNS, Let's Encrypt via HTTP-01 |
-| Cloudflare        | Your domain on Cloudflare DNS, wildcard Let's Encrypt via DNS-01 |
+| LAN               | Caddy serves plain HTTP on the LAN, no public exposure |
+| DuckDNS           | Free dynamic DNS, Let's Encrypt via DNS-01 (needs Caddy image with the DuckDNS plugin) |
+| Cloudflare        | Your domain on Cloudflare DNS, wildcard Let's Encrypt via DNS-01 (needs Caddy image with the Cloudflare plugin) |
 
-Details in `04-remote-access.md`.
+Details (including the plugin note) in `04-remote-access.md`.
 
 ### 7. Local DNS
 
@@ -168,7 +168,7 @@ Two independent flags:
 | Field             | Default | Notes |
 |-------------------|---------|-------|
 | Enable gluetun    | off     | Only qBittorrent routes through by default. |
-| Provider          | mullvad | Also: protonvpn, airvpn, custom wireguard |
+| Provider          | mullvad | Also: `protonvpn`, `custom`. AirVPN / PIA / others go through `custom`. |
 | Wireguard config  | paste   | Private key, address, endpoint. See `06-vpn.md`. |
 
 ### 9. System

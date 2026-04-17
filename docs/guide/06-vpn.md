@@ -1,6 +1,6 @@
 # 06. VPN (gluetun + WireGuard)
 
-arrstack routes **qBittorrent only** through a VPN by default. Prowlarr, Sonarr, Radarr, and the rest use your normal internet connection. This page covers enabling gluetun, pasting a WireGuard config from Mullvad, Proton, or AirVPN, and understanding the kill-switch behavior so your torrent traffic never leaks.
+arrstack routes **qBittorrent only** through a VPN by default. Prowlarr, Sonarr, Radarr, and the rest use your normal internet connection. This page covers enabling gluetun, pasting a WireGuard config from Mullvad or Proton (or any provider via the custom path), and understanding the kill-switch behavior so your torrent traffic never leaks.
 
 ## TL;DR
 
@@ -53,10 +53,13 @@ On the VPN screen:
 | Field                | Options |
 |----------------------|---------|
 | Enable gluetun       | on / off |
-| Provider             | mullvad, protonvpn, airvpn, custom |
-| Config source        | Paste inline, or point to `~/arrstack/config/gluetun/wireguard/wg0.conf` |
+| Provider             | `mullvad`, `protonvpn`, `custom` |
+| Protocol             | `wireguard` (only protocol wired end-to-end today) |
+| Private key          | `WIREGUARD_PRIVATE_KEY` from your provider config |
+| Addresses            | Tunnel IP/CIDR, e.g. `10.64.222.21/32` |
+| Countries (optional) | Gluetun server-selection hint, e.g. `Switzerland, Sweden` |
 
-If you picked custom, arrstack treats your `wg0.conf` as the source of truth and does not try to manage the provider's API.
+For `custom`, arrstack also asks for the server endpoint IP, endpoint port, and the peer's public key so gluetun has the full tuple (providers such as AirVPN and PrivateInternetAccess go through this path, since gluetun has no built-in server list for them when exposed via the custom flow here).
 
 ## Provider configs
 
@@ -90,18 +93,19 @@ Endpoint = 185.65.134.66:51820
 
 ProtonVPN's free tier does not allow P2P. You need Plus or higher. Port forwarding works but requires `natpmpc` inside the container, which gluetun handles.
 
-### AirVPN
+### AirVPN and other providers (use `custom`)
 
-1. Sign in at https://airvpn.org/client-area/.
-2. Config Generator, select WireGuard, pick a server.
-3. Accept the terms, download the `.conf`.
-4. Paste in wizard under provider `airvpn`.
+AirVPN, PrivateInternetAccess, and any other WireGuard provider that hands you a `.conf` file go through the `custom` path. Gluetun has a built-in server list for Mullvad and Proton only; for everything else you feed it the endpoint yourself.
 
-AirVPN's config includes multiple endpoints in `[Peer]` blocks. arrstack keeps only the first one, which is the primary server. Edit `wg0.conf` by hand if you want a different endpoint.
+1. Sign in at your provider (for AirVPN: https://airvpn.org/client-area/).
+2. Generate a WireGuard config and download the `.conf`.
+3. In the wizard, pick provider `custom` and fill in:
+   - Private key (from `[Interface] PrivateKey`)
+   - Addresses (from `[Interface] Address`)
+   - Endpoint IP and port (from `[Peer] Endpoint`, split on `:`)
+   - Server public key (from `[Peer] PublicKey`)
 
-### Generic WireGuard (custom)
-
-Any WireGuard provider that gives you a `.conf` file works. Pick provider `custom` in the wizard, paste the config, done. arrstack does not try to call the provider's API.
+arrstack does not call the provider's API in this mode; your tuple is the source of truth.
 
 ## Where the config lives
 

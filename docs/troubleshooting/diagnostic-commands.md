@@ -19,9 +19,11 @@ arrstack doctor --install-dir /opt/arrstack        # non-default location
 ```
 
 It checks, in order:
-1. **System checks** via `runPreflight`: Docker installed, Docker running, Compose v2 present, disk space, storage-root writability, required ports free.
-2. **Container status** from `docker compose ps --format json`: each enabled service must be `running`, health column is reported when available.
-3. **HTTP health checks**: `fetch` to `http://localhost:<port><health.path>` on every service whose catalog entry declares `health.type: http`. Any response under 500 counts as up.
+1. **System checks** via `runPreflight`: Docker installed, Docker running, Compose v2 present, 10 GB free on `/`, 10 GB free on `storage_root` (if different from `/`), ports 80 and 443 free on the host.
+2. **Container status** from `docker compose ps --format json`: each enabled service must be `running`, the health column is reported when the image declares a healthcheck.
+3. **HTTP health checks**: `fetch` to `http://localhost:<port><health.path>` on every service whose catalog entry declares `health.type: http`. Any HTTP response under 500 counts as up (arr apps commonly return 401 before auth is set up).
+
+Preflight does **not** probe disk writability or individual service ports beyond 80 and 443. If the storage root is read-only or a service port is claimed by another process, the problem surfaces during `docker compose up`, not in preflight.
 
 If doctor says a service is unreachable, the next two sections are the right follow-up.
 

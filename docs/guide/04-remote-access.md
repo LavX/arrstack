@@ -6,11 +6,13 @@ Three ways to reach your stack from outside the house: LAN only (safest, no publ
 
 | Mode        | What you open to the internet | DNS requirement              | TLS                       | Good for |
 |-------------|-------------------------------|------------------------------|---------------------------|----------|
-| LAN         | Nothing                       | None                         | Self-signed or none       | Home use only |
-| DuckDNS     | Ports 80, 443                 | Free subdomain               | Let's Encrypt HTTP-01     | Remote access without owning a domain |
-| Cloudflare  | Ports 80, 443                 | Your domain on Cloudflare    | Wildcard Let's Encrypt DNS-01 | Custom domain, one cert for every subdomain |
+| LAN         | Nothing                       | None                         | None (plain HTTP)         | Home use only |
+| DuckDNS     | Ports 80, 443                 | Free subdomain               | Let's Encrypt DNS-01 via the DuckDNS plugin | Remote access without owning a domain |
+| Cloudflare  | Ports 80, 443                 | Your domain on Cloudflare    | Wildcard Let's Encrypt DNS-01 via the Cloudflare plugin | Custom domain, one cert for every subdomain |
 
 Caddy is the only process that takes inbound internet traffic in every mode. The arr services stay on the internal docker bridge.
+
+> **Caddy plugin note**: both remote-access modes use DNS-01 challenges (`tls { dns cloudflare ... }` or `tls { dns duckdns ... }` in the rendered Caddyfile), which need DNS-provider plugins baked into the Caddy binary. The default `caddy:latest` image ships neither. To use DuckDNS or Cloudflare mode, swap the Caddy image for a build that carries the right plugin, for example `xcaddy build --with github.com/caddy-dns/cloudflare --with github.com/caddy-dns/duckdns`. LAN mode works on the stock image.
 
 ## LAN mode
 
@@ -72,7 +74,7 @@ Annoying on phones. Use dnsmasq if you have more than a laptop.
 
 ## DuckDNS mode
 
-Free dynamic DNS. You register a `you.duckdns.org` subdomain, arrstack updates it on every IP change, Caddy gets a Let's Encrypt cert via HTTP-01.
+Free dynamic DNS. You register a `you.duckdns.org` subdomain, arrstack runs a companion updater that pushes your public IP to DuckDNS on every change, and Caddy issues a Let's Encrypt cert via the DuckDNS DNS-01 plugin.
 
 ### Setup
 
@@ -94,7 +96,18 @@ myarr.duckdns.org                -> Jellyfin
 sonarr.myarr.duckdns.org         -> Sonarr (if you enabled sub-subdomains)
 ```
 
-DuckDNS does not support wildcard certs on the free tier. Each sub-subdomain gets its own HTTP-01 cert. If you want a single wildcard cert across many names, use Cloudflare mode instead.
+Under the hood the rendered Caddyfile carries one block per service:
+
+```caddyfile
+sonarr.myarr.duckdns.org {
+    tls {
+        dns duckdns {$DUCKDNS_TOKEN}
+    }
+    reverse_proxy sonarr:8989
+}
+```
+
+Caddy solves the DNS-01 challenge by creating a TXT record on DuckDNS via the plugin, which is why the `caddy-dns/duckdns` plugin needs to be baked into the Caddy image. See the plugin note at the top of this page.
 
 ## Cloudflare mode
 
@@ -132,9 +145,8 @@ Create a token at https://dash.cloudflare.com/profile/api-tokens. Use the Edit z
 
 | Field            | Value |
 |------------------|-------|
-| Domain           | `yourdomain.com` |
-| Base subdomain   | `arr` (generates `arr.yourdomain.com`, `sonarr.arr.yourdomain.com`, etc.) |
-| Cloudflare token | the scoped token you just made |
+| Domain           | `arr.yourdomain.com` (the base domain Caddy appends each service ID to: `sonarr.arr.yourdomain.com`, `jellyfin.arr.yourdomain.com`, etc.) |
+| CF API token     | the scoped token you just made |
 
 arrstack writes the token to `~/arrstack/config/caddy/.env` as `CF_API_TOKEN=...` (mode 0o600) and wires it into the Caddy container. Caddy never sends the token anywhere except Cloudflare's API.
 

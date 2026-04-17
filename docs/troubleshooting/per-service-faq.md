@@ -153,12 +153,12 @@ A: Bazarr+ does not ship with provider credentials. You must log in to each prov
 - Opensubtitles-scraper side-car handles rate-limited scraping
 
 **Q: Subtitle editor shows "Failed to parse subtitle file".**
-A: The editor uses `crypto.randomUUID()` which requires a secure context. Access Bazarr via HTTPS (the Caddy vhost) or via `http://localhost:6767` on the Docker host.
+A: The editor uses `crypto.randomUUID()` which requires a secure context. Access Bazarr+ via HTTPS (the Caddy vhost) or via `http://localhost:6767` on the Docker host.
 
 **Q: AI translation does nothing.**
-A: Set `OPENROUTER_API_KEY` in `~/arrstack/.env` and restart Bazarr and `ai-subtitle-translator`. Both containers share an `ENCRYPTION_KEY` so the API key can be AES-GCM-encrypted when one calls the other.
+A: Set `OPENROUTER_API_KEY` in `~/arrstack/.env` and restart Bazarr+ and `ai-subtitle-translator`. Both containers share an `ENCRYPTION_KEY` so the API key can be AES-GCM-encrypted when one calls the other.
 
-**Q: Language profile crashes Bazarr with `KeyError`.**
+**Q: Language profile crashes Bazarr+ with `KeyError`.**
 A: Every profile item must include `audio_exclude`, `audio_only_include`, `hi`, and `forced`. See the error catalog entry.
 
 **Q: Where is the config file, really?**
@@ -184,8 +184,8 @@ A: The scraper uses `http://flaresolverr:8191/v1`. Confirm FlareSolverr is up wi
 **Q: How often does it run?**
 A: On its internal schedule; check `docker exec arrstack-opensubtitles-scraper-1 cat /app/config.yml` for the cron expression.
 
-**Q: Bazarr shows no subtitles even with the scraper enabled.**
-A: Bazarr must point at the scraper URL, which the installer sets via `OPENSUBTITLES_SCRAPER_URL=http://opensubtitles-scraper:8000`. Verify it is present in Bazarr's `config.yaml` under the providers section.
+**Q: Bazarr+ shows no subtitles even with the scraper enabled.**
+A: Bazarr+ must point at the scraper URL, which the installer sets via `OPENSUBTITLES_SCRAPER_URL=http://opensubtitles-scraper:8000`. Verify it is present in Bazarr+'s `config.yaml` under the providers section.
 
 **Q: Where are the container logs?**
 A: `arrstack logs opensubtitles-scraper`. Or from `${installDir}`:
@@ -202,7 +202,7 @@ arrstack logs opensubtitles-scraper | grep -iE 'status|error'
 ## AI Subtitle Translator
 
 **Q: Translation requests fail with "invalid encryption key".**
-A: Bazarr and the translator must share the same `ENCRYPTION_KEY` env var. Both read it from the same `.env` at compose time. Run `arrstack install --resume` to regenerate and sync.
+A: Bazarr+ and the translator must share the same `ENCRYPTION_KEY` env var. Both read it from the same `.env` at compose time. Run `arrstack install --resume` to regenerate and sync.
 
 **Q: Which models work?**
 A: Any OpenRouter-hosted model your key can reach. Cheap defaults are `anthropic/claude-3.5-haiku` and `openai/gpt-4o-mini`. Set the preferred model in Bazarr's AI provider settings.

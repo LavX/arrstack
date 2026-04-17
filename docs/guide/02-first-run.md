@@ -39,14 +39,18 @@ Do not edit `state.json` by hand. Use `arrstack install --resume` to change wiza
 
 On a healthy run the auto-wiring sequence does all of the following without you touching a browser. Expect it to take 60 to 180 seconds after containers go healthy.
 
-1. Seeds the admin user into Sonarr, Radarr, Prowlarr, and Bazarr+ SQLite databases. Auth is set to `authenticationMethod=Forms`, `authenticationRequired=Enabled`.
-2. Creates a Prowlarr tag called `flaresolverr`, adds FlareSolverr as an indexer-proxy, and pushes 8 public indexers with the tag attached at create time (required for FS routing): 1337x, TorrentGalaxyClone, EZTV, The Pirate Bay, YTS, LimeTorrents, Torrent Downloads, Magnet Cat.
-3. Connects Prowlarr to Sonarr and Radarr as `IndexerProxy` apps with `syncLevel=fullSync`, then runs a full sync.
-4. Writes Bazarr+ `config.yaml` with form auth, a PBKDF2-SHA256 (600k iterations) password hash, and language profiles that include `audio_exclude`, `audio_only_include`, `hi`, and `forced` flags.
-5. Waits for Jellyfin `/Startup/User` to return 200, walks the Startup Wizard, creates the admin user, and adds libraries: Movies at `/data/media/movies`, TV at `/data/media/tv`, Music at `/data/media/music`.
-6. Runs Jellyseerr's 4-step bootstrap: `auth/jellyfin` with `serverType=2` and hostname, library sync, library enable, initialize. Links Sonarr and Radarr with `activeProfileId=1`.
-7. Reads the Trailarr API key from `~/arrstack/config/trailarr/.env`, changes the default `admin/trailarr` login, and seeds Sonarr and Radarr connections.
-8. Runs `recyclarr sync` to apply TRaSH Guides quality profiles.
+1. Writes the Sonarr, Radarr, and Prowlarr `config.xml` with `AuthenticationMethod=Forms` and `AuthenticationRequired=Enabled` before `docker compose up -d`, so the containers start with auth already switched on.
+2. Pre-writes Bazarr+ `config.yaml` (mounted at `/config/config/config.yaml` inside the container) with `auth.type: form`, a PBKDF2-SHA256 (600k iterations) password hash, the pre-generated API key, and the Sonarr/Radarr API keys so the subtitle fetchers work on first boot.
+3. Waits for Jellyfin `/Startup/User` to return 200, walks the Startup Wizard, creates the admin user, and calls `POST /Users/{id}/Policy` with `IsAdministrator: true` to close the 10.11 admin-flag gap. Then creates libraries: Movies at `/data/media/movies`, TV at `/data/media/tv`, Music at `/data/media/music`.
+4. Runs Jellyseerr's 4-step bootstrap: `POST /api/v1/auth/jellyfin` with `serverType: 2` and `hostname: "jellyfin"`, `GET /api/v1/settings/jellyfin/library?sync=true`, `GET /api/v1/settings/jellyfin/library?enable=<ids>`, `POST /api/v1/settings/initialize`.
+5. Configures Bazarr+ languages + default profile via `POST /api/system/settings`, with each profile item carrying `audio_exclude`, `audio_only_include`, `hi`, and `forced` flags (all four required, omitting any triggers a `KeyError` on the first scan).
+6. Creates qBittorrent categories `tv`, `movies`, `music`, `books` and pushes TRaSH preferences (`save_path: /data/torrents`, `max_ratio_enabled: false`, etc.).
+7. Seeds the admin user via `PUT /api/v{N}/config/host` on Sonarr (v3), Radarr (v3), and Prowlarr (v1). Body sets `authenticationMethod: "forms"`, `authenticationRequired: "enabled"`, `username`, `password`, `passwordConfirmation`. Sonarr/Radarr return 202, Prowlarr returns 200, both are accepted.
+8. Registers Sonarr and Radarr in Prowlarr as apps (`implementation: "Sonarr"`/`"Radarr"`, `syncLevel: "fullSync"`), creates the `flaresolverr` tag and FlareSolverr indexer-proxy, then pushes 8 public indexers with the tag stamped in the POST body (required for FS routing): 1337x, TorrentGalaxyClone, EZTV, The Pirate Bay, YTS, LimeTorrents, Torrent Downloads, Magnet Cat.
+9. Configures Sonarr and Radarr root folders (`/data/media/tv`, `/data/media/movies`) and adds qBittorrent as the download client with the matching TRaSH category.
+10. Links Jellyseerr to Sonarr and Radarr via `POST /api/v1/settings/{sonarr,radarr}` with `activeProfileId: 1` and `activeDirectory` set to the root folder. A second login first against `/api/v1/auth/jellyfin` omits `hostname` because Jellyseerr returns HTTP 500 if `hostname` is already configured.
+11. Reads the Trailarr API key from `~/arrstack/config/trailarr/.env` (match: `^API_KEY=['"]?...['"]?$`), replaces the default `admin/trailarr` login via `PUT /api/v1/settings/updatelogin`, then adds Sonarr and Radarr connections with `monitor: "new"`.
+12. Runs `docker compose run --rm recyclarr sync` once (5-minute timeout) to apply the inline v8 quality profiles (`WEB-1080p` for Sonarr, `HD Bluray + WEB` for Radarr).
 
 If any step fails, `arrstack doctor` will print which one and tell you the fix.
 
@@ -62,7 +66,7 @@ Default ports assuming LAN mode. If you picked DuckDNS or Cloudflare, replace `l
 | 4     | qBittorrent | http://localhost:8080        | Login works, Downloads tab empty |
 | 5     | Jellyfin    | http://localhost:8096        | 3 libraries visible, scan shows 0 items (expected) |
 | 6     | Jellyseerr  | http://localhost:5055        | Jellyfin linked, Sonarr+Radarr linked, no red banners |
-| 7     | Bazarr+     | http://localhost:6767        | Providers page empty (you add these in `07-providers-setup.md`) |
+| 7     | Bazarr+     | http://localhost:6767        | 6 providers enabled by default (OpenSubtitles.com + OpenSubtitles + Embedded + Podnapisi + Addic7ed + YIFY); only the first two need credentials |
 | 8     | Trailarr    | http://localhost:7889        | Sonarr and Radarr show as connected |
 
 Caddy is on 80/443. If you picked LAN hostnames, also try `http://sonarr.arr.lan` and similar.

@@ -8,27 +8,21 @@ arrstack uses `:latest` tags for every service image. Updates are a single comma
 # Update all images, restart in order, run health checks
 arrstack update
 
-# Update a single service
-arrstack update sonarr
-
 # Update the arrstack binary itself
 curl -fsSL https://lavx.github.io/arrstack/install.sh | bash
 
-# Verbose mode, see every step
-arrstack update --verbose
+# Verify afterwards
+arrstack doctor
 ```
 
 ## What `arrstack update` does
 
-1. Checks the arrstack binary version against the GitHub release feed. Warns if you are behind.
-2. Runs `docker compose pull` for every enabled service.
-3. Runs `docker compose up -d` which only recreates containers with changed images.
-4. Waits for health checks to go green.
-5. Re-runs the idempotent slices of auto-wiring (Prowlarr app sync, Jellyseerr library enable, Trailarr key refresh) in case the new images reset anything.
-6. Prunes dangling images to free disk.
-7. Prints a summary: which services changed tag, which stayed.
+1. Reads `state.json` to find the install directory and compose file.
+2. Runs `docker compose pull` against the generated `docker-compose.yml` so every enabled service fetches its latest image.
+3. Runs `docker compose up -d`, which recreates only the containers whose images changed.
+4. Prints a hint to run `arrstack doctor` next, which re-probes every service HTTP endpoint.
 
-Duration: 30 seconds to 5 minutes depending on image sizes and download speed.
+Duration: 30 seconds to 5 minutes depending on image sizes and download speed. Health checks, image pruning, and single-service updates are not built in yet, run them with `docker compose` directly if you need them.
 
 ## Image tag policy
 
@@ -79,17 +73,17 @@ docker inspect --format='{{.Image}}' sonarr radarr prowlarr
 
 Run `arrstack doctor`. It checks:
 
-- Every container is `running` and `healthy`
-- API keys still valid
-- Prowlarr still pushes indexers to Sonarr/Radarr
-- Jellyfin library scan succeeds
-- Caddy cert is still valid
+- Docker is installed and running, Compose v2 is present
+- Storage root is writable and has enough free disk
+- Every service's HTTP port is free or owned by the expected container
+- Every enabled container is `running` (plus its `Health` status if defined)
+- Every service with an HTTP endpoint responds (any 1xx-4xx counts as up, only 5xx and connection errors fail)
 
-If anything fails, logs tell the story:
+If anything fails, logs tell the story (`arrstack logs` tails one service at a time via `docker compose logs -f`):
 
 ```bash
 arrstack logs sonarr
-arrstack logs --since 10m
+arrstack logs radarr
 ```
 
 ## Rollback via image pinning
@@ -147,28 +141,33 @@ curl -fsSL https://lavx.github.io/arrstack/install.sh | bash
 arrstack --version
 ```
 
-Binary updates are backward compatible with existing `state.json`. If a new binary introduces a state migration, it runs automatically on the next `install --resume`.
+A fresh binary keeps reading the same `state.json`. The state schema is validated with Zod on every read, so an incompatible schema will surface as a clear error rather than a silent corruption.
 
 ## Skipping a service during update
 
-Sometimes you want to hold one service back while updating the rest:
+`arrstack update` always targets every service in the compose file. To hold one service back while refreshing the rest, pin it in the override file and then run the update:
 
 ```bash
-# Update everything except Jellyfin
-for s in sonarr radarr prowlarr bazarr qbittorrent flaresolverr trailarr jellyseerr recyclarr caddy; do
-  arrstack update "$s"
-done
+# Example: pin Jellyfin before running arrstack update, so only the others move
+cat >> ~/arrstack/docker-compose.override.yml <<'YAML'
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:10.9.11
+YAML
+
+arrstack update
 ```
 
-Or use the override file to pin the specific service before running `arrstack update`.
+Once you are ready to move Jellyfin too, remove the `image:` pin from the override file and run `arrstack update` again.
 
 ## Canary one service first
 
-If you are nervous about an update, run a dry pass on one service:
+If you are nervous about an update, drop to `docker compose` to refresh one service on its own before running the full update:
 
 ```bash
 # Only Prowlarr (lowest blast radius, no persistent downloads)
-arrstack update prowlarr
+docker compose -f ~/arrstack/docker-compose.yml pull prowlarr
+docker compose -f ~/arrstack/docker-compose.yml up -d prowlarr
 
 # If healthy, continue with the rest
 arrstack update
@@ -181,15 +180,15 @@ arrstack update
 | Sonarr/Radarr login loop              | DB schema migration needed. Check logs. | Usually self-heals on second restart. |
 | Prowlarr loses all indexers           | Major Prowlarr version with broken migration | Restore `config/prowlarr` from backup, roll image back. |
 | Jellyfin asks for Startup Wizard      | Config path moved | Roll image back, file an issue, wait for upstream fix. |
-| FlareSolverr 500 errors               | Cloudflare changed challenge, FS needs its own update | `arrstack update flaresolverr` |
+| FlareSolverr 500 errors               | Cloudflare changed challenge, FS needs its own update | `docker compose -f ~/arrstack/docker-compose.yml pull flaresolverr && docker compose -f ~/arrstack/docker-compose.yml up -d flaresolverr` |
 | qBittorrent WebUI shows login fail    | 5.x auth flow change | Update qBittorrent indexer clients in Sonarr/Radarr (Settings, Download Clients). |
 
-## Log where update ran
+## Capturing the update output
 
-Every `arrstack update` run appends to `~/arrstack/update.log` with timestamps, pulled tags, and health-check results. Useful evidence when asking for help.
+`arrstack update` streams straight to your terminal. Pipe it into a log file if you want a record of which images moved and when.
 
 ```bash
-tail -n 100 ~/arrstack/update.log
+arrstack update 2>&1 | tee -a ~/arrstack/update.log
 ```
 
 ## Recommended monthly routine

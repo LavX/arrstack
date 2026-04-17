@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Recyclarr">
+  <title>Recyclarr</title>
+  <desc>Fallback text chip for Recyclarr, upstream ships only a PNG logo.</desc>
+  <rect width="48" height="48" rx="2" fill="#4C9A2A"/>
+  <text x="24" y="30" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace" font-size="16" font-weight="700" fill="#FFFFFF">Rc</text>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 96" width="640" height="96" role="img" aria-label="arrstack">
+  <title>arrstack</title>
+  <desc>Horizontal lockup: mark on the left, arrstack wordmark in JetBrains Mono to the right.</desc>
+  <g transform="translate(16,16)" fill="none" stroke="#3FB950" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter">
+    <polyline points="4,12 22,28 4,44"/>
+    <polyline points="22,28 40,44 22,60"/>
+    <polyline points="40,44 58,60 40,76"/>
+  </g>
+  <text x="112" y="66"
+        font-family="'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace"
+        font-size="52" font-weight="700" letter-spacing="-1.5" fill="#E6EDF3">arrstack</text>
+</svg>

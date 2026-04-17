@@ -112,6 +112,8 @@
       </div>
     </section>
 
+    <img class="rule-scanline" src="assets/ornaments/rule-scanline.svg" alt="" role="presentation" aria-hidden="true">
+
     <!-- 2. PROBLEM -->
     <section class="section" aria-labelledby="problem-heading">
       <div class="container">
@@ -126,6 +128,8 @@
         </div>
       </div>
     </section>
+
+    <img class="rule-ascii" src="assets/ornaments/rule-ascii.svg" alt="" role="presentation" aria-hidden="true">
 
     <!-- 3. SOLUTION -->
     <section class="section" aria-labelledby="solution-heading">
@@ -154,6 +158,8 @@
       </div>
     </section>
 
+    <img class="rule-scanline" src="assets/ornaments/rule-scanline.svg" alt="" role="presentation" aria-hidden="true">
+
     <!-- 4. SERVICES -->
     <section class="section" id="services" aria-labelledby="services-heading">
       <div class="container">
@@ -165,73 +171,73 @@
 
         <div class="services-grid">
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">qB</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/qbittorrent.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">qBittorrent <span class="svc-port">:8080</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">download</span> Client with tv/movies/music/books categories pre-matched to TRaSH paths.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Gt</div>
+            <div class="svc-icon svc-icon-fallback" aria-hidden="true">Gt</div>
             <div class="svc-name">Gluetun <span class="svc-port">network</span></div>
             <span class="svc-chip optional">optional</span>
             <p class="svc-desc"><span class="svc-role">vpn</span> Wraps the download client in a killswitched VPN tunnel. Enabled if you provide WireGuard or OpenVPN credentials.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Pr</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/prowlarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Prowlarr <span class="svc-port">:9696</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">indexer</span> Unified indexer manager, five public indexers pre-added and app-synced to Sonarr and Radarr.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Fl</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/flaresolverr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">FlareSolverr <span class="svc-port">:8191</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">indexer</span> Headless browser that solves Cloudflare challenges, tagged onto gated indexers at create-time.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">So</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/sonarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Sonarr <span class="svc-port">:8989</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">arr</span> TV manager. Root folder, download client, quality profile wired on first boot.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Ra</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/radarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Radarr <span class="svc-port">:7878</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">arr</span> Movie manager, same wiring as Sonarr, pointed at <code>/data/media/movies</code>.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Bz</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/bazarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Bazarr+ <span class="svc-port">:6767</span></div>
-            <span class="svc-chip optional">optional</span>
-            <p class="svc-desc"><span class="svc-role">subtitles</span> LavX fork with OpenSubtitles scraper and AI translator. Language profiles ship with the fields it needs.</p>
+            <span class="svc-chip required">required</span>
+            <p class="svc-desc"><span class="svc-role">subtitles</span> <a href="https://github.com/lavx/bazarr">LavX fork</a>, shipped in place of upstream Bazarr, with OpenSubtitles scraper and OpenRouter translator. Language profiles ship with the fields it needs.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Jf</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/jellyfin.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Jellyfin <span class="svc-port">:8096</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">media server</span> Intel, AMD, or NVIDIA hardware transcoding wired from <code>/dev/dri</code> and <code>nvidia-smi</code>.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Js</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/jellyseerr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Jellyseerr <span class="svc-port">:5055</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">requests</span> Request portal. The four-step bootstrap pre-links Jellyfin so no <code>/setup</code> wizard appears.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Cd</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/caddy.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Caddy <span class="svc-port">:80 :443</span></div>
             <span class="svc-chip required">required</span>
             <p class="svc-desc"><span class="svc-role">reverse proxy</span> Virtual hosts generated per mode (LAN, DuckDNS, Cloudflare) with optional local DNS block.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Tr</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/trailarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Trailarr <span class="svc-port">:7889</span></div>
             <span class="svc-chip optional">optional</span>
             <p class="svc-desc"><span class="svc-role">trailers</span> Pre-roll trailer fetcher linked to Radarr and Sonarr libraries.</p>
           </article>
           <article class="svc">
-            <div class="svc-icon" aria-hidden="true">Rc</div>
+            <div class="svc-icon" aria-hidden="true"><img class="service-logo" src="assets/service-logos/recyclarr.svg" alt="" width="48" height="48"></div>
             <div class="svc-name">Recyclarr <span class="svc-port">cron</span></div>
             <span class="svc-chip optional">optional</span>
             <p class="svc-desc"><span class="svc-role">quality profiles</span> Syncs TRaSH-Guides profiles and custom formats into Sonarr and Radarr on a schedule.</p>
@@ -240,8 +246,10 @@
       </div>
     </section>
 
+    <img class="rule-ascii" src="assets/ornaments/rule-ascii.svg" alt="" role="presentation" aria-hidden="true">
+
     <!-- 5. AUTO-WIRING -->
-    <section class="section" id="wiring" aria-labelledby="wiring-heading">
+    <section class="section section-textured" id="wiring" aria-labelledby="wiring-heading">
       <div class="container">
         <div class="section-head">
           <span class="section-kicker">the small things that break homelabs</span>
@@ -275,6 +283,8 @@
         </div>
       </div>
     </section>
+
+    <img class="rule-scanline" src="assets/ornaments/rule-scanline.svg" alt="" role="presentation" aria-hidden="true">
 
     <!-- 6. REMOTE ACCESS MATRIX -->
     <section class="section" id="remote" aria-labelledby="remote-heading">
@@ -331,6 +341,8 @@
       </div>
     </section>
 
+    <img class="rule-ascii" src="assets/ornaments/rule-ascii.svg" alt="" role="presentation" aria-hidden="true">
+
     <!-- 7. LAN HOSTNAMES -->
     <section class="section" aria-labelledby="hosts-heading">
       <div class="container">
@@ -364,6 +376,8 @@ address=/jellyfin.homelab/192.168.1.20
       </div>
     </section>
 
+    <img class="rule-scanline" src="assets/ornaments/rule-scanline.svg" alt="" role="presentation" aria-hidden="true">
+
     <!-- 8. REQUIREMENTS -->
     <section class="section" aria-labelledby="req-heading">
       <div class="container">
@@ -379,6 +393,8 @@ address=/jellyfin.homelab/192.168.1.20
       </div>
     </section>
 
+    <img class="rule-ascii" src="assets/ornaments/rule-ascii.svg" alt="" role="presentation" aria-hidden="true">
+
     <!-- 9. FAQ -->
     <section class="section" id="faq" aria-labelledby="faq-heading">
       <div class="container">
@@ -386,7 +402,9 @@ address=/jellyfin.homelab/192.168.1.20
           <span class="section-kicker">faq</span>
           <h2 id="faq-heading">Honest answers.</h2>
         </div>
-        <div class="faq">
+        <div class="faq-frame">
+          <img class="bracket bracket-left" src="assets/ornaments/bracket-left.svg" alt="" role="presentation" aria-hidden="true">
+          <div class="faq">
           <details>
             <summary>Is this a fork of the linuxserver stack?</summary>
             <div class="a">No. arrstack uses the same upstream images (linuxserver.io and vendor images for Jellyfin, Jellyseerr, Caddy), but adds the TUI, the cross-wiring, and the opinionated defaults. The heavy lifting of container maintenance is still done by those teams, and we thank them for it.</div>
@@ -419,6 +437,8 @@ address=/jellyfin.homelab/192.168.1.20
             <summary>How do I update?</summary>
             <div class="a"><code>arrstack update</code> pulls the latest images for every service and restarts the stack. Configs are preserved. Run it from any shell; it finds its install directory from <code>state.json</code>.</div>
           </details>
+          </div>
+          <img class="bracket bracket-right" src="assets/ornaments/bracket-right.svg" alt="" role="presentation" aria-hidden="true">
         </div>
       </div>
     </section>
@@ -429,7 +449,7 @@ address=/jellyfin.homelab/192.168.1.20
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-col">
-        <div class="footer-brand mono">arrstack</div>
+        <img class="footer-wordmark" src="assets/wordmarks/wordmark-prompt.svg" alt="arrstack" width="240" height="36">
         <p class="footer-tag">The arr stack, pre-wired.<br>MIT licensed, open source.</p>
       </div>
       <nav class="footer-col" aria-label="Links">

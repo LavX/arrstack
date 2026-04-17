@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400" role="img" aria-label="arrstack terminal window">
+  <title>arrstack terminal</title>
+  <desc>A faux terminal window with three macOS dots, the path ~/arrstack, the ASCII banner, and the install command. Used for social previews and README.</desc>
+  <rect width="800" height="400" fill="#0D1117"/>
+  <rect x="24" y="24" width="752" height="352" rx="2" fill="#161B22" stroke="#30363D" stroke-width="1"/>
+  <rect x="24" y="24" width="752" height="36" rx="2" fill="#1C2129"/>
+  <rect x="24" y="52" width="752" height="8" fill="#1C2129"/>
+  <line x1="24" y1="60" x2="776" y2="60" stroke="#30363D" stroke-width="1"/>
+  <g>
+    <circle cx="44" cy="42" r="6" fill="#F85149"/>
+    <circle cx="64" cy="42" r="6" fill="#D29922"/>
+    <circle cx="84" cy="42" r="6" fill="#3FB950"/>
+  </g>
+  <text x="400" y="46" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#8B949E">lavx@homelab: ~/arrstack</text>
+  <g font-family="'JetBrains Mono',ui-monospace,monospace" font-size="14" xml:space="preserve">
+    <text x="48" y="104" fill="#3FB950">&gt;_ arrstack</text>
+    <text x="48" y="128" fill="#8B949E">============================</text>
+    <text x="48" y="152" fill="#E6EDF3">  the stack that self installs</text>
+    <text x="48" y="176" fill="#E6EDF3">  homelab . vpn routed . one binary</text>
+    <text x="48" y="200" fill="#8B949E">============================</text>
+    <text x="48" y="248" fill="#8B949E"># paste in any shell, no sudo for the installer</text>
+    <text x="48" y="276" fill="#E6EDF3"><tspan fill="#3FB950">$ </tspan>curl -fsSL https://lavx.github.io/arrstack/install.sh | bash</text>
+    <text x="48" y="316" fill="#8B949E">[ok] docker detected          [ok] compose v2 detected</text>
+    <text x="48" y="340" fill="#8B949E">[ok] twelve services wired    [ok] admin.txt written</text>
+    <text x="48" y="368" fill="#3FB950">$ </text>
+  </g>
+  <rect x="64" y="356" width="8" height="16" fill="#E6EDF3"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160" preserveAspectRatio="xMidYMid slice" role="img" aria-label="dot grid">
+  <title>dot grid</title>
+  <desc>Sparse 8-row by 20-column dot grid used as background texture.</desc>
+  <defs>
+    <pattern id="arrstack-dot-grid" x="0" y="0" width="32" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="0" cy="0" r="1" fill="#3FB950" fill-opacity="0.30"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="640" height="160" fill="url(#arrstack-dot-grid)"/>
+</svg>

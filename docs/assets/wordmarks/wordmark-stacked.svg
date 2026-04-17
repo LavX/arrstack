@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 192" width="320" height="192" role="img" aria-label="arrstack">
+  <title>arrstack</title>
+  <desc>Stacked lockup: mark centered above the arrstack wordmark.</desc>
+  <g transform="translate(128,16)" fill="none" stroke="#3FB950" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter">
+    <polyline points="4,8 26,28 4,48"/>
+    <polyline points="26,28 48,48 26,68"/>
+    <polyline points="48,48 62,60 48,72"/>
+  </g>
+  <text x="160" y="160" text-anchor="middle"
+        font-family="'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace"
+        font-size="40" font-weight="700" letter-spacing="-1" fill="#E6EDF3">arrstack</text>
+</svg>

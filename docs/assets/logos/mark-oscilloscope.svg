@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 256" width="512" height="256" role="img" aria-label="arrstack oscilloscope mark">
+  <title>arrstack oscilloscope</title>
+  <desc>Oscilloscope trace in phosphor green against a dark graticule grid; the waveform dips into a chevron at the center.</desc>
+  <rect x="0" y="0" width="512" height="256" fill="#0D1117"/>
+  <g stroke="#161B22" stroke-width="1" fill="none">
+    <path d="M0 32H512M0 64H512M0 96H512M0 128H512M0 160H512M0 192H512M0 224H512"/>
+    <path d="M32 0V256M96 0V256M160 0V256M224 0V256M288 0V256M352 0V256M416 0V256M480 0V256"/>
+  </g>
+  <path d="M0 128 L32 128 L48 120 L64 136 L80 112 L96 144 L128 128 L160 128 L192 88 L224 168 L256 56 L288 200 L320 128 L352 128 L384 112 L400 136 L416 120 L432 132 L480 128 L512 128"
+        fill="none" stroke="#3FB950" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>
+  <g fill="#3FB950">
+    <circle cx="192" cy="88" r="3"/>
+    <circle cx="256" cy="56" r="3"/>
+    <circle cx="288" cy="200" r="3"/>
+    <circle cx="224" cy="168" r="3"/>
+  </g>
+  <text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8B949E">CH1  50mV/div  2ms/div</text>
+  <text x="400" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8B949E">TRIG  auto</text>
+</svg>

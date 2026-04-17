@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="arrstack rack mark">
+  <title>arrstack rack</title>
+  <desc>Front elevation of a four-unit rack with tiny service labels and status LEDs.</desc>
+  <rect width="256" height="256" fill="#0D1117"/>
+  <rect x="32" y="32" width="192" height="192" rx="2" fill="none" stroke="#3FB950" stroke-width="4"/>
+  <g fill="none" stroke="#30363D" stroke-width="1">
+    <line x1="40" y1="48"  x2="40" y2="208"/>
+    <line x1="216" y1="48" x2="216" y2="208"/>
+  </g>
+  <g fill="none" stroke="#3FB950" stroke-width="2">
+    <rect x="48" y="48"  width="160" height="36" rx="2"/>
+    <rect x="48" y="92"  width="160" height="36" rx="2"/>
+    <rect x="48" y="136" width="160" height="36" rx="2"/>
+    <rect x="48" y="180" width="160" height="36" rx="2"/>
+  </g>
+  <g font-family="'JetBrains Mono',ui-monospace,monospace" font-size="14" font-weight="600" fill="#E6EDF3">
+    <text x="60" y="72">QB</text>
+    <text x="60" y="116">SON</text>
+    <text x="60" y="160">RAD</text>
+    <text x="60" y="204">JF</text>
+  </g>
+  <g font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#8B949E">
+    <text x="108" y="72">:8080</text>
+    <text x="108" y="116">:8989</text>
+    <text x="108" y="160">:7878</text>
+    <text x="108" y="204">:8096</text>
+  </g>
+  <g fill="#3FB950">
+    <circle cx="196" cy="66" r="3"/>
+    <circle cx="196" cy="110" r="3"/>
+    <circle cx="196" cy="154" r="3"/>
+    <circle cx="196" cy="198" r="3"/>
+  </g>
+  <g fill="#D29922">
+    <circle cx="184" cy="66" r="3"/>
+    <circle cx="184" cy="110" r="3"/>
+  </g>
+  <g fill="#30363D">
+    <circle cx="184" cy="154" r="3"/>
+    <circle cx="184" cy="198" r="3"/>
+  </g>
+</svg>

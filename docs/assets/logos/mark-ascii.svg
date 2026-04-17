@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 192" width="640" height="192" role="img" aria-label="arrstack ASCII banner">
+  <title>arrstack</title>
+  <desc>Six lines of the compact ASCII banner rendered in JetBrains Mono on a tight grid.</desc>
+  <rect width="640" height="192" fill="#0D1117"/>
+  <g font-family="'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace" font-size="18" font-weight="500" xml:space="preserve">
+    <text x="16" y="32"  fill="#3FB950">&gt;_ arrstack</text>
+    <text x="16" y="56"  fill="#8B949E">============================</text>
+    <text x="16" y="88"  fill="#E6EDF3">  the stack that self installs</text>
+    <text x="16" y="112" fill="#E6EDF3">  homelab . vpn routed . one binary</text>
+    <text x="16" y="144" fill="#8B949E">============================</text>
+    <text x="16" y="176" fill="#3FB950">$ _</text>
+  </g>
+</svg>

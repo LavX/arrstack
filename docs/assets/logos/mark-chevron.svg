@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="arrstack chevron mark">
+  <title>arrstack</title>
+  <desc>Three stacked phosphor-green chevrons, each offset down and right, evoking a terminal prompt and forward motion.</desc>
+  <g fill="none" stroke="#3FB950" stroke-width="16" stroke-linecap="square" stroke-linejoin="miter">
+    <polyline points="40,48  96,104  40,160"/>
+    <polyline points="96,72  152,128 96,184"/>
+    <polyline points="152,96 208,152 152,208"/>
+  </g>
+</svg>

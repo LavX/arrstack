@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 4" width="1280" height="4" preserveAspectRatio="none" role="img" aria-label="scanline divider">
+  <title>scanline</title>
+  <desc>Sparse ascending oscilloscope scanline fading from left to right.</desc>
+  <g fill="#3FB950">
+    <rect x="0"    y="2" width="16" height="1" opacity="0.9"/>
+    <rect x="32"   y="2" width="12" height="1" opacity="0.8"/>
+    <rect x="72"   y="2" width="24" height="1" opacity="0.75"/>
+    <rect x="120"  y="2" width="8"  height="1" opacity="0.65"/>
+    <rect x="160"  y="2" width="20" height="1" opacity="0.6"/>
+    <rect x="224"  y="2" width="12" height="1" opacity="0.55"/>
+    <rect x="280"  y="2" width="32" height="1" opacity="0.5"/>
+    <rect x="352"  y="2" width="8"  height="1" opacity="0.45"/>
+    <rect x="408"  y="2" width="16" height="1" opacity="0.4"/>
+    <rect x="472"  y="2" width="24" height="1" opacity="0.35"/>
+    <rect x="544"  y="2" width="8"  height="1" opacity="0.3"/>
+    <rect x="608"  y="2" width="16" height="1" opacity="0.25"/>
+    <rect x="680"  y="2" width="12" height="1" opacity="0.22"/>
+    <rect x="752"  y="2" width="20" height="1" opacity="0.2"/>
+    <rect x="832"  y="2" width="8"  height="1" opacity="0.18"/>
+    <rect x="896"  y="2" width="12" height="1" opacity="0.15"/>
+    <rect x="968"  y="2" width="8"  height="1" opacity="0.13"/>
+    <rect x="1032" y="2" width="16" height="1" opacity="0.1"/>
+    <rect x="1104" y="2" width="8"  height="1" opacity="0.08"/>
+    <rect x="1176" y="2" width="12" height="1" opacity="0.06"/>
+    <rect x="1240" y="2" width="8"  height="1" opacity="0.05"/>
+  </g>
+</svg>

@@ -461,6 +461,20 @@ p { margin: 0 0 var(--s-3) 0; }
   color: var(--fg-mut);
   font-family: var(--mono);
   font-size: 14px;
+  overflow: hidden;
+}
+/* Native brand logo inside the icon slot. Logos keep their own color;
+ * the card background supplies contrast. object-fit: contain so odd aspect
+ * ratios (e.g. Jellyseerr's wordmark lockup) do not crop. */
+.service-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+}
+.svc-icon-fallback {
+  font-weight: 600;
+  color: var(--fg);
 }
 .svc-name {
   grid-area: name;
@@ -749,9 +763,88 @@ p { margin: 0 0 var(--s-3) 0; }
 .footer-bottom a:hover { color: var(--fg); }
 .mono { font-family: var(--mono); }
 
+/* ---------- brand ornaments (rules, textures, brackets) ---------- */
+/* Scanline / ascii rules replace the section border visually; keep the
+ * underlying border-top for print and fallbacks. */
+.rule-scanline,
+.rule-ascii {
+  display: block;
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--s-5);
+  box-sizing: content-box;
+  opacity: 0.85;
+}
+.rule-scanline { height: 4px; }
+.rule-ascii    { height: 24px; margin-top: var(--s-4); margin-bottom: calc(var(--s-4) * -1); }
+/* The ruled section already carries its own border-top; suppress it when
+ * a rule image is preceding so we do not double-line. */
+.rule-scanline + .section,
+.rule-ascii    + .section { border-top: 0; }
+/* In light mode the ornaments are still phosphor green against whatever
+ * sits behind them. They are SVG with hard-coded colors, so no override. */
+@media (prefers-color-scheme: light) {
+  .rule-scanline,
+  .rule-ascii { opacity: 0.65; }
+}
+
+/* Dot-grid texture behind the auto-wiring callouts. Dark-optimized:
+ * the SVG's own alpha (30%) + our low opacity give a quiet scan-pattern. */
+.section-textured {
+  position: relative;
+  isolation: isolate;
+}
+.dot-grid-bg,
+.section-textured::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url("assets/ornaments/dot-grid.svg");
+  background-repeat: repeat;
+  background-size: 320px 80px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+@media (prefers-color-scheme: light) {
+  .section-textured::before { opacity: 0.18; }
+}
+
+/* Bracket ornaments flank the FAQ block on wide screens; hide on narrow. */
+.faq-frame {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+  align-items: stretch;
+}
+.faq-frame .bracket { display: none; }
+@media (min-width: 1020px) {
+  .faq-frame { grid-template-columns: 48px 1fr 48px; gap: var(--s-5); }
+  .faq-frame .bracket {
+    display: block;
+    width: 48px;
+    height: auto;
+    align-self: stretch;
+    object-fit: contain;
+    opacity: 0.7;
+  }
+}
+
+/* Footer wordmark: replaces the plain text lockup. */
+.footer-wordmark {
+  display: block;
+  width: auto;
+  max-width: 240px;
+  height: 36px;
+  margin: 0 0 var(--s-2);
+}
+
 /* ---------- print ---------- */
 @media print {
-  .site-header, .cta-row, .copy-btn, .hero::before { display: none !important; }
+  .site-header, .cta-row, .copy-btn, .hero::before,
+  .rule-scanline, .rule-ascii, .bracket,
+  .section-textured::before { display: none !important; }
   body { background: #fff; color: #000; }
   a { color: #000; text-decoration: underline; }
   .section { border-color: #999; padding: 12pt 0; }

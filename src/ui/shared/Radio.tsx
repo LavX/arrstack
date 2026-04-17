@@ -12,7 +12,6 @@ export interface RadioOption {
 interface Props {
   options: RadioOption[];
   selected: string;
-  onChange: (val: string) => void;
   focusedIndex: number;
   inline?: boolean;
 }

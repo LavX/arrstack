@@ -33,7 +33,6 @@ describe("RemoteAccessField", () => {
         mode="none"
         domain=""
         token=""
-        onModeChange={() => {}}
         onDomainChange={() => {}}
         onTokenChange={() => {}}
         isFocused={false}
@@ -51,7 +50,6 @@ describe("RemoteAccessField", () => {
         mode="cloudflare"
         domain="arr.lavx.hu"
         token=""
-        onModeChange={() => {}}
         onDomainChange={() => {}}
         onTokenChange={() => {}}
         isFocused={true}

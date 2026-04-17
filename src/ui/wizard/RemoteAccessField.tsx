@@ -8,7 +8,6 @@ interface RemoteAccessFieldProps {
   mode: "none" | "duckdns" | "cloudflare";
   domain: string;
   token: string;
-  onModeChange: (val: string) => void;
   onDomainChange: (val: string) => void;
   onTokenChange: (val: string) => void;
   isFocused: boolean;
@@ -25,7 +24,6 @@ export function RemoteAccessField({
   mode,
   domain,
   token,
-  onModeChange,
   onDomainChange,
   onTokenChange,
   isFocused,
@@ -36,7 +34,6 @@ export function RemoteAccessField({
       <Radio
         options={MODE_OPTIONS}
         selected={mode}
-        onChange={onModeChange}
         focusedIndex={focusedField === 0 ? MODE_OPTIONS.findIndex((o) => o.value === mode) : -1}
         inline
       />

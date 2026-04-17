@@ -5,10 +5,12 @@ import { SectionBox } from "../shared/SectionBox.js";
 import { Radio, RadioOption } from "../shared/Radio.js";
 import { colors } from "../shared/theme.js";
 
+export type GpuVendor = "none" | "intel" | "amd" | "nvidia";
+
 interface GpuFieldProps {
   detectedGpus: Array<{ vendor: string; name: string }>;
-  selected: string; // "none" | "intel" | "amd" | "nvidia"
-  onChange: (val: string) => void;
+  selected: GpuVendor;
+  onChange: (val: GpuVendor) => void;
   isFocused: boolean;
   focusedIndex: number;
 }
@@ -16,7 +18,6 @@ interface GpuFieldProps {
 export function GpuField({
   detectedGpus,
   selected,
-  onChange,
   isFocused,
   focusedIndex,
 }: GpuFieldProps) {
@@ -48,7 +49,6 @@ export function GpuField({
         <Radio
           options={options}
           selected={selected}
-          onChange={onChange}
           focusedIndex={focusedIndex}
           inline={options.length <= 3}
         />

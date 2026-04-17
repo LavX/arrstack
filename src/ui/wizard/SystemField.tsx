@@ -13,8 +13,6 @@ interface SystemFieldProps {
   vpnMode: "none" | "gluetun";
   onTimezoneChange: (val: string) => void;
   onPuidChange: (val: string) => void;
-  onPgidChange: (val: string) => void;
-  onVpnChange: (val: string) => void;
   isFocused: boolean;
   focusedField: number; // 0 = timezone, 1 = puid/pgid, 2 = vpn radio
 }
@@ -31,7 +29,6 @@ export function SystemField({
   vpnMode,
   onTimezoneChange,
   onPuidChange,
-  onVpnChange,
   isFocused,
   focusedField,
 }: SystemFieldProps) {
@@ -62,7 +59,6 @@ export function SystemField({
         <Radio
           options={VPN_OPTIONS}
           selected={vpnMode}
-          onChange={onVpnChange}
           focusedIndex={focusedField === 2 ? VPN_OPTIONS.findIndex((o) => o.value === vpnMode) : -1}
           inline
         />

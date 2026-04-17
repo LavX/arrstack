@@ -12,6 +12,7 @@ import { RemoteAccessField } from "./RemoteAccessField.js";
 import { LocalDnsField } from "./LocalDnsField.js";
 import { SystemField } from "./SystemField.js";
 import { StatusStrip } from "./StatusStrip.js";
+import { generatePassword } from "../../lib/random.js";
 
 export interface FormProps {
   initial?: Partial<State> | null;
@@ -251,12 +252,9 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // "r" regenerates password when on username field (not password, where InkTextInput is active)
-    if (activeSectionIndex === SEC_ADMIN && activeFieldIndex !== 1 && input === "r") {
-      const { generatePassword } = require("../../lib/random.js");
-      ws.setAdminPassword(generatePassword());
-      return;
-    }
+    // Ctrl+R regenerates the password, but only when the password field
+    // itself is focused — PasswordInput handles that locally. No handler
+    // here so bare "r" never leaks into unrelated fields.
   });
 
   // Derive focused props per section
@@ -299,10 +297,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         password={ws.adminPassword}
         onUsernameChange={ws.setAdminUsername}
         onPasswordChange={ws.setAdminPassword}
-        onRegenerate={() => {
-          const { generatePassword } = require("../../lib/random.js");
-          ws.setAdminPassword(generatePassword());
-        }}
+        onRegenerate={() => ws.setAdminPassword(generatePassword())}
         focusedField={adminFocusedField}
       />
 
@@ -325,7 +320,6 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         mode={ws.remoteMode}
         domain={ws.remoteDomain}
         token={ws.remoteToken}
-        onModeChange={(v) => ws.setRemoteMode(v as "none" | "duckdns" | "cloudflare")}
         onDomainChange={ws.setRemoteDomain}
         onTokenChange={ws.setRemoteToken}
         isFocused={activeSectionIndex === SEC_REMOTE}
@@ -352,11 +346,6 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
           if (!isNaN(p)) ws.setPuid(p);
           if (!isNaN(g)) ws.setPgid(g);
         }}
-        onPgidChange={(v) => {
-          const n = Number(v);
-          if (!isNaN(n)) ws.setPgid(n);
-        }}
-        onVpnChange={(v) => ws.setVpnMode(v as "none" | "gluetun")}
         isFocused={activeSectionIndex === SEC_SYSTEM}
         focusedField={systemFocusedField}
       />

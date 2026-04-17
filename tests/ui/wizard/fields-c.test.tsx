@@ -88,8 +88,6 @@ describe("SystemField", () => {
         vpnMode="none"
         onTimezoneChange={() => {}}
         onPuidChange={() => {}}
-        onPgidChange={() => {}}
-        onVpnChange={() => {}}
         isFocused={false}
         focusedField={-1}
       />
@@ -106,8 +104,6 @@ describe("SystemField", () => {
         vpnMode="none"
         onTimezoneChange={() => {}}
         onPuidChange={() => {}}
-        onPgidChange={() => {}}
-        onVpnChange={() => {}}
         isFocused={false}
         focusedField={-1}
       />
@@ -124,8 +120,6 @@ describe("SystemField", () => {
         vpnMode="none"
         onTimezoneChange={() => {}}
         onPuidChange={() => {}}
-        onPgidChange={() => {}}
-        onVpnChange={() => {}}
         isFocused={false}
         focusedField={-1}
       />
@@ -142,8 +136,6 @@ describe("SystemField", () => {
         vpnMode="none"
         onTimezoneChange={() => {}}
         onPuidChange={() => {}}
-        onPgidChange={() => {}}
-        onVpnChange={() => {}}
         isFocused={false}
         focusedField={-1}
       />

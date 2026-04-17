@@ -81,7 +81,7 @@ export function ProgressView({ steps, error }: ProgressViewProps) {
       {error && (
         <Box flexDirection="column" marginTop={1}>
           <Text color="red">Install failed: {error}</Text>
-          <Text color={colors.muted}>Re-run: arrstack install --resume</Text>
+          <Text color={colors.muted}>Fix the cause above and re-run: arrstack install</Text>
         </Box>
       )}
     </Box>

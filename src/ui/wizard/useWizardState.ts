@@ -173,8 +173,9 @@ export function useWizardState(existingState?: Partial<State> | null) {
   const pgid =
     typeof process.getgid === "function" ? process.getgid() : 1000;
 
+  const defaultStorageRoot = `${process.env.HOME ?? "."}/arrstack/data`;
   const [storageRoot, setStorageRoot] = useState(
-    existingState?.storage_root ?? "/srv/arrstack"
+    existingState?.storage_root ?? defaultStorageRoot
   );
   const [extraPaths, setExtraPaths] = useState(
     existingState?.extra_paths?.join(", ") ?? ""
@@ -364,6 +365,12 @@ export function useWizardState(existingState?: Partial<State> | null) {
       vpnMode,
       hostname,
       loading,
+      caddyHttpPort,
+      caddyHttpsPort,
+      dockerOk,
+      portsOk,
+      diskInfo,
+      portConflicts,
     };
     return buildStateFromWizard(ws);
   }

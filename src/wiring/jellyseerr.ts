@@ -52,10 +52,47 @@ export async function linkJellyseerr(
     throw new Error(`Jellyseerr auth failed: HTTP ${bootstrap.status}\n${await readBody(bootstrap)}`);
   }
 
-  // bootstrap also sets a session cookie; reuse it for the remaining config.
+  // The session cookie that bootstrap returns is racy: Jellyseerr creates the
+  // admin user, saves settings, and fires startJobs() before the response
+  // flushes, but subsequent GETs with that cookie intermittently return 403
+  // ("You do not have permission to access this endpoint") because the
+  // session/user join hasn't materialised yet. Re-logging in with the same
+  // credentials (no hostname — Jellyfin is already configured now) returns a
+  // cookie that's reliably bound to the admin user.
+  const relogin = await withRetry(() =>
+    fetch(`${base}/api/v1/auth/jellyfin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: jellyfinUser,
+        password: jellyfinPass,
+        email: jellyfinUser,
+        serverType: 2,
+      }),
+    })
+  );
+  if (!relogin.ok) {
+    throw new Error(`Jellyseerr re-login failed: HTTP ${relogin.status}\n${await readBody(relogin)}`);
+  }
   const cookie =
-    (bootstrap.headers.get("set-cookie") ?? "").match(/connect\.sid=[^;]+/)?.[0] ?? "";
+    (relogin.headers.get("set-cookie") ?? "").match(/connect\.sid=[^;]+/)?.[0] ?? "";
+  if (!cookie) {
+    throw new Error("Jellyseerr re-login did not return a session cookie");
+  }
   const authedHeaders = { "Content-Type": "application/json", Cookie: cookie };
+
+  // Belt-and-suspenders: poll a cheap admin-gated endpoint until it's 200 so
+  // the subsequent sync/enable/initialize calls never race the session store.
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const probe = await fetch(`${base}/api/v1/settings/main`, { headers: authedHeaders });
+    if (probe.ok) break;
+    if (attempt === 19) {
+      throw new Error(
+        `Jellyseerr session not admin-usable after 20 tries (last status ${probe.status})`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
 
   // 2. Sync the Jellyfin library list so Jellyseerr knows what exists.
   const syncRes = await withRetry(() =>

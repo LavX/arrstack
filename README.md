@@ -59,7 +59,7 @@ The README is a tour. The full user guide lives under `docs/`.
 - Prowlarr gets 8 public indexers pushed, plus a FlareSolverr proxy tag applied at indexer create-time
 - Sonarr and Radarr registered as Prowlarr apps with round-tripped API keys
 - qBittorrent gets TRaSH download categories (`tv`, `movies`, `music`, `books`) and is wired as the download client in both Arrs
-- Bazarr linked to Sonarr and Radarr with language profiles pre-built using `audio_exclude` + `audio_only_include` + `hi` + seeded `forced` (avoids the vanilla-Bazarr KeyError that bites most first-time users)
+- Bazarr+ linked to Sonarr and Radarr with language profiles pre-built using `audio_exclude` + `audio_only_include` + `hi` + seeded `forced` (avoids the vanilla-Bazarr KeyError that bites most first-time users)
 - Jellyseerr bootstrapped in four steps (auth, library sync, library enable, initialize) so the `/setup` page never appears
 - Trailarr reads its Sonarr and Radarr API keys from `/config/.env` at startup, no manual key paste
 - Recyclarr pre-populated with TRaSH profiles for Sonarr v4 and Radarr v5
@@ -100,13 +100,13 @@ Twelve services, grouped by role. Each runs in its own container under the share
 | Download | qBittorrent | Torrent client, TRaSH categories pre-created |
 | Indexer | Prowlarr | Indexer manager, 8 public indexers pre-added |
 | Indexer | FlareSolverr | Cloudflare challenge solver, wired as a Prowlarr proxy tag |
-| Arr | Sonarr | TV show manager, linked to Prowlarr + qBittorrent + Bazarr |
-| Arr | Radarr | Movie manager, linked to Prowlarr + qBittorrent + Bazarr |
+| Arr | Sonarr | TV show manager, linked to Prowlarr + qBittorrent + Bazarr+ |
+| Arr | Radarr | Movie manager, linked to Prowlarr + qBittorrent + Bazarr+ |
 | Media | Jellyfin | Media server, hardware transcoding auto-detected |
 | Request | Jellyseerr | Request UI, Jellyfin auth pre-imported, `/setup` skipped |
 | Reverse proxy | Caddy | TLS terminator, LAN or DuckDNS or Cloudflare DNS-01 wildcard |
 | Quality | Recyclarr | Syncs TRaSH quality profiles into Sonarr and Radarr |
-| Subtitles | Bazarr+ | [LavX fork](https://github.com/lavx/bazarr) with OpenSubtitles scraper and OpenRouter translator |
+| Subtitles | Bazarr+ | [LavX fork](https://lavx.github.io/bazarr/) with OpenSubtitles scraper and OpenRouter translator |
 | Trailers | Trailarr | Trailer fetcher, reads Sonarr and Radarr keys from `/config/.env` |
 | Optional | gluetun | WireGuard VPN namespace for qBittorrent |
 | Optional | dnsmasq | LAN-wide DNS for `*.home.arpa` hostnames |
@@ -121,7 +121,7 @@ Once `docker compose up -d` returns, the installer opens a second loop that talk
 4. Register Sonarr and Radarr as Prowlarr "apps", round-tripping their API keys
 5. Create qBittorrent download categories per TRaSH and assign them as download clients in Sonarr and Radarr
 6. Create root folders in Sonarr and Radarr under `/data/media/tv` and `/data/media/movies`
-7. Register Sonarr and Radarr as Bazarr connections, then create language profiles (avoids the `audio_exclude` KeyError)
+7. Register Sonarr and Radarr as Bazarr+ connections, then create language profiles (avoids the `audio_exclude` KeyError)
 8. Bootstrap Jellyfin's admin user, then create Movies + TV + Music libraries and scan them
 9. Drive Jellyseerr's four-step setup flow via its internal API so the wizard page never renders
 10. Trigger Recyclarr once to apply TRaSH quality profiles
@@ -187,7 +187,7 @@ TRaSH-compliant, hardlink-safe. Everything downloaded, imported, and watched liv
     └── movies
 ```
 
-Every container that touches media mounts `/data` at `/data`. That means Sonarr, Radarr, qBittorrent, Jellyfin, and Bazarr all see the same paths, which is the whole reason hardlinks work.
+Every container that touches media mounts `/data` at `/data`. That means Sonarr, Radarr, qBittorrent, Jellyfin, and Bazarr+ all see the same paths, which is the whole reason hardlinks work.
 
 Add a drive later by mounting it on the host, re-running `arrstack`, and entering the mount path under "Extra scan paths". The installer re-renders the compose file, creates `tv/` and `movies/` on the new drive, and pushes matching root folders to Sonarr, Radarr, and Jellyfin. See [docs/guide/05-extra-drives.md](docs/guide/05-extra-drives.md).
 

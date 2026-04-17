@@ -4,7 +4,9 @@ export type GpuVendor = "intel" | "amd" | "nvidia" | "none";
 
 export interface JellyfinEncodingOptions {
   vendor: GpuVendor;
-  deviceName?: string;
+  // Optional override for the DRI render node (e.g. "/dev/dri/renderD129"
+  // when the iGPU is secondary). Must be a /dev path, not the lspci name.
+  devicePath?: string;
 }
 
 function hwTypeForVendor(vendor: GpuVendor): string {
@@ -13,13 +15,13 @@ function hwTypeForVendor(vendor: GpuVendor): string {
   return "";
 }
 
-function vaapiDeviceForVendor(vendor: GpuVendor, deviceName?: string): string {
+function vaapiDeviceForVendor(vendor: GpuVendor, devicePath?: string): string {
   if (vendor !== "intel" && vendor !== "amd") return "";
-  return deviceName ?? "/dev/dri/renderD128";
+  return devicePath ?? "/dev/dri/renderD128";
 }
 
 export function renderJellyfinEncoding(opts: JellyfinEncodingOptions): string {
   const hwType = hwTypeForVendor(opts.vendor);
-  const vaapiDevice = vaapiDeviceForVendor(opts.vendor, opts.deviceName);
+  const vaapiDevice = vaapiDeviceForVendor(opts.vendor, opts.devicePath);
   return renderFile("encoding.xml.hbs", { hwType, vaapiDevice });
 }

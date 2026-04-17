@@ -2,6 +2,7 @@ import type { Service } from "../catalog/schema.js";
 import { renderFile } from "./engine.js";
 
 export interface ComposeOptions {
+  installDir: string;
   storageRoot: string;
   extraPaths: string[];
   puid: number;
@@ -30,12 +31,16 @@ interface EnvEntry {
   value: string;
 }
 
+interface PortBinding {
+  binding: string; // e.g. "127.0.0.1:8989:8989" or "0.0.0.0:443:443"
+}
+
 interface ServiceContext {
   id: string;
   image: string;
   tag: string;
   configPath: string;
-  ports: number[];
+  ports: PortBinding[];
   apiKeyEnv: string | undefined;
   apiKey: string | undefined;
   extraEnv: EnvEntry[];
@@ -46,7 +51,13 @@ interface ServiceContext {
   vpnNetwork: boolean;
 }
 
+// Services that need to be reachable from outside the host by default.
+// Everyone else is bound to loopback so Caddy (or the VPN gateway) is the
+// only external surface.
+const PUBLIC_SERVICES = new Set(["caddy", "gluetun"]);
+
 interface ComposeContext {
+  installDir: string;
   storageRoot: string;
   puid: number;
   pgid: number;
@@ -57,7 +68,12 @@ interface ComposeContext {
 function buildDataMounts(svc: Service, storageRoot: string, extraPaths: string[]): DataMount[] {
   const mounts: DataMount[] = [];
   for (const [role, containerPath] of Object.entries(svc.mounts)) {
-    if (role === "downloads") {
+    // `data` mounts the whole storageRoot into the container (TRaSH layout):
+    // the container sees /data/torrents/... and /data/media/... under one
+    // shared root so Sonarr/Radarr can hardlink from downloads to media.
+    if (role === "data") {
+      mounts.push({ src: storageRoot, dst: containerPath });
+    } else if (role === "downloads") {
       mounts.push({ src: `${storageRoot}/torrents`, dst: containerPath });
     } else if (role === "tv") {
       mounts.push({ src: `${storageRoot}/media/tv`, dst: containerPath });
@@ -71,10 +87,15 @@ function buildDataMounts(svc: Service, storageRoot: string, extraPaths: string[]
       mounts.push({ src: `${storageRoot}/${role}`, dst: containerPath });
     }
   }
-  for (const extraPath of extraPaths) {
-    if (!mounts.some((m) => m.src === extraPath)) {
-      mounts.push({ src: extraPath, dst: extraPath });
-    }
+  // Extra scan paths (additional drives) only get mounted into services that
+  // already have a /data mount — i.e. the media/downloads pipeline. Mount each
+  // under /data/extra-N so paths like /data/extra-0/movies are valid inside
+  // containers and match what install.ts passes to the arr APIs.
+  const hasDataMount = Object.keys(svc.mounts).includes("data");
+  if (hasDataMount) {
+    extraPaths.forEach((extraPath, i) => {
+      mounts.push({ src: extraPath, dst: `/data/extra-${i}` });
+    });
   }
   return mounts;
 }
@@ -82,11 +103,9 @@ function buildDataMounts(svc: Service, storageRoot: string, extraPaths: string[]
 function buildDevices(svc: Service, gpu: ComposeOptions["gpu"]): string[] {
   if (!svc.hwaccelSupport || gpu.vendor === "none") return [];
   if (gpu.vendor === "nvidia") return [];
-  if (gpu.device_name) {
-    return [gpu.device_name];
-  }
-  if (gpu.vendor === "intel") return ["/dev/dri/renderD128"];
-  if (gpu.vendor === "amd") return ["/dev/dri/renderD128"];
+  // Intel/AMD use the DRI render node. `gpu.device_name` holds the
+  // human-readable lspci string and must not be passed to Docker as a path.
+  if (gpu.vendor === "intel" || gpu.vendor === "amd") return ["/dev/dri/renderD128"];
   return [];
 }
 
@@ -114,12 +133,17 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       value,
     }));
 
+    const bindHost = PUBLIC_SERVICES.has(svc.id) ? "0.0.0.0" : "127.0.0.1";
+    const ports: PortBinding[] = vpnNetwork
+      ? []
+      : svc.ports.map((p) => ({ binding: `${bindHost}:${p}:${p}` }));
+
     return {
       id: svc.id,
       image: svc.image,
       tag: svc.tag,
       configPath: svc.configPath,
-      ports: vpnNetwork ? [] : svc.ports,
+      ports,
       apiKeyEnv,
       apiKey,
       extraEnv,
@@ -132,6 +156,7 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
   });
 
   return {
+    installDir: opts.installDir,
     storageRoot: opts.storageRoot,
     puid: opts.puid,
     pgid: opts.pgid,

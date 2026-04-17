@@ -5,12 +5,12 @@ services:
     description: Feature-rich BitTorrent client with a web UI
     category: download
     image: lscr.io/linuxserver/qbittorrent
-    tag: "4.6.7"
+    tag: "latest"
     ports: [8080]
     adminPort: 8080
     configPath: /config
     mounts:
-      downloads: /downloads
+      data: /data
     envVars: {}
     dependsOn: []
     health:
@@ -25,7 +25,7 @@ services:
     description: Indexer manager and proxy for Sonarr, Radarr, and other arr apps
     category: indexer
     image: lscr.io/linuxserver/prowlarr
-    tag: "1.24.3"
+    tag: "latest"
     ports: [9696]
     adminPort: 9696
     configPath: /config
@@ -45,7 +45,7 @@ services:
     description: Solves Cloudflare challenges for the subtitle scraper
     category: subtitle
     image: ghcr.io/flaresolverr/flaresolverr
-    tag: "v3.3.21"
+    tag: "latest"
     ports: [8191]
     configPath: /config
     mounts: {}
@@ -64,13 +64,12 @@ services:
     description: TV series management and automation
     category: arr
     image: lscr.io/linuxserver/sonarr
-    tag: "4.0.14"
+    tag: "latest"
     ports: [8989]
     adminPort: 8989
     configPath: /config
     mounts:
-      tv: /tv
-      downloads: /downloads
+      data: /data
     envVars: {}
     dependsOn: [prowlarr]
     health:
@@ -86,13 +85,12 @@ services:
     description: Movie management and automation
     category: arr
     image: lscr.io/linuxserver/radarr
-    tag: "5.14.0"
+    tag: "latest"
     ports: [7878]
     adminPort: 7878
     configPath: /config
     mounts:
-      movies: /movies
-      downloads: /downloads
+      data: /data
     envVars: {}
     dependsOn: [prowlarr]
     health:
@@ -113,8 +111,7 @@ services:
     adminPort: 6767
     configPath: /config
     mounts:
-      tv: /tv
-      movies: /movies
+      data: /data
     envVars:
       OPENSUBTITLES_SCRAPER_URL: "http://opensubtitles-scraper:8000"
     dependsOn: [sonarr, radarr, flaresolverr, opensubtitles-scraper]
@@ -167,13 +164,12 @@ services:
     description: Free and open-source media server
     category: media
     image: jellyfin/jellyfin
-    tag: "10.11.6"
+    tag: "latest"
     ports: [8096]
     adminPort: 8096
     configPath: /config
     mounts:
-      tv: /data/tvshows
-      movies: /data/movies
+      data: /data
     envVars: {}
     dependsOn: []
     health:
@@ -189,7 +185,7 @@ services:
     description: Request management and media discovery tool for Jellyfin
     category: request
     image: ghcr.io/seerr-team/seerr
-    tag: "2.4.2"
+    tag: "latest"
     ports: [5055]
     adminPort: 5055
     configPath: /app/config
@@ -207,8 +203,11 @@ services:
     name: Caddy
     description: Automatic HTTPS reverse proxy for the media stack
     category: proxy
-    image: ghcr.io/lavx/arrstack-caddy
-    tag: "v1"
+    # Stock Caddy works for LAN mode. Remote-access modes (duckdns/cloudflare)
+    # need a build with the matching DNS plugins, e.g. built via xcaddy:
+    #   xcaddy build --with github.com/caddy-dns/cloudflare --with github.com/caddy-dns/duckdns
+    image: caddy
+    tag: "latest"
     ports: [80, 443]
     adminPort: 443
     configPath: /config
@@ -226,7 +225,7 @@ services:
     description: Automatically sync TRaSH Guide settings to Sonarr and Radarr
     category: utility
     image: ghcr.io/recyclarr/recyclarr
-    tag: "7.4.1"
+    tag: "latest"
     ports: []
     configPath: /config
     mounts: {}
@@ -243,7 +242,7 @@ services:
     description: Distributed transcoding system for managing and converting media files
     category: utility
     image: ghcr.io/haveagitgat/tdarr
-    tag: "2.24.01"
+    tag: "latest"
     ports: [8265]
     adminPort: 8265
     configPath: /app/configs
@@ -265,7 +264,7 @@ services:
     description: Download and manage trailers for your media library
     category: utility
     image: nandyalu/trailarr
-    tag: "0.3.2"
+    tag: "latest"
     ports: [7879]
     adminPort: 7879
     configPath: /config
@@ -284,7 +283,7 @@ services:
     description: VPN client in a thin Docker container for multiple VPN providers
     category: utility
     image: qmcgaw/gluetun
-    tag: "v3.40.0"
+    tag: "latest"
     ports: []
     configPath: /gluetun
     mounts: {}

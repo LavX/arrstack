@@ -3,6 +3,7 @@ import { renderCompose, buildComposeContext } from "../../src/renderer/compose";
 import { getService, getServicesByIds } from "../../src/catalog";
 
 const baseOpts = {
+  installDir: "/home/user/arrstack",
   storageRoot: "/mnt/storage",
   extraPaths: [],
   puid: 1000,
@@ -66,10 +67,47 @@ describe("renderCompose", () => {
     expect(output).toContain("SONARR__AUTH__APIKEY=abc123");
   });
 
-  test("storage root path is used for config volumes", () => {
+  test("install dir is used for config volumes", () => {
     const services = getServices(["sonarr"]);
     const output = renderCompose(services, baseOpts);
-    expect(output).toContain("/mnt/storage/config/sonarr");
+    expect(output).toContain("/home/user/arrstack/config/sonarr");
+  });
+
+  test("admin ports are bound to 127.0.0.1 by default", () => {
+    const services = getServices(["sonarr"]);
+    const output = renderCompose(services, baseOpts);
+    expect(output).toContain("127.0.0.1:8989:8989");
+  });
+
+  test("caddy ports are bound to 0.0.0.0 so the reverse proxy is reachable", () => {
+    const services = getServices(["caddy"]);
+    const output = renderCompose(services, baseOpts);
+    expect(output).toContain("0.0.0.0:80:80");
+    expect(output).toContain("0.0.0.0:443:443");
+  });
+
+  test("extra scan paths are mounted at /data/extra-N inside media containers", () => {
+    const services = getServices(["sonarr", "jellyfin"]);
+    const opts = { ...baseOpts, extraPaths: ["/mnt/hdd2", "/mnt/ssd1"] };
+    const output = renderCompose(services, opts);
+    expect(output).toContain("/mnt/hdd2:/data/extra-0");
+    expect(output).toContain("/mnt/ssd1:/data/extra-1");
+  });
+
+  test("extras are NOT mounted into services without a /data role", () => {
+    const services = getServices(["caddy"]);
+    const opts = { ...baseOpts, extraPaths: ["/mnt/hdd2"] };
+    const output = renderCompose(services, opts);
+    expect(output).not.toContain("/mnt/hdd2");
+  });
+
+  test("sonarr, radarr, qbittorrent and jellyfin all share storageRoot:/data", () => {
+    const services = getServices(["sonarr", "radarr", "qbittorrent", "jellyfin"]);
+    const output = renderCompose(services, baseOpts);
+    // TRaSH layout: every service sees the same /data root so hardlinks work
+    // across Sonarr/Radarr downloads (/data/torrents/*) and media (/data/media/*).
+    const dataMountCount = output.match(/- \/mnt\/storage:\/data$/gm)?.length ?? 0;
+    expect(dataMountCount).toBe(4);
   });
 
   test("GPU devices added for jellyfin with Intel GPU", () => {

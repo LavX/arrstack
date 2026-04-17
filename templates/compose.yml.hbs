@@ -22,7 +22,7 @@ services:
 {{#if ports}}
     ports:
 {{#each ports}}
-      - "{{this}}:{{this}}"
+      - "{{binding}}"
 {{/each}}
 {{/if}}
     environment:
@@ -36,7 +36,7 @@ services:
       - {{key}}={{value}}
 {{/each}}
     volumes:
-      - {{../storageRoot}}/config/{{id}}:{{configPath}}
+      - {{../installDir}}/config/{{id}}:{{configPath}}
 {{#each dataMounts}}
       - {{src}}:{{dst}}
 {{/each}}

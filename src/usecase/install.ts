@@ -20,6 +20,13 @@ import { renderFirstRun } from "../renderer/first-run.js";
 import { renderDnsmasqConf } from "../renderer/dnsmasq.js";
 import { getServicesByIds } from "../catalog/index.js";
 import { writeState } from "../state/store.js";
+import { addProwlarrIndexers } from "../wiring/prowlarr-indexers.js";
+import { registerProwlarrApps } from "../wiring/prowlarr-apps.js";
+import { configureArr } from "../wiring/sonarr-radarr.js";
+import { configureQbit } from "../wiring/qbittorrent.js";
+import { setupJellyfin } from "../wiring/jellyfin.js";
+import { linkJellyseerr } from "../wiring/jellyseerr.js";
+import { runRecyclarrSync } from "../wiring/recyclarr.js";
 
 export type StepStatus = "pending" | "running" | "done" | "failed";
 export interface StepUpdate {
@@ -285,15 +292,81 @@ export async function runInstall(
   });
 
   // Step 12: Integration wiring (Phase 9)
-  // TODO: wire in Phase 9 integration task
-  // await configureProwlarrIndexers(state, apiKeys, installDir);
-  // await registerApps(state, apiKeys, installDir);
-  // await configureSonarr(state, apiKeys, installDir);
-  // await configureRadarr(state, apiKeys, installDir);
-  // await configureQbittorrent(state, adminPassword, installDir);
-  // await setupJellyfin(state, adminPassword, installDir);
-  // await linkJellyseerr(state, apiKeys, installDir);
-  // await syncRecyclarr(state, installDir);
+  const has = (id: string) => state.services_enabled.includes(id);
+
+  const extraMediaPaths = (kind: "movies" | "tv") =>
+    state.extra_paths.map((_, i) => `/data/extra-${i}/${kind === "tv" ? "tv" : "movies"}`);
+
+  // Step 12a: Jellyfin setup (must be first, Jellyseerr depends on it)
+  if (has("jellyfin")) {
+    await runStep("Setting up Jellyfin admin and libraries", onStep, log, async () => {
+      const libs = [
+        { name: "Movies", type: "movies", paths: ["/data/media/movies", ...extraMediaPaths("movies")] },
+        { name: "TV Shows", type: "tvshows", paths: ["/data/media/tv", ...extraMediaPaths("tv")] },
+        { name: "Music", type: "music", paths: ["/data/media/music"] },
+      ];
+      await setupJellyfin(state.admin.username, adminPassword, libs);
+    });
+  }
+
+  // Step 12b: Jellyseerr (depends on Jellyfin)
+  if (has("jellyseerr")) {
+    await runStep("Linking Jellyseerr to Jellyfin", onStep, log, async () => {
+      await linkJellyseerr(state.admin.username, adminPassword);
+    });
+  }
+
+  // Step 12c: qBittorrent categories + settings
+  if (has("qbittorrent")) {
+    await runStep("Configuring qBittorrent categories and settings", onStep, log, async () => {
+      await configureQbit(state.admin.username, adminPassword);
+    });
+  }
+
+  // Step 12d: Prowlarr indexers + app registration
+  if (has("prowlarr")) {
+    await runStep("Adding Prowlarr public indexers", onStep, log, async () => {
+      await addProwlarrIndexers(apiKeys.prowlarr);
+    });
+
+    // Step 12e: Prowlarr app registration
+    await runStep("Registering Sonarr and Radarr in Prowlarr", onStep, log, async () => {
+      await registerProwlarrApps(apiKeys.prowlarr, apiKeys.sonarr ?? "", apiKeys.radarr ?? "");
+    });
+  }
+
+  // Step 12f: Sonarr root folders + download client
+  if (has("sonarr")) {
+    await runStep("Configuring Sonarr root folders and download client", onStep, log, async () => {
+      await configureArr("sonarr", apiKeys.sonarr, {
+        rootFolder: "/data/media/tv",
+        extraFolders: state.extra_paths.map((_, i) => `/data/extra-${i}/tv`),
+        qbitUser: state.admin.username,
+        qbitPass: adminPassword,
+        category: "tv",
+      });
+    });
+  }
+
+  // Step 12g: Radarr root folders + download client
+  if (has("radarr")) {
+    await runStep("Configuring Radarr root folders and download client", onStep, log, async () => {
+      await configureArr("radarr", apiKeys.radarr, {
+        rootFolder: "/data/media/movies",
+        extraFolders: state.extra_paths.map((_, i) => `/data/extra-${i}/movies`),
+        qbitUser: state.admin.username,
+        qbitPass: adminPassword,
+        category: "movies",
+      });
+    });
+  }
+
+  // Step 12h: Recyclarr TRaSH profiles
+  if (has("recyclarr")) {
+    await runStep("Applying TRaSH quality profiles via Recyclarr", onStep, log, async () => {
+      await runRecyclarrSync(state.install_dir);
+    });
+  }
 
   // Step 13: Generate FIRST-RUN.md
   await runStep("Write FIRST-RUN.md", onStep, log, async () => {

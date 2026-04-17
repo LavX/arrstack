@@ -22,7 +22,15 @@ export async function configureQbit(
   );
 
   if (!loginRes.ok) {
-    throw new Error(`qBittorrent login failed: ${loginRes.status}`);
+    // qBittorrent returns 403 for both "wrong password" and "your IP is
+    // banned after too many failures"; surface the body so the user can tell
+    // them apart. The ban is in-memory and clears on `docker compose restart
+    // qbittorrent`.
+    const body = (await loginRes.text()).trim();
+    const hint = body.toLowerCase().includes("banned")
+      ? " — run `docker compose restart qbittorrent` to clear the in-memory IP ban, then re-run the installer"
+      : "";
+    throw new Error(`qBittorrent login failed: ${loginRes.status} ${body}${hint}`);
   }
 
   const body = await loginRes.text();

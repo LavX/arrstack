@@ -312,3 +312,11 @@ services:
     default: false
     requiresAdminAuth: false
     networkMode: host
+    # gluetun builds its own kill-switch with iptables/nftables on boot. Without
+    # NET_ADMIN it exits with "Could not fetch rule set generation id: Permission
+    # denied (you must be root)" before reaching the healthcheck. /dev/net/tun
+    # is required for the OpenVPN/WireGuard tunnel interface.
+    capAdd:
+      - NET_ADMIN
+    extraDevices:
+      - /dev/net/tun:/dev/net/tun

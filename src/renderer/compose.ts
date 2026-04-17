@@ -49,6 +49,7 @@ interface ServiceContext {
   extraEnv: EnvEntry[];
   dataMounts: DataMount[];
   devices: string[];
+  capAdd: string[];
   groupAdd: string[];
   dependsOn: string[];
   vpnNetwork: boolean;
@@ -105,12 +106,15 @@ function buildDataMounts(svc: Service, storageRoot: string, extraPaths: string[]
 }
 
 function buildDevices(svc: Service, gpu: ComposeOptions["gpu"]): string[] {
-  if (!svc.hwaccelSupport || gpu.vendor === "none") return [];
-  if (gpu.vendor === "nvidia") return [];
+  // extraDevices are service-intrinsic (e.g. /dev/net/tun for gluetun) and
+  // must be emitted regardless of GPU wiring.
+  const devices: string[] = [...svc.extraDevices];
+  if (!svc.hwaccelSupport || gpu.vendor === "none") return devices;
+  if (gpu.vendor === "nvidia") return devices;
   // Intel/AMD use the DRI render node. `gpu.device_name` holds the
   // human-readable lspci string and must not be passed to Docker as a path.
-  if (gpu.vendor === "intel" || gpu.vendor === "amd") return ["/dev/dri/renderD128"];
-  return [];
+  if (gpu.vendor === "intel" || gpu.vendor === "amd") devices.push("/dev/dri/renderD128");
+  return devices;
 }
 
 function buildGroupAdd(svc: Service, gpu: ComposeOptions["gpu"]): string[] {
@@ -156,6 +160,7 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       extraEnv,
       dataMounts: buildDataMounts(svc, opts.storageRoot, opts.extraPaths),
       devices: buildDevices(svc, opts.gpu),
+      capAdd: svc.capAdd,
       groupAdd: buildGroupAdd(svc, opts.gpu),
       dependsOn: svc.dependsOn,
       vpnNetwork,

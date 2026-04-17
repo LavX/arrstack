@@ -117,6 +117,14 @@ describe("renderCompose", () => {
     expect(dataMountCount).toBe(4);
   });
 
+  test("gluetun gets NET_ADMIN + /dev/net/tun so its nftables kill-switch can init", () => {
+    const services = getServices(["gluetun"]);
+    const output = renderCompose(services, baseOpts);
+    expect(output).toContain("cap_add:");
+    expect(output).toContain("- NET_ADMIN");
+    expect(output).toContain("/dev/net/tun:/dev/net/tun");
+  });
+
   test("GPU devices added for jellyfin with Intel GPU", () => {
     const services = getServices(["jellyfin"]);
     const opts = {

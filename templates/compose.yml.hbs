@@ -46,6 +46,12 @@ services:
       - {{this}}
 {{/each}}
 {{/if}}
+{{#if capAdd}}
+    cap_add:
+{{#each capAdd}}
+      - {{this}}
+{{/each}}
+{{/if}}
 {{#if groupAdd}}
     group_add:
 {{#each groupAdd}}

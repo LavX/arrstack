@@ -25,6 +25,8 @@ export const ServiceSchema = z.object({
   apiKeyEnv: z.string().optional(),
   hwaccelSupport: z.boolean().default(false),
   networkMode: z.string().optional(),
+  capAdd: z.array(z.string()).default([]),
+  extraDevices: z.array(z.string()).default([]),
 });
 
 export type Service = z.infer<typeof ServiceSchema>;

@@ -218,8 +218,12 @@ export async function runInstall(
 
     const bazarrSvc = services.find((s) => s.id === "bazarr");
     if (bazarrSvc) {
-      const configDir = join(installDir, "config", "bazarr");
-      mkdirSync(configDir, { recursive: true });
+      // Bazarr reads its config from $CONFIG_DIR/config/config.yaml (note the
+      // nested config/ dir — see bazarr/app/config.py:507). Our bind mount is
+      // installDir/config/bazarr -> /config inside the container, so on the
+      // host we need to write to installDir/config/bazarr/config/config.yaml.
+      const bazarrConfigDir = join(installDir, "config", "bazarr", "config");
+      mkdirSync(bazarrConfigDir, { recursive: true });
       // Generate Bazarr's own API key once and keep it in apiKeys so both the
       // config.yaml and the post-install wiring call (configureBazarrLanguages)
       // use the same value.
@@ -232,7 +236,7 @@ export async function runInstall(
         sonarrApiKey: apiKeys["sonarr"] ?? "",
         radarrApiKey: apiKeys["radarr"] ?? "",
       });
-      writeFileSync(join(configDir, "config.yaml"), yaml);
+      writeFileSync(join(bazarrConfigDir, "config.yaml"), yaml);
     }
 
     const qbitSvc = services.find((s) => s.id === "qbittorrent");

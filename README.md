@@ -8,14 +8,14 @@ One-command install for your Sonarr, Radarr, Jellyfin, and friends.
 
 ## What it installs
 
-10 services, pre-configured and cross-wired:
+12 services, pre-configured and cross-wired:
 
 - **qBittorrent**: torrent download client
 - **Prowlarr**: indexer manager (5 public indexers pre-added)
 - **FlareSolverr**: solves Cloudflare challenges for indexers
 - **Sonarr**: TV show manager
 - **Radarr**: movie manager
-- **Bazarr**: subtitle manager
+- **Bazarr+**: subtitle manager (LavX fork with OpenSubtitles scraper and AI translator add-ons)
 - **Jellyfin**: media server (hardware transcoding auto-detected)
 - **Jellyseerr**: request manager (linked to Jellyfin)
 - **Caddy**: reverse proxy with automatic HTTPS
@@ -53,13 +53,16 @@ That is it. Everything else was configured during install.
 ## Day-two commands
 
 ```
-arrstack              re-open the config form (add/remove services)
-arrstack doctor       run diagnostics
-arrstack update       pull latest images
-arrstack show-password
-arrstack logs <svc>   tail a service
-arrstack uninstall    stop the stack (media preserved)
+arrstack install            run the wizard and install (default when no subcommand)
+arrstack doctor             run diagnostics
+arrstack update             pull latest images and restart
+arrstack show-password      print the generated admin password
+arrstack logs <svc>         tail a service
+arrstack uninstall          stop the stack (media preserved; --purge wipes configs)
 ```
+
+Global flags: `--verbose`, `--non-interactive`.
+`install` flags: `--fresh`, `--resume`, `--install-dir <path>`.
 
 ## Remote access
 
@@ -78,7 +81,20 @@ Follows TRaSH-Guides recommendations for hardlinks:
 └── media/{tv,movies,music}
 ```
 
-Additional drives can be added as scan-only paths during install.
+Additional drives can be added as scan paths during install, or attached later:
+
+```
+# 1. Mount the drive on the host (once-off)
+sudo mount /dev/sdX1 /mnt/hdd2
+
+# 2. Re-open the wizard; add /mnt/hdd2 to "Extra scan paths" and submit
+arrstack
+```
+
+The installer re-renders `docker-compose.yml` mounting the new drive at
+`/data/extra-N` inside every media container, creates `tv/` and `movies/`
+subdirs on it, and adds matching root folders in Sonarr/Radarr and library
+paths in Jellyfin. Existing libraries are extended rather than recreated.
 
 ## Development
 
@@ -86,7 +102,9 @@ Additional drives can be added as scan-only paths during install.
 bun install
 bun run dev          # run the CLI locally
 bun test             # run tests
+bun run typecheck    # strict tsc --noEmit
 bun run build        # compile to dist/arrstack-linux-x64
+bun run build:arm64  # compile to dist/arrstack-linux-arm64
 ```
 
 ## License

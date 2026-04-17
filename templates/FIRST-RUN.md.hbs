@@ -1,6 +1,7 @@
 # First Run Guide
 
-Welcome to your Arrstack installation. Below are the URLs for all your services.
+Your arrstack is up. Everything below is already configured; these are just the
+URLs you need and a couple of clicks to finish.
 
 ## Service URLs
 
@@ -10,13 +11,28 @@ Welcome to your Arrstack installation. Below are the URLs for all your services.
 
 ## Admin Credentials
 
-Your admin username is **{{adminUsername}}**. Set your password during the first login
-for each service that requires it.
+Username: **{{adminUsername}}**
 
-## Remaining Manual Steps
+The generated admin password is shared across every service and was saved to
+`~/arrstack/admin.txt` at install time. To print it again later:
 
-1. Open Jellyseerr at the URL above and complete the initial setup wizard.
-2. Connect Jellyseerr to your Jellyfin server.
-3. Request a movie or TV show to verify the full pipeline is working.
-4. In Prowlarr, add your preferred indexers and sync them to Sonarr and Radarr.
-5. In qBittorrent, verify the download categories match what Sonarr and Radarr expect.
+    arrstack show-password
+
+## What is already done for you
+
+- Single admin account across every service (no per-service signup)
+- 5 public Prowlarr indexers added and synced to Sonarr and Radarr
+- qBittorrent download categories (tv, movies, music, books) created per TRaSH
+- Sonarr/Radarr root folders and qBittorrent as download client
+- Bazarr linked to Sonarr and Radarr
+- Jellyfin admin user and Movies/TV/Music libraries
+- Jellyseerr linked to Jellyfin
+
+## Next steps
+
+1. Open Jellyseerr (see URL above) and sign in with the admin credentials.
+2. Request a movie or TV show. The full pipeline (Prowlarr → Sonarr/Radarr →
+   qBittorrent → Jellyfin) should handle the rest.
+
+If something does not work, `arrstack doctor` checks every service and prints
+what is wrong.

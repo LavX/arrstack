@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, chownSync } from "node:fs";
 import { join } from "node:path";
 
 import type { State } from "../state/schema.js";
@@ -81,18 +81,21 @@ export async function waitForHealth(
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
-  const logs = await exec(
-    `docker compose -f ${installDir}/docker-compose.yml logs --tail=50 ${service}`
-  );
+  const logs = await exec([
+    "docker", "compose", "-f", `${installDir}/docker-compose.yml`,
+    "logs", "--tail=200", service,
+  ]);
+  const tail = logs.ok ? logs.stdout : "unavailable";
   throw new Error(
-    `${service} did not become healthy within ${timeoutMs / 1000}s.\nLast logs:\n${
-      logs.ok ? logs.stdout.slice(-1000) : "unavailable"
-    }`
+    `${service} did not become healthy within ${timeoutMs / 1000}s.\n` +
+    `Last logs (last 200 lines):\n${tail}\n` +
+    `Full logs: docker compose -f ${installDir}/docker-compose.yml logs ${service}\n` +
+    `Install log: ${installDir}/install.log`
   );
 }
 
 export async function getHostIp(): Promise<string> {
-  const r = await exec("hostname -I");
+  const r = await exec(["hostname", "-I"]);
   return r.ok ? r.stdout.trim().split(" ")[0] : "localhost";
 }
 
@@ -115,9 +118,10 @@ export async function runInstall(
   let pbkdf2Hash = "";
   let hostIp = "localhost";
 
-  // Step 1: Create storage layout
+  // Step 1: Create storage layout (primary root + tv/movies subdirs inside each
+  // extra path so reconfigures that add drives also get their layout).
   await runStep("Create storage layout", onStep, log, async () => {
-    createStorageLayout(state.storage_root, state.puid, state.pgid);
+    createStorageLayout(state.storage_root, state.puid, state.pgid, state.extra_paths);
   });
 
   // Step 2: Generate API keys for services that declare apiKeyEnv
@@ -163,6 +167,7 @@ export async function runInstall(
   // Step 5: Render docker-compose.yml
   await runStep("Render docker-compose.yml", onStep, log, async () => {
     const content = renderCompose(services, {
+      installDir,
       storageRoot: state.storage_root,
       extraPaths: state.extra_paths,
       puid: state.puid,
@@ -186,6 +191,16 @@ export async function runInstall(
 
   // Step 7: Pre-write service configs
   await runStep("Pre-write service configs", onStep, log, async () => {
+    // Pre-create every enabled service's config dir owned by PUID/PGID so
+    // containers running as that uid can write into their bind mount. If
+    // Docker auto-creates the dir instead, it lands as root:root and the
+    // container hits EACCES on first write (e.g. jellyseerr logs).
+    for (const svc of services) {
+      const configDir = join(installDir, "config", svc.id);
+      mkdirSync(configDir, { recursive: true });
+      try { chownSync(configDir, state.puid, state.pgid); } catch { /* non-root */ }
+    }
+
     const servarrIds = ["sonarr", "radarr", "prowlarr", "lidarr", "readarr"] as const;
     for (const id of servarrIds) {
       const svc = services.find((s) => s.id === id);
@@ -237,7 +252,9 @@ export async function runInstall(
       mkdirSync(configDir, { recursive: true });
       const xml = renderJellyfinEncoding({
         vendor: state.gpu.vendor,
-        deviceName: state.gpu.device_name,
+        // state.gpu.device_name is the lspci string (e.g. "Intel ... Iris Xe"),
+        // not a /dev path, so do not pass it as devicePath. Default (renderD128)
+        // is the right answer for single-GPU hosts.
       });
       writeFileSync(join(configDir, "encoding.xml"), xml);
     }
@@ -261,9 +278,10 @@ export async function runInstall(
 
   // Step 9: docker compose pull (timeout 10 min)
   await runStep("docker compose pull", onStep, log, async () => {
-    const result = await exec(`docker compose -f ${join(installDir, "docker-compose.yml")} pull`, {
-      timeoutMs: 600_000,
-    });
+    const result = await exec(
+      ["docker", "compose", "-f", join(installDir, "docker-compose.yml"), "pull"],
+      { timeoutMs: 600_000 }
+    );
     if (!result.ok) {
       throw new Error(`docker compose pull failed: ${result.stderr}`);
     }
@@ -272,7 +290,7 @@ export async function runInstall(
   // Step 10: docker compose up -d (timeout 2 min)
   await runStep("docker compose up", onStep, log, async () => {
     const result = await exec(
-      `docker compose -f ${join(installDir, "docker-compose.yml")} up -d`,
+      ["docker", "compose", "-f", join(installDir, "docker-compose.yml"), "up", "-d"],
       { timeoutMs: 120_000 }
     );
     if (!result.ok) {

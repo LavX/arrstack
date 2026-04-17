@@ -122,7 +122,10 @@ export async function registerProwlarrApps(
   }
   const existingApps = (await listRes.json()) as Array<{ id: number; name: string }>;
 
-  const prowlarrUrl = baseUrl;
+  // prowlarrUrl is validated by Prowlarr from Sonarr/Radarr's perspective,
+  // so it must resolve from inside those containers. Use the docker service
+  // name, not localhost. baseUrl (the installer's outbound target) stays as-is.
+  const prowlarrUrl = "http://prowlarr:9696";
   const sonarrApp = buildSonarrApp(prowlarrUrl, sonarrKey);
   const radarrApp = buildRadarrApp(prowlarrUrl, radarrKey);
 

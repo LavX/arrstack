@@ -1,17 +1,41 @@
+# Recyclarr v8-compatible config.
+# Instance names (sonarr/radarr) must be UNIQUE across ALL services, not just
+# within one. Include templates were removed from the official repo in v8, so
+# quality profiles are inlined with their full qualities array here.
+# `upgrade.until_quality` is required — Recyclarr rejects profiles without a
+# cutoff ("Cutoff must be an allowed quality or group").
 sonarr:
-  default:
+  sonarr:
     base_url: http://sonarr:8989
     api_key: {{sonarrApiKey}}
     quality_definition:
       type: series
     quality_profiles:
       - name: WEB-1080p
-      - name: WEB-2160p
+        upgrade:
+          allowed: true
+          until_quality: WEB 1080p
+        qualities:
+          - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p
+          - name: Bluray-1080p
 
 radarr:
-  default:
+  radarr:
     base_url: http://radarr:7878
     api_key: {{radarrApiKey}}
+    quality_definition:
+      type: movie
     quality_profiles:
       - name: HD Bluray + WEB
-      - name: UHD Bluray + WEB
+        upgrade:
+          allowed: true
+          until_quality: Bluray-1080p
+        qualities:
+          - name: Bluray-1080p
+          - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p

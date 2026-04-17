@@ -118,16 +118,26 @@ describe("recyclarr.yml", () => {
     expect(output).toContain("api_key: sonarr-api");
   });
 
-  test("quality profiles for sonarr include WEB-1080p and WEB-2160p", () => {
+  test("sonarr section declares a WEB-1080p profile with cutoff", () => {
     const output = renderRecyclarrConfig(opts);
-    expect(output).toContain("WEB-1080p");
-    expect(output).toContain("WEB-2160p");
+    expect(output).toContain("name: WEB-1080p");
+    expect(output).toContain("until_quality: WEB 1080p");
+    expect(output).toContain("type: series");
   });
 
-  test("quality profiles for radarr include HD Bluray + WEB", () => {
+  test("radarr section declares HD Bluray + WEB profile with cutoff", () => {
     const output = renderRecyclarrConfig(opts);
-    expect(output).toContain("HD Bluray + WEB");
-    expect(output).toContain("UHD Bluray + WEB");
+    expect(output).toContain("name: HD Bluray + WEB");
+    expect(output).toContain("until_quality: Bluray-1080p");
+    expect(output).toContain("type: movie");
+  });
+
+  test("instance names are unique across services (v8 constraint)", () => {
+    const output = renderRecyclarrConfig(opts);
+    // Must NOT use 'default' as instance name under both sonarr and radarr;
+    // Recyclarr v8 rejects with 'Duplicate Instances: default'.
+    expect(output).toContain("sonarr:\n  sonarr:");
+    expect(output).toContain("radarr:\n  radarr:");
   });
 });
 

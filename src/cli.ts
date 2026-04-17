@@ -5,6 +5,11 @@ import { render } from "ink";
 import React from "react";
 import { App } from "./ui/App.js";
 import { readState } from "./state/store.js";
+import { runDoctor } from "./usecase/doctor.js";
+import { runUpdate } from "./usecase/update.js";
+import { showPassword } from "./usecase/show-password.js";
+import { runUninstall } from "./usecase/uninstall.js";
+import { tailLogs } from "./usecase/logs.js";
 
 const program = new Command();
 
@@ -31,36 +36,57 @@ program
 program
   .command("doctor")
   .description("Check system requirements and diagnose issues")
-  .action(() => {
-    console.log("not yet implemented");
+  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .action(async (opts) => {
+    await runDoctor(opts.installDir).catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
   });
 
 program
   .command("update")
   .description("Update the arr media stack to the latest version")
-  .action(() => {
-    console.log("not yet implemented");
+  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .action(async (opts) => {
+    await runUpdate(opts.installDir).catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
   });
 
 program
   .command("show-password")
   .description("Show service passwords")
-  .action(() => {
-    console.log("not yet implemented");
+  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .action(async (opts) => {
+    await showPassword(opts.installDir).catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
   });
 
 program
   .command("uninstall")
   .description("Uninstall the arr media stack")
-  .action(() => {
-    console.log("not yet implemented");
+  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--purge", "also remove config files (media data is always preserved)")
+  .action(async (opts) => {
+    await runUninstall(opts.installDir, opts.purge ?? false).catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
   });
 
 program
   .command("logs <service>")
   .description("Show logs for a service")
-  .action((_service) => {
-    console.log("not yet implemented");
+  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .action(async (service, opts) => {
+    await tailLogs(opts.installDir, service).catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
   });
 
 // If no subcommand provided (just `arrstack`), launch the TUI

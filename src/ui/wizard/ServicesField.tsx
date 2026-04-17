@@ -1,5 +1,6 @@
 /** @jsxImportSource react */
 import React from "react";
+import { Text } from "ink";
 import { SectionBox } from "../shared/SectionBox.js";
 import { CheckboxGrid, CheckboxItem } from "../shared/Checkbox.js";
 
@@ -38,6 +39,9 @@ export function ServicesField({
         focusedIndex={focusedIndex}
         columns={3}
       />
+      {isFocused && focusedIndex >= 0 && items[focusedIndex]?.description && (
+        <Text color="gray" dimColor>{"  "}{items[focusedIndex].description}</Text>
+      )}
     </SectionBox>
   );
 }

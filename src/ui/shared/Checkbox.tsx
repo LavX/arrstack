@@ -39,8 +39,8 @@ export function CheckboxGrid({ items, focusedIndex, columns = 3 }: Props) {
             // x marker kept in output for test compatibility
             return (
               <Box key={item.id} width={COL_WIDTH}>
-                <Text color={focused ? colors.accent : undefined}>
-                  {cellText}
+                <Text color={focused ? colors.accent : undefined} bold={focused}>
+                  {focused ? `▸${cellText}` : ` ${cellText}`}
                 </Text>
                 {item.checked && <Text> </Text>}
               </Box>

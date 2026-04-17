@@ -85,66 +85,46 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
   }
 
   useInput((input, key) => {
-    // Tab / Shift-Tab for navigation
-    if (key.tab) {
-      if (key.shift) {
-        retreat();
-      } else {
+    // Up/Down arrows are the primary navigation (Tab/Shift-Tab also work as aliases)
+    if (key.downArrow || (key.tab && !key.shift)) {
+      // In radio sections Left/Right handles cycling, so Up/Down always navigates
+      if (key.downArrow) {
+        // Services section: Up/Down moves between rows
+        if (activeSectionIndex === SEC_SERVICES) {
+          const cols = 3;
+          const newIdx = Math.min(activeFieldIndex + cols, ws.services.length - 1);
+          setActiveFieldIndex(newIdx);
+          return;
+        }
         advance();
+        return;
       }
+      // Tab (not shift): advance
+      advance();
       return;
     }
 
-    // Enter on Install button or Ctrl+Enter anywhere
-    if (key.return) {
-      if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 0) {
-        onSubmit(ws.toState(), ws.adminPassword);
+    if (key.upArrow || (key.tab && key.shift)) {
+      if (key.upArrow) {
+        // Services section: Up/Down moves between rows
+        if (activeSectionIndex === SEC_SERVICES) {
+          const cols = 3;
+          const newIdx = Math.max(activeFieldIndex - cols, 0);
+          setActiveFieldIndex(newIdx);
+          return;
+        }
+        retreat();
         return;
       }
-      if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 1) {
-        onCancel?.();
-        return;
-      }
+      // Shift-Tab: retreat
+      retreat();
       return;
     }
 
-    // Escape = cancel
-    if (key.escape) {
-      onCancel?.();
-      return;
-    }
-
-    // Space = toggle for Services and LocalDns checkbox
-    if (input === " ") {
-      if (activeSectionIndex === SEC_SERVICES) {
-        const svc = ws.services[activeFieldIndex];
-        if (svc) ws.toggleService(svc.id);
-      }
-      if (activeSectionIndex === SEC_LOCALDNS && activeFieldIndex === 0) {
-        ws.setLocalDnsEnabled(!ws.localDnsEnabled);
-      }
-      return;
-    }
-
-    // "a" = select all services, "n" = select none
-    if (activeSectionIndex === SEC_SERVICES) {
-      if (input === "a") {
-        ws.setServices((prev) => prev.map((s) => ({ ...s, checked: true })));
-        return;
-      }
-      if (input === "n") {
-        ws.setServices((prev) => prev.map((s) => ({ ...s, checked: false })));
-        return;
-      }
-    }
-
-    // Arrow keys for radio/checkbox navigation within a section
-    // Both left/right AND up/down work for inline radios
-    const isArrow = key.upArrow || key.downArrow || key.leftArrow || key.rightArrow;
-    const isForward = key.downArrow || key.rightArrow;
-    if (isArrow) {
+    // Left/Right: cycle radio options OR move between service columns
+    if (key.leftArrow || key.rightArrow) {
+      const isForward = key.rightArrow;
       if (activeSectionIndex === SEC_GPU) {
-        // cycle GPU vendor selection
         const gpuOptions = ["none", ...ws.detectedGpus.map(g => g.vendor)].filter(
           (v, i, a) => a.indexOf(v) === i
         );
@@ -173,26 +153,85 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         ws.setVpnMode(vpns[next]);
         return;
       }
-      // Up/down in services section: navigate rows
-      if (activeSectionIndex === SEC_SERVICES && (key.upArrow || key.downArrow)) {
-        const cols = 3;
-        const newIdx = key.downArrow
-          ? Math.min(activeFieldIndex + cols, ws.services.length - 1)
-          : Math.max(activeFieldIndex - cols, 0);
-        setActiveFieldIndex(newIdx);
-        return;
-      }
-      // Left/right in services section: navigate columns
-      if (activeSectionIndex === SEC_SERVICES && (key.leftArrow || key.rightArrow)) {
-        const newIdx = key.rightArrow
+      // Left/Right in services section: move between columns
+      if (activeSectionIndex === SEC_SERVICES) {
+        const newIdx = isForward
           ? Math.min(activeFieldIndex + 1, ws.services.length - 1)
           : Math.max(activeFieldIndex - 1, 0);
         setActiveFieldIndex(newIdx);
         return;
       }
-      // General: up/down arrows navigate fields within and between sections
-      if (key.upArrow) { retreat(); return; }
-      if (key.downArrow) { advance(); return; }
+    }
+
+    // Enter on Install/Cancel buttons; elsewhere behaves like Down (advance)
+    if (key.return) {
+      if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 0) {
+        onSubmit(ws.toState(), ws.adminPassword);
+        return;
+      }
+      if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 1) {
+        onCancel?.();
+        return;
+      }
+      advance();
+      return;
+    }
+
+    // Escape = cancel
+    if (key.escape) {
+      onCancel?.();
+      return;
+    }
+
+    // Space = toggle/cycle for services, local DNS, and all radio fields
+    if (input === " ") {
+      // Services toggle
+      if (activeSectionIndex === SEC_SERVICES) {
+        const svc = ws.services[activeFieldIndex];
+        if (svc) ws.toggleService(svc.id);
+        return;
+      }
+      // Local DNS toggle
+      if (activeSectionIndex === SEC_LOCALDNS && activeFieldIndex === 0) {
+        ws.setLocalDnsEnabled(!ws.localDnsEnabled);
+        return;
+      }
+      // GPU radio: cycle to next
+      if (activeSectionIndex === SEC_GPU) {
+        const gpuOptions = ["none", ...ws.detectedGpus.map(g => g.vendor)].filter(
+          (v, i, a) => a.indexOf(v) === i
+        );
+        const idx = gpuOptions.indexOf(ws.gpuVendor);
+        ws.setGpuVendor(gpuOptions[(idx + 1) % gpuOptions.length] as "none" | "intel" | "amd" | "nvidia");
+        return;
+      }
+      // Remote mode radio: cycle to next
+      if (activeSectionIndex === SEC_REMOTE && activeFieldIndex === 0) {
+        const modes = ["none", "duckdns", "cloudflare"] as const;
+        const idx = modes.indexOf(ws.remoteMode as (typeof modes)[number]);
+        ws.setRemoteMode(modes[(idx + 1) % modes.length]);
+        return;
+      }
+      // VPN radio: cycle to next
+      if (activeSectionIndex === SEC_SYSTEM && activeFieldIndex === 2) {
+        const vpns = ["none", "gluetun"] as const;
+        const idx = vpns.indexOf(ws.vpnMode as (typeof vpns)[number]);
+        ws.setVpnMode(vpns[(idx + 1) % vpns.length]);
+        return;
+      }
+      return;
+    }
+
+    // "a" = select all services, "n" = select none
+    if (activeSectionIndex === SEC_SERVICES) {
+      if (input === "a") {
+        ws.setServices((prev) => prev.map((s) => ({ ...s, checked: true })));
+        return;
+      }
+      if (input === "n") {
+        ws.setServices((prev) => prev.map((s) => ({ ...s, checked: false })));
+        return;
+      }
     }
 
     // "r" outside the focused password input = regenerate password
@@ -338,14 +377,16 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
           </Text>
         </Box>
         <Box gap={1}>
-          <Text color={colors.muted}>Tab</Text>
-          <Text color={colors.muted} dimColor>next</Text>
+          <Text color={colors.muted}>↑↓</Text>
+          <Text color={colors.muted} dimColor>navigate</Text>
+          <Text color={colors.muted}> ←→</Text>
+          <Text color={colors.muted} dimColor>options</Text>
           <Text color={colors.muted}> Space</Text>
-          <Text color={colors.muted} dimColor>toggle</Text>
+          <Text color={colors.muted} dimColor>select</Text>
           <Text color={colors.muted}> Enter</Text>
           <Text color={colors.muted} dimColor>install</Text>
           <Text color={colors.muted}> Esc</Text>
-          <Text color={colors.muted} dimColor>cancel</Text>
+          <Text color={colors.muted} dimColor>quit</Text>
         </Box>
       </Box>
     </Box>

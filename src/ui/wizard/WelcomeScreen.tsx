@@ -38,9 +38,9 @@ export function WelcomeScreen({ onContinue, onCancel }: WelcomeScreenProps) {
         <Text>Most users just hit Enter to install.</Text>
         <Text> </Text>
         <Text bold>Navigation:</Text>
-        <Text>  <Text color="cyan">Tab / Shift+Tab</Text>{"    move between fields"}</Text>
-        <Text>  <Text color="cyan">Space</Text>{"              toggle checkboxes and radios"}</Text>
-        <Text>  <Text color="cyan">Type</Text>{"               edit text fields"}</Text>
+        <Text>  <Text color="cyan">Up / Down</Text>{"          move between fields"}</Text>
+        <Text>  <Text color="cyan">Left / Right</Text>{"       change radio options"}</Text>
+        <Text>  <Text color="cyan">Space</Text>{"              toggle / select"}</Text>
         <Text>  <Text color="cyan">Enter</Text>{"              install with current settings"}</Text>
         <Text>  <Text color="cyan">Esc</Text>{"                cancel and exit"}</Text>
         <Text> </Text>

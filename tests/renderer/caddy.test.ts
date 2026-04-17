@@ -5,16 +5,21 @@ import { getServicesByIds } from "../../src/catalog";
 const services = getServicesByIds(["sonarr", "radarr", "jellyfin"]);
 
 describe("renderCaddyfile", () => {
-  test("LAN mode has port blocks and no tls block", () => {
+  test("LAN mode without local DNS emits an empty Caddyfile (direct IP access)", () => {
     const output = renderCaddyfile(services, { mode: "none" });
-    expect(output).toContain(":8989");
-    expect(output).not.toContain("tls");
-    expect(output).not.toContain("dns");
+    expect(output).not.toContain("reverse_proxy");
+    expect(output).not.toContain("tls {");
   });
 
-  test("LAN mode reverse_proxy uses service name", () => {
-    const output = renderCaddyfile(services, { mode: "none" });
+  test("LAN mode WITH local DNS emits hostname vhosts on HTTP", () => {
+    const output = renderCaddyfile(services, {
+      mode: "none",
+      localDns: { enabled: true, tld: "arrstack.local" },
+    });
+    expect(output).toContain("http://sonarr.arrstack.local");
     expect(output).toContain("reverse_proxy sonarr:8989");
+    expect(output).not.toContain("tls {");
+    expect(output).not.toContain("dns cloudflare");
   });
 
   test("cloudflare mode includes domain and dns challenge", () => {

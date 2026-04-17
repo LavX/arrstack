@@ -8,6 +8,33 @@ URLs you need and a couple of clicks to finish.
 {{#each services}}
 - **{{name}}**: http://{{../hostIp}}:{{port}}
 {{/each}}
+{{#if hostnamesEnabled}}
+
+### Hostname access (Caddy reverse proxy on :80)
+
+Every service is also reachable at `http://<id>.{{tld}}` once the hostname
+resolves to `{{hostIp}}`.
+
+{{#if dnsmasqInstalled}}
+Resolution is already handled for you on this LAN by the **dnsmasq** container
+at `{{hostIp}}:53`. Point your router's DNS — or each client's `/etc/resolv.conf`
+— at `{{hostIp}}` and the names below just work.
+{{else}}
+No LAN DNS service is installed in this stack. To use hostnames, add this one
+line to the `/etc/hosts` file on every client that should reach the stack
+(`sudo` required on Linux/macOS, edit as Administrator on Windows):
+
+```
+{{hostsLine}}
+```
+{{/if}}
+
+Then open in a browser:
+
+{{#each services}}
+- http://{{id}}.{{../tld}}
+{{/each}}
+{{/if}}
 
 ## Admin Credentials
 

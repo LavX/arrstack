@@ -6,6 +6,13 @@ export type CaddyMode = "none" | "cloudflare" | "duckdns";
 export interface CaddyOptions {
   mode: CaddyMode;
   domain?: string;
+  // Hostname-based LAN access. When enabled and mode is "none", Caddy serves
+  // http://{id}.{tld} for every service so users can resolve hostnames via
+  // dnsmasq OR entries in their own /etc/hosts file on the client side.
+  localDns?: {
+    enabled: boolean;
+    tld: string;
+  };
 }
 
 interface CaddyServiceEntry {
@@ -16,6 +23,8 @@ interface CaddyServiceEntry {
 interface CaddyContext {
   mode: CaddyMode;
   domain: string;
+  localDnsEnabled: boolean;
+  localDnsTld: string;
   services: CaddyServiceEntry[];
 }
 
@@ -27,6 +36,8 @@ export function buildCaddyContext(services: Service[], opts: CaddyOptions): Cadd
   return {
     mode: opts.mode,
     domain: opts.domain ?? "",
+    localDnsEnabled: opts.localDns?.enabled ?? false,
+    localDnsTld: opts.localDns?.tld ?? "",
     services: entries,
   };
 }

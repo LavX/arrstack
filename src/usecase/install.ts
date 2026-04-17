@@ -202,6 +202,7 @@ export async function runInstall(
     const content = renderCaddyfile(services, {
       mode: state.remote_access.mode === "none" ? "none" : state.remote_access.mode,
       domain: state.remote_access.domain,
+      localDns: state.local_dns,
     });
     writeFileSync(join(installDir, "Caddyfile"), content);
   });
@@ -514,6 +515,8 @@ export async function runInstall(
       services,
       hostIp,
       adminUsername: state.admin.username,
+      localDns: state.local_dns,
+      dnsmasqInstalled: has("dnsmasq"),
     });
     writeFileSync(join(installDir, "FIRST-RUN.md"), content);
   });

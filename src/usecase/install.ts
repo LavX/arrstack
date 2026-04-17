@@ -23,6 +23,8 @@ import { getServicesByIds } from "../catalog/index.js";
 import { writeState } from "../state/store.js";
 import { addProwlarrIndexers } from "../wiring/prowlarr-indexers.js";
 import { registerProwlarrApps } from "../wiring/prowlarr-apps.js";
+import { configureProwlarrFlaresolverr, repushProwlarrIndexersToApps } from "../wiring/prowlarr-flaresolverr.js";
+import { linkJellyseerrToArrs } from "../wiring/jellyseerr-arr.js";
 import { configureArr } from "../wiring/sonarr-radarr.js";
 import { configureQbit } from "../wiring/qbittorrent.js";
 import { setupJellyfin } from "../wiring/jellyfin.js";
@@ -342,12 +344,17 @@ export async function runInstall(
     });
   }
 
-  // Step 12b: Jellyseerr (depends on Jellyfin)
+  // Step 12b: Jellyseerr (depends on Jellyfin). The /auth/jellyfin bootstrap
+  // also persists the Jellyfin connection to Jellyseerr's settings.
   if (has("jellyseerr")) {
     await runStep("Linking Jellyseerr to Jellyfin", onStep, log, async () => {
       await linkJellyseerr(state.admin.username, adminPassword);
     });
   }
+
+  // Step 12b3: Jellyseerr to Sonarr/Radarr (run AFTER the arr apps are wired
+  // so the activeProfileId=1 and activeDirectory exist on the arr side).
+  // Moved to run after Sonarr/Radarr configuration below.
 
   // Step 12b2: Bazarr languages + default profile
   if (has("bazarr")) {
@@ -366,15 +373,34 @@ export async function runInstall(
     });
   }
 
-  // Step 12d: Prowlarr indexers + app registration
+  // Step 12d: Prowlarr wiring
+  // Order matters: apps FIRST, then indexers. Prowlarr auto-pushes an indexer
+  // to every registered app at creation time; doing the reverse means the
+  // indexer-push fires against zero apps and ApplicationIndexerSync does not
+  // re-push existing indexers. FlareSolverr must also be wired before
+  // indexers so Cloudflare-gated trackers can actually be probed.
   if (has("prowlarr")) {
+    // Register Sonarr/Radarr first so subsequent indexer creations auto-push.
+    await runStep("Registering Sonarr and Radarr in Prowlarr", onStep, log, async () => {
+      await registerProwlarrApps(apiKeys.prowlarr, apiKeys.sonarr ?? "", apiKeys.radarr ?? "");
+    });
+
+    // Wire FlareSolverr so CF-gated trackers can be probed.
+    if (has("flaresolverr")) {
+      await runStep("Wiring FlareSolverr into Prowlarr", onStep, log, async () => {
+        await configureProwlarrFlaresolverr({ apiKey: apiKeys.prowlarr });
+      });
+    }
+
+    // Now add indexers — each one auto-pushes to the registered apps.
     await runStep("Adding Prowlarr public indexers", onStep, log, async () => {
       await addProwlarrIndexers(apiKeys.prowlarr);
     });
 
-    // Step 12e: Prowlarr app registration
-    await runStep("Registering Sonarr and Radarr in Prowlarr", onStep, log, async () => {
-      await registerProwlarrApps(apiKeys.prowlarr, apiKeys.sonarr ?? "", apiKeys.radarr ?? "");
+    // Safety net: re-PUT every indexer so any that were present before apps
+    // existed (e.g. from a failed previous install) also get pushed.
+    await runStep("Re-syncing Prowlarr indexers to apps", onStep, log, async () => {
+      await repushProwlarrIndexersToApps(apiKeys.prowlarr);
     });
   }
 
@@ -400,6 +426,19 @@ export async function runInstall(
         qbitUser: state.admin.username,
         qbitPass: adminPassword,
         category: "movies",
+      });
+    });
+  }
+
+  // Step 12g2: Jellyseerr -> Sonarr + Radarr (after arrs have root folders &
+  // quality profiles that Jellyseerr references with activeProfileId:1).
+  if (has("jellyseerr") && (has("sonarr") || has("radarr"))) {
+    await runStep("Linking Jellyseerr to Sonarr and Radarr", onStep, log, async () => {
+      await linkJellyseerrToArrs({
+        adminUser: state.admin.username,
+        adminPass: adminPassword,
+        sonarrApiKey: apiKeys.sonarr ?? "",
+        radarrApiKey: apiKeys.radarr ?? "",
       });
     });
   }

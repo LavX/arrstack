@@ -1,0 +1,261 @@
+version: 1
+services:
+  - id: qbittorrent
+    name: qBittorrent
+    description: Feature-rich BitTorrent client with a web UI
+    category: download
+    image: lscr.io/linuxserver/qbittorrent
+    tag: "4.6.7"
+    ports: [8080]
+    adminPort: 8080
+    configPath: /config
+    mounts:
+      downloads: /downloads
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /
+      port: 8080
+    default: true
+    requiresAdminAuth: true
+
+  - id: prowlarr
+    name: Prowlarr
+    description: Indexer manager and proxy for Sonarr, Radarr, and other arr apps
+    category: indexer
+    image: lscr.io/linuxserver/prowlarr
+    tag: "1.24.3"
+    ports: [9696]
+    adminPort: 9696
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /ping
+      port: 9696
+    default: true
+    requiresAdminAuth: false
+    apiKeyEnv: PROWLARR__AUTH__APIKEY
+
+  - id: flaresolverr
+    name: FlareSolverr
+    description: Proxy server to bypass Cloudflare and DDoS-GUARD protection
+    category: indexer
+    image: ghcr.io/flaresolverr/flaresolverr
+    tag: "v3.3.21"
+    ports: [8191]
+    adminPort: 8191
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /health
+      port: 8191
+    default: true
+    requiresAdminAuth: false
+
+  - id: sonarr
+    name: Sonarr
+    description: TV series management and automation
+    category: arr
+    image: lscr.io/linuxserver/sonarr
+    tag: "4.0.14"
+    ports: [8989]
+    adminPort: 8989
+    configPath: /config
+    mounts:
+      tv: /tv
+      downloads: /downloads
+    envVars: {}
+    dependsOn: [prowlarr]
+    health:
+      type: http
+      path: /ping
+      port: 8989
+    default: true
+    requiresAdminAuth: false
+    apiKeyEnv: SONARR__AUTH__APIKEY
+
+  - id: radarr
+    name: Radarr
+    description: Movie management and automation
+    category: arr
+    image: lscr.io/linuxserver/radarr
+    tag: "5.14.0"
+    ports: [7878]
+    adminPort: 7878
+    configPath: /config
+    mounts:
+      movies: /movies
+      downloads: /downloads
+    envVars: {}
+    dependsOn: [prowlarr]
+    health:
+      type: http
+      path: /ping
+      port: 7878
+    default: true
+    requiresAdminAuth: false
+    apiKeyEnv: RADARR__AUTH__APIKEY
+
+  - id: bazarr
+    name: Bazarr
+    description: Companion application to Sonarr and Radarr for subtitle management
+    category: subtitle
+    image: lscr.io/linuxserver/bazarr
+    tag: "1.4.5"
+    ports: [6767]
+    adminPort: 6767
+    configPath: /config
+    mounts:
+      tv: /tv
+      movies: /movies
+    envVars: {}
+    dependsOn: [sonarr, radarr]
+    health:
+      type: http
+      path: /
+      port: 6767
+    default: true
+    requiresAdminAuth: false
+
+  - id: jellyfin
+    name: Jellyfin
+    description: Free and open-source media server
+    category: media
+    image: jellyfin/jellyfin
+    tag: "10.11.6"
+    ports: [8096]
+    adminPort: 8096
+    configPath: /config
+    mounts:
+      tv: /data/tvshows
+      movies: /data/movies
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /health
+      port: 8096
+    default: true
+    requiresAdminAuth: false
+    hwaccelSupport: true
+
+  - id: jellyseerr
+    name: Jellyseerr
+    description: Request management and media discovery tool for Jellyfin
+    category: request
+    image: ghcr.io/seerr-team/seerr
+    tag: "2.4.2"
+    ports: [5055]
+    adminPort: 5055
+    configPath: /app/config
+    mounts: {}
+    envVars: {}
+    dependsOn: [jellyfin]
+    health:
+      type: http
+      path: /api/v1/status
+      port: 5055
+    default: true
+    requiresAdminAuth: false
+
+  - id: caddy
+    name: Caddy
+    description: Automatic HTTPS reverse proxy for the media stack
+    category: proxy
+    image: ghcr.io/lavx/arrstack-caddy
+    tag: "v1"
+    ports: [80, 443]
+    adminPort: 443
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    health:
+      type: tcp
+      port: 80
+    default: true
+    requiresAdminAuth: false
+
+  - id: recyclarr
+    name: Recyclarr
+    description: Automatically sync TRaSH Guide settings to Sonarr and Radarr
+    category: utility
+    image: ghcr.io/recyclarr/recyclarr
+    tag: "7.4.1"
+    ports: []
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: [sonarr, radarr]
+    health:
+      type: tcp
+      port: 0
+    default: true
+    requiresAdminAuth: false
+
+  - id: tdarr
+    name: Tdarr
+    description: Distributed transcoding system for managing and converting media files
+    category: utility
+    image: ghcr.io/haveagitgat/tdarr
+    tag: "2.24.01"
+    ports: [8265]
+    adminPort: 8265
+    configPath: /app/configs
+    mounts:
+      media: /media
+      transcode_cache: /temp
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /
+      port: 8265
+    default: false
+    requiresAdminAuth: false
+    hwaccelSupport: true
+
+  - id: trailarr
+    name: Trailarr
+    description: Download and manage trailers for your media library
+    category: utility
+    image: nandyalu/trailarr
+    tag: "0.3.2"
+    ports: [7879]
+    adminPort: 7879
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /
+      port: 7879
+    default: false
+    requiresAdminAuth: false
+
+  - id: gluetun
+    name: Gluetun
+    description: VPN client in a thin Docker container for multiple VPN providers
+    category: utility
+    image: qmcgaw/gluetun
+    tag: "v3.40.0"
+    ports: []
+    configPath: /gluetun
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    health:
+      type: http
+      path: /v1/openvpn/status
+      port: 8000
+    default: false
+    requiresAdminAuth: false
+    networkMode: host

@@ -259,4 +259,4 @@ arrstack is a LavX project. The project site is [lavx.github.io/arrstack](https:
 
 ## License
 
-[MIT](./LICENSE) (c) 2026 [LavX](https://lavx.github.io)
+[MIT](./LICENSE) (c) 2026 [LavX](https://lavx.hu)

@@ -130,8 +130,18 @@ export async function addProwlarrIndexers(
       enableInteractiveSearch: true,
     });
 
+    // forceSave=true skips Prowlarr's pre-save liveness probe. Without it,
+    // Prowlarr hits the indexer from its own egress IP BEFORE the indexer
+    // gets the FlareSolverr tag applied at the network layer, so CF-gated
+    // sites (1337x, TorrentGalaxyClone, EZTV) and geo-restricted sites
+    // (EZTV returns UnavailableForLegalReasons) fail the probe with
+    // HTTP 400 and the POST is rejected before the tag can help. With
+    // forceSave=true, Prowlarr stores the indexer with its tag in place,
+    // and the next real search goes through FlareSolverr correctly. Better
+    // to have a possibly-dead indexer listed than to drop a working one
+    // to a false negative at install time.
     const res = await withRetry(() =>
-      fetch(`${baseUrl}/api/v1/indexer`, {
+      fetch(`${baseUrl}/api/v1/indexer?forceSave=true`, {
         method: "POST",
         headers,
         body,

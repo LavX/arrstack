@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import os from "node:os";
+import { statfsSync } from "node:fs";
 import { detectGpus, type GpuInfo } from "../../platform/gpu.js";
 import { resolveRenderVideoGids } from "../../platform/groups.js";
+import { isDockerInstalled, isDockerRunning, isComposeV2 } from "../../platform/docker.js";
+import { checkPortFree } from "../../platform/ports.js";
 import { getDefaultServices, loadCatalog } from "../../catalog/index.js";
 import { generatePassword, generateApiKey } from "../../lib/random.js";
 import { VERSION } from "../../version.js";
@@ -51,6 +54,11 @@ export interface WizardState {
   // Meta
   hostname: string;
   loading: boolean;
+
+  // Status (for status strip)
+  dockerOk: boolean;
+  portsOk: boolean;
+  diskInfo: Array<{ path: string; freeGb: number }>;
 }
 
 export function buildStateFromWizard(ws: WizardState): State {
@@ -197,15 +205,37 @@ export function useWizardState(existingState?: Partial<State> | null) {
     }
   });
   const [loading, setLoading] = useState(true);
+  const [dockerOk, setDockerOk] = useState(false);
+  const [portsOk, setPortsOk] = useState(false);
+  const [diskInfo, setDiskInfo] = useState<Array<{ path: string; freeGb: number }>>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function detect() {
-      const [gpus, gids] = await Promise.all([
+      const [gpus, gids, dockerInstalled, dockerRunning, composeOk, port80, port443] = await Promise.all([
         detectGpus(),
         Promise.resolve(resolveRenderVideoGids()),
+        isDockerInstalled(),
+        isDockerRunning(),
+        isComposeV2(),
+        checkPortFree(80),
+        checkPortFree(443),
       ]);
+
+      if (cancelled) return;
+
+      setDockerOk(dockerInstalled && dockerRunning && composeOk);
+      setPortsOk(port80 && port443);
+
+      // Detect disk space for storage root
+      try {
+        const stat = statfsSync(storageRoot);
+        const freeGb = Math.round((stat.bfree * stat.bsize) / (1024 ** 3));
+        setDiskInfo([{ path: storageRoot, freeGb }]);
+      } catch {
+        setDiskInfo([]);
+      }
 
       if (cancelled) return;
 
@@ -331,6 +361,11 @@ export function useWizardState(existingState?: Partial<State> | null) {
     // Meta
     hostname,
     loading,
+
+    // Status
+    dockerOk,
+    portsOk,
+    diskInfo,
 
     // Converter
     toState,

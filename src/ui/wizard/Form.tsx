@@ -366,9 +366,9 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       {/* Status strip */}
       <Box marginTop={0}>
         <StatusStrip
-          diskInfo={[]}
-          dockerOk={false}
-          portsOk={false}
+          diskInfo={ws.diskInfo}
+          dockerOk={ws.dockerOk}
+          portsOk={ws.portsOk}
           gpuName={ws.detectedGpus.find((g) => g.vendor === ws.gpuVendor)?.name}
         />
       </Box>

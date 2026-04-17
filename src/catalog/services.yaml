@@ -42,15 +42,15 @@ services:
 
   - id: flaresolverr
     name: FlareSolverr
-    description: Proxy server to bypass Cloudflare and DDoS-GUARD protection
-    category: indexer
+    description: Solves Cloudflare challenges for the subtitle scraper
+    category: subtitle
     image: ghcr.io/flaresolverr/flaresolverr
     tag: "v3.3.21"
     ports: [8191]
-    adminPort: 8191
     configPath: /config
     mounts: {}
-    envVars: {}
+    envVars:
+      LOG_LEVEL: info
     dependsOn: []
     health:
       type: http
@@ -104,23 +104,61 @@ services:
     apiKeyEnv: RADARR__AUTH__APIKEY
 
   - id: bazarr
-    name: Bazarr
-    description: Companion application to Sonarr and Radarr for subtitle management
+    name: Bazarr+
+    description: "Enhanced subtitle manager with AI translation and web scraping"
     category: subtitle
-    image: lscr.io/linuxserver/bazarr
-    tag: "1.4.5"
+    image: ghcr.io/lavx/bazarr
+    tag: "latest"
     ports: [6767]
     adminPort: 6767
     configPath: /config
     mounts:
       tv: /tv
       movies: /movies
-    envVars: {}
-    dependsOn: [sonarr, radarr]
+    envVars:
+      OPENSUBTITLES_SCRAPER_URL: "http://opensubtitles-scraper:8000"
+    dependsOn: [sonarr, radarr, flaresolverr, opensubtitles-scraper]
     health:
       type: http
       path: /
       port: 6767
+    default: true
+    requiresAdminAuth: false
+
+  - id: opensubtitles-scraper
+    name: OpenSubtitles Scraper
+    description: Scrapes subtitles from OpenSubtitles on a schedule for Bazarr+
+    category: subtitle
+    image: ghcr.io/lavx/opensubtitles-scraper
+    tag: "latest"
+    ports: [8000]
+    configPath: /config
+    mounts: {}
+    envVars:
+      FLARESOLVERR_URL: "http://flaresolverr:8191/v1"
+    dependsOn: [flaresolverr]
+    health:
+      type: http
+      path: /health
+      port: 8000
+    default: true
+    requiresAdminAuth: false
+
+  - id: ai-subtitle-translator
+    name: AI Subtitle Translator
+    description: Translates subtitles using AI models via OpenRouter
+    category: subtitle
+    image: ghcr.io/lavx/ai-subtitle-translator
+    tag: "latest"
+    ports: [8765]
+    configPath: /app/data
+    mounts: {}
+    envVars: {}
+    dependsOn: [bazarr]
+    health:
+      type: http
+      path: /health
+      port: 8765
     default: true
     requiresAdminAuth: false
 

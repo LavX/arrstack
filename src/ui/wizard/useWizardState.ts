@@ -72,6 +72,13 @@ export function buildStateFromWizard(ws: WizardState): State {
   if (ws.localDnsEnabled) enabledIds.push("dnsmasq");
   if (ws.vpnMode === "gluetun" && !enabledIds.includes("gluetun")) enabledIds.push("gluetun");
 
+  // Bazarr+ bundle: when bazarr is checked, auto-add its dependencies
+  if (enabledIds.includes("bazarr")) {
+    for (const dep of ["flaresolverr", "opensubtitles-scraper", "ai-subtitle-translator"]) {
+      if (!enabledIds.includes(dep)) enabledIds.push(dep);
+    }
+  }
+
   const extraPaths = ws.extraPaths
     .split(",")
     .map((p) => p.trim())
@@ -131,7 +138,12 @@ function detectTimezone(): string {
 }
 
 // Services managed automatically by the installer, hidden from the user grid
-const AUTO_MANAGED_SERVICES = new Set(["caddy", "cloudflare-ddns", "duckdns-updater", "dnsmasq"]);
+// Infrastructure: caddy, ddns containers, dnsmasq
+// Bazarr+ deps: flaresolverr, opensubtitles-scraper, ai-subtitle-translator (bundled with Bazarr+)
+const AUTO_MANAGED_SERVICES = new Set([
+  "caddy", "cloudflare-ddns", "duckdns-updater", "dnsmasq",
+  "flaresolverr", "opensubtitles-scraper", "ai-subtitle-translator",
+]);
 
 function buildInitialServices(existingEnabled?: string[]): WizardServiceItem[] {
   const catalog = loadCatalog();

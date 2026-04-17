@@ -16,7 +16,7 @@ import { StatusStrip } from "./StatusStrip.js";
 export interface FormProps {
   initial?: Partial<State> | null;
   isReconfigure: boolean;
-  onSubmit: (state: State) => void;
+  onSubmit: (state: State, adminPassword: string) => void;
   onCancel?: () => void;
 }
 
@@ -106,7 +106,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
     // Enter on Install button or Ctrl+Enter anywhere
     if (key.return) {
       if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 0) {
-        onSubmit(ws.toState());
+        onSubmit(ws.toState(), ws.adminPassword);
         return;
       }
       if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 1) {

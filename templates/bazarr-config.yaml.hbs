@@ -36,7 +36,12 @@ general:
   theme: auto
   upgrade_frequency: 12
   upgrade_subs: true
-  use_embedded_subs: false
+  # Enables the "Embedded Subtitles Handling" section and flips the
+  # "Treat Embedded Subtitles as Downloaded" checkbox on (both bound to the
+  # same key in Bazarr+, see frontend/src/pages/Settings/Subtitles/index.tsx).
+  # Bazarr treats subtitles embedded in media files as already-downloaded when
+  # deciding what's missing, so you don't get redundant external subs pulled.
+  use_embedded_subs: true
   use_provider_priority: true
   use_radarr: true
   use_sonarr: true

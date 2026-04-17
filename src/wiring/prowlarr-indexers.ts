@@ -82,6 +82,10 @@ export async function addProwlarrIndexers(
       // GreaterThanValidator / InclusiveBetweenValidator messages.
       appProfileId: 1,
       priority: 25,
+      // Top-level `enable` is required — it defaults to False on POST if
+      // omitted, which (a) makes the indexer useless and (b) blocks the
+      // auto-push to Sonarr/Radarr since only enabled indexers sync.
+      enable: true,
       fields: indexer.fields,
       enableRss: true,
       enableAutomaticSearch: true,

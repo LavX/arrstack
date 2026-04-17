@@ -1,6 +1,7 @@
 /** @jsxImportSource react */
 import React from "react";
 import { Box, Text } from "ink";
+import InkTextInput from "ink-text-input";
 import { SectionBox } from "../shared/SectionBox.js";
 import { TextInput } from "../shared/TextInput.js";
 import { colors, LABEL_WIDTH } from "../shared/theme.js";
@@ -20,7 +21,8 @@ export function AdminField({
   onPasswordChange,
   focusedField,
 }: AdminFieldProps) {
-  const maskedPassword = password.replace(/./g, "\u25CF");
+  const maskedPassword = "\u25CF".repeat(password.length);
+  const isPasswordFocused = focusedField === 1;
 
   return (
     <SectionBox title="ADMIN" isFocused={focusedField >= 0}>
@@ -31,15 +33,17 @@ export function AdminField({
         isFocused={focusedField === 0}
       />
       <Box>
-        <Text color={focusedField === 1 ? colors.accent : "white"}>
+        <Text color={isPasswordFocused ? colors.accent : "white"}>
           {"Password".padEnd(LABEL_WIDTH)}
         </Text>
-        {focusedField === 1 ? (
-          <Text>{password}</Text>
+        {isPasswordFocused ? (
+          <InkTextInput value={password} onChange={onPasswordChange} />
         ) : (
-          <Text color={colors.value}>{maskedPassword}</Text>
+          <>
+            <Text color={colors.value}>{maskedPassword}</Text>
+            <Text color={colors.muted}>{"  (" + password.length + " chars)  (r to regenerate)"}</Text>
+          </>
         )}
-        <Text color={colors.muted}>  (r to regenerate)</Text>
       </Box>
     </SectionBox>
   );

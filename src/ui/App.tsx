@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box } from "ink";
 import type { State } from "../state/schema.js";
+import { WelcomeScreen } from "./wizard/WelcomeScreen.js";
 import { Form } from "./wizard/Form.js";
 import { DoneScreen } from "./done/DoneScreen.js";
 import { ProgressView } from "./progress/ProgressView.js";
@@ -9,7 +10,7 @@ import type { StepUpdate } from "./progress/ProgressView.js";
 import { runInstall } from "../usecase/install.js";
 import type { InstallResult } from "../usecase/install.js";
 
-type Screen = "wizard" | "progress" | "done";
+type Screen = "welcome" | "wizard" | "progress" | "done";
 
 interface AppProps {
   existingState?: State | null;
@@ -51,7 +52,7 @@ function ProgressRunner({ state, adminPassword, onDone }: ProgressRunnerProps) {
 }
 
 export function App({ existingState }: AppProps) {
-  const [screen, setScreen] = useState<Screen>("wizard");
+  const [screen, setScreen] = useState<Screen>(existingState ? "wizard" : "welcome");
   const [wizardState, setWizardState] = useState<State | null>(null);
   const [adminPassword, setAdminPassword] = useState<string>("");
   const [installResult, setInstallResult] = useState<InstallResult | null>(null);
@@ -73,6 +74,12 @@ export function App({ existingState }: AppProps) {
 
   return (
     <Box flexDirection="column" padding={1}>
+      {screen === "welcome" && (
+        <WelcomeScreen
+          onContinue={() => setScreen("wizard")}
+          onCancel={() => process.exit(0)}
+        />
+      )}
       {screen === "wizard" && (
         <Form
           initial={existingState}

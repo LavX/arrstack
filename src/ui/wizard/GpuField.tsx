@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 import React from "react";
 import { Box, Text } from "ink";
-import { SectionHeader } from "../shared/SectionHeader.js";
+import { SectionBox } from "../shared/SectionBox.js";
 import { Radio, RadioOption } from "../shared/Radio.js";
 import { colors } from "../shared/theme.js";
 
@@ -17,6 +17,7 @@ export function GpuField({
   detectedGpus,
   selected,
   onChange,
+  isFocused,
   focusedIndex,
 }: GpuFieldProps) {
   const hasGpu = detectedGpus.length > 0;
@@ -33,40 +34,25 @@ export function GpuField({
     options.push({ value: "nvidia", label: "NVIDIA NVENC" });
   }
 
+  const gpuNames = detectedGpus.map((g) => g.name).join(" \u00B7 ");
+  const hint = hasGpu ? "(auto-detected)" : undefined;
+
   return (
-    <Box flexDirection="column">
-      <SectionHeader title="HARDWARE TRANSCODING" hint="(auto-detected)" />
-      <Box flexDirection="column" marginTop={1}>
-        {hasGpu ? (
-          <>
-            {detectedGpus.map((gpu, idx) => (
-              <Text key={idx} color={colors.highlight}>
-                Detected: {gpu.name}
-              </Text>
-            ))}
-            <Box marginTop={1}>
-              <Radio
-                options={options}
-                selected={selected}
-                onChange={onChange}
-                focusedIndex={focusedIndex}
-              />
-            </Box>
-          </>
-        ) : (
-          <>
-            <Text color={colors.muted}>No GPU detected, using CPU only</Text>
-            <Box marginTop={1}>
-              <Radio
-                options={options}
-                selected={selected}
-                onChange={onChange}
-                focusedIndex={focusedIndex}
-              />
-            </Box>
-          </>
-        )}
+    <SectionBox title="HARDWARE TRANSCODING" hint={hint} isFocused={isFocused}>
+      {hasGpu ? (
+        <Text color={colors.highlight}>{gpuNames}</Text>
+      ) : (
+        <Text color={colors.muted}>No GPU detected, using CPU only</Text>
+      )}
+      <Box>
+        <Radio
+          options={options}
+          selected={selected}
+          onChange={onChange}
+          focusedIndex={focusedIndex}
+          inline={options.length <= 3}
+        />
       </Box>
-    </Box>
+    </SectionBox>
   );
 }

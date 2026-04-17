@@ -25,7 +25,7 @@ describe("shared components", () => {
       />
     );
     expect(lastFrame()).toContain("Sonarr");
-    expect(lastFrame()).toContain("x");
+    expect(lastFrame()).toContain("\u25A0");
   });
 
   test("Radio renders selected option", () => {

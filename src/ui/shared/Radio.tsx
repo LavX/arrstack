@@ -14,19 +14,39 @@ interface Props {
   selected: string;
   onChange: (val: string) => void;
   focusedIndex: number;
+  inline?: boolean;
 }
 
-export function Radio({ options, selected, focusedIndex }: Props) {
+export function Radio({ options, selected, focusedIndex, inline = false }: Props) {
+  if (inline) {
+    return (
+      <Box>
+        {options.map((option, idx) => {
+          const isSelected = option.value === selected;
+          const isFocused = idx === focusedIndex;
+          const mark = isSelected ? "\u25CF" : "\u25CB";
+          return (
+            <Box key={option.value} marginRight={2}>
+              <Text color={isFocused ? colors.accent : undefined}>
+                {mark} {option.label}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column">
       {options.map((option, idx) => {
         const isSelected = option.value === selected;
         const isFocused = idx === focusedIndex;
-        const mark = isSelected ? "o" : " ";
+        const mark = isSelected ? "\u25CF" : "\u25CB";
         return (
           <Box key={option.value}>
             <Text color={isFocused ? colors.accent : undefined}>
-              ({mark}) {option.label}
+              {mark} {option.label}
             </Text>
             {option.hint && (
               <Text color={colors.muted}>  {option.hint}</Text>

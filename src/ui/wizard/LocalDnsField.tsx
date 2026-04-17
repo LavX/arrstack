@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 import React from "react";
 import { Box, Text } from "ink";
-import { SectionHeader } from "../shared/SectionHeader.js";
+import { SectionBox } from "../shared/SectionBox.js";
 import { TextInput } from "../shared/TextInput.js";
 import { colors } from "../shared/theme.js";
 
@@ -19,32 +19,30 @@ export function LocalDnsField({
   tld,
   onEnabledChange,
   onTldChange,
+  isFocused,
   focusedField,
 }: LocalDnsFieldProps) {
   const checkboxFocused = focusedField === 0;
   const mark = enabled ? "x" : " ";
 
   return (
-    <Box flexDirection="column">
-      <SectionHeader title="LOCAL HOSTNAMES" hint="(optional)" />
-      <Box flexDirection="column" marginTop={1}>
-        <Box>
-          <Text color={checkboxFocused ? colors.accent : undefined}>
-            [{mark}] Install local DNS
-          </Text>
-        </Box>
+    <SectionBox title="LOCAL HOSTNAMES" hint="(optional)" isFocused={isFocused}>
+      <Box>
+        <Text color={checkboxFocused ? colors.accent : undefined}>
+          [{mark}] Install local DNS
+        </Text>
         {enabled && (
-          <Box marginTop={1}>
-            <TextInput
-              label="TLD"
-              value={tld}
-              onChange={onTldChange}
-              hint="Resolves *.arrstack.local on this LAN via dnsmasq on port 53"
-              isFocused={focusedField === 1}
-            />
-          </Box>
+          <Text color={colors.muted}>  (resolve *.arrstack.{tld})</Text>
         )}
       </Box>
-    </Box>
+      {enabled && (
+        <TextInput
+          label="TLD"
+          value={tld}
+          onChange={onTldChange}
+          isFocused={focusedField === 1}
+        />
+      )}
+    </SectionBox>
   );
 }

@@ -1,9 +1,9 @@
 /** @jsxImportSource react */
 import React from "react";
 import { Box, Text } from "ink";
-import { SectionHeader } from "../shared/SectionHeader.js";
+import { SectionBox } from "../shared/SectionBox.js";
 import { TextInput } from "../shared/TextInput.js";
-import { colors } from "../shared/theme.js";
+import { colors, LABEL_WIDTH } from "../shared/theme.js";
 
 interface AdminFieldProps {
   username: string;
@@ -20,30 +20,27 @@ export function AdminField({
   onPasswordChange,
   focusedField,
 }: AdminFieldProps) {
-  const maskedPassword = password.replace(/./g, "\u00b7");
+  const maskedPassword = password.replace(/./g, "\u25CF");
 
   return (
-    <Box flexDirection="column">
-      <SectionHeader title="ADMIN ACCOUNT" hint="used by every service, change later in each UI" />
-      <Box flexDirection="column" marginTop={1}>
-        <TextInput
-          label="Username"
-          value={username}
-          onChange={onUsernameChange}
-          isFocused={focusedField === 0}
-        />
-        <TextInput
-          label="Password"
-          value={focusedField === 1 ? password : maskedPassword}
-          onChange={onPasswordChange}
-          isFocused={focusedField === 1}
-        />
-        <Box marginLeft={2} marginTop={1}>
-          <Text color={colors.muted}>Tab to password field and press </Text>
-          <Text color={colors.accent}>r</Text>
-          <Text color={colors.muted}> to (regenerate)</Text>
-        </Box>
+    <SectionBox title="ADMIN" isFocused={focusedField >= 0}>
+      <TextInput
+        label="Username"
+        value={username}
+        onChange={onUsernameChange}
+        isFocused={focusedField === 0}
+      />
+      <Box>
+        <Text color={focusedField === 1 ? colors.accent : "white"}>
+          {"Password".padEnd(LABEL_WIDTH)}
+        </Text>
+        {focusedField === 1 ? (
+          <Text>{password}</Text>
+        ) : (
+          <Text color={colors.value}>{maskedPassword}</Text>
+        )}
+        <Text color={colors.muted}>  (r to regenerate)</Text>
       </Box>
-    </Box>
+    </SectionBox>
   );
 }

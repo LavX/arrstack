@@ -2,7 +2,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import InkTextInput from "ink-text-input";
-import { colors } from "./theme.js";
+import { colors, LABEL_WIDTH } from "./theme.js";
 
 interface Props {
   label: string;
@@ -13,23 +13,19 @@ interface Props {
   width?: number;
 }
 
-export function TextInput({ label, value, onChange, hint, isFocused, width = 20 }: Props) {
-  const padded = label.padStart(width, ".");
+export function TextInput({ label, value, onChange, hint, isFocused, width = LABEL_WIDTH }: Props) {
+  const padded = label.padEnd(width);
 
   return (
-    <Box flexDirection="column">
-      <Box>
-        <Text color={isFocused ? colors.accent : undefined}>{padded}: </Text>
-        {isFocused ? (
-          <InkTextInput value={value} onChange={onChange} />
-        ) : (
-          <Text>{value}</Text>
-        )}
-      </Box>
-      {hint && (
-        <Box marginLeft={width + 2}>
-          <Text color={colors.muted}>{hint}</Text>
-        </Box>
+    <Box>
+      <Text color={isFocused ? colors.accent : "white"}>{padded}</Text>
+      {isFocused ? (
+        <InkTextInput value={value} onChange={onChange} />
+      ) : (
+        <Text color={colors.value}>{value || <Text color={colors.muted}>(none)</Text>}</Text>
+      )}
+      {hint && !isFocused && (
+        <Text color={colors.muted}>  {hint}</Text>
       )}
     </Box>
   );

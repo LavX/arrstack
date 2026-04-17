@@ -11,22 +11,16 @@ interface StatusStripProps {
 }
 
 export function StatusStrip({ diskInfo, dockerOk, portsOk, gpuName }: StatusStripProps) {
-  const parts: string[] = [];
-
-  for (const disk of diskInfo) {
-    parts.push(`${disk.path}:${disk.freeGb}G`);
-  }
-
-  parts.push(`Docker:${dockerOk ? "ok" : "missing"}`);
-  parts.push(`80/443:${portsOk ? "free" : "in use"}`);
-
-  if (gpuName) {
-    parts.push(`GPU:${gpuName}`);
-  }
-
   return (
     <Box>
-      <Text color={colors.muted}>{parts.join(" | ")}</Text>
+      <Text color={colors.muted}>
+        {diskInfo.map((d) => `${d.path}:${d.freeGb}G`).join("  ")}
+        {diskInfo.length > 0 && "  "}
+        Docker:{dockerOk ? "ok" : "missing"}
+        {"  "}
+        80/443:{portsOk ? "free" : "in use"}
+        {gpuName ? `  GPU:${gpuName}` : ""}
+      </Text>
     </Box>
   );
 }

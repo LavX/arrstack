@@ -1,9 +1,10 @@
 /** @jsxImportSource react */
 import React from "react";
-import { Box } from "ink";
-import { SectionHeader } from "../shared/SectionHeader.js";
+import { Box, Text } from "ink";
+import { SectionBox } from "../shared/SectionBox.js";
 import { TextInput } from "../shared/TextInput.js";
 import { Radio, RadioOption } from "../shared/Radio.js";
+import { colors, LABEL_WIDTH } from "../shared/theme.js";
 
 interface SystemFieldProps {
   timezone: string;
@@ -31,36 +32,41 @@ export function SystemField({
   onTimezoneChange,
   onPuidChange,
   onVpnChange,
+  isFocused,
   focusedField,
 }: SystemFieldProps) {
   const puidPgid = `${puid}/${pgid}`;
 
   return (
-    <Box flexDirection="column">
-      <SectionHeader title="SYSTEM" />
-      <Box flexDirection="column" marginTop={1}>
+    <SectionBox title="SYSTEM" isFocused={isFocused}>
+      <Box>
         <TextInput
           label="Timezone"
           value={timezone}
           onChange={onTimezoneChange}
           isFocused={focusedField === 0}
         />
+      </Box>
+      <Box>
         <TextInput
-          label="PUID/PGID"
+          label="UID/GID"
           value={puidPgid}
           onChange={onPuidChange}
-          hint="e.g. 1000/1000"
           isFocused={focusedField === 1}
         />
-        <Box marginTop={1}>
-          <Radio
-            options={VPN_OPTIONS}
-            selected={vpnMode}
-            onChange={onVpnChange}
-            focusedIndex={focusedField === 2 ? VPN_OPTIONS.findIndex((o) => o.value === vpnMode) : -1}
-          />
-        </Box>
       </Box>
-    </Box>
+      <Box>
+        <Text color={focusedField === 2 ? colors.accent : "white"}>
+          {"VPN".padEnd(LABEL_WIDTH)}
+        </Text>
+        <Radio
+          options={VPN_OPTIONS}
+          selected={vpnMode}
+          onChange={onVpnChange}
+          focusedIndex={focusedField === 2 ? VPN_OPTIONS.findIndex((o) => o.value === vpnMode) : -1}
+          inline
+        />
+      </Box>
+    </SectionBox>
   );
 }

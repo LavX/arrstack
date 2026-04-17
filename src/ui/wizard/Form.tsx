@@ -53,14 +53,6 @@ function sectionFieldCount(
 
 const SECTION_COUNT = 8;
 
-function Separator() {
-  return (
-    <Box marginY={0}>
-      <Text color={colors.muted}>{"─".repeat(60)}</Text>
-    </Box>
-  );
-}
-
 export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) {
   const ws = useWizardState(initial ?? undefined);
 
@@ -205,130 +197,127 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
 
   return (
     <Box flexDirection="column">
-      {/* Header */}
-      <Box>
+      {/* Header bar */}
+      <Box justifyContent="space-between">
         <Text bold color="cyan">{HEADER}</Text>
         {ws.hostname && (
-          <Text color={colors.muted}>  {ws.hostname}</Text>
+          <Text color={colors.muted}>{ws.hostname}</Text>
         )}
       </Box>
-      <Separator />
-      <Text color={colors.muted}>Review, tab to change, Enter to install.</Text>
-      <Separator />
+      <Text color={colors.muted}>{"─".repeat(58)}</Text>
 
-      {/* Fields */}
-      <Box marginY={1}>
-        <StorageField
-          storageRoot={ws.storageRoot}
-          extraPaths={ws.extraPaths}
-          onStorageRootChange={ws.setStorageRoot}
-          onExtraPathsChange={ws.setExtraPaths}
-          focusedField={storageFocusedField}
-        />
-      </Box>
-
-      <Box marginY={1}>
-        <AdminField
-          username={ws.adminUsername}
-          password={ws.adminPassword}
-          onUsernameChange={ws.setAdminUsername}
-          onPasswordChange={ws.setAdminPassword}
-          focusedField={adminFocusedField}
-        />
-      </Box>
-
-      <Box marginY={1}>
-        <GpuField
-          detectedGpus={ws.detectedGpus}
-          selected={ws.gpuVendor}
-          onChange={ws.setGpuVendor}
-          isFocused={gpuIsFocused}
-          focusedIndex={gpuFocusedIndex}
-        />
-      </Box>
-
-      <Box marginY={1}>
-        <ServicesField
-          services={ws.services}
-          onChange={ws.toggleService}
-          isFocused={servicesIsFocused}
-          focusedIndex={servicesFocusedIndex}
-        />
-      </Box>
-
-      <Box marginY={1}>
-        <RemoteAccessField
-          mode={ws.remoteMode}
-          domain={ws.remoteDomain}
-          token={ws.remoteToken}
-          onModeChange={(v) => ws.setRemoteMode(v as "none" | "duckdns" | "cloudflare")}
-          onDomainChange={ws.setRemoteDomain}
-          onTokenChange={ws.setRemoteToken}
-          isFocused={activeSectionIndex === SEC_REMOTE}
-          focusedField={remoteFocusedField}
-        />
-      </Box>
-
-      <Box marginY={1}>
-        <LocalDnsField
-          enabled={ws.localDnsEnabled}
-          tld={ws.localDnsTld}
-          onEnabledChange={ws.setLocalDnsEnabled}
-          onTldChange={ws.setLocalDnsTld}
-          isFocused={activeSectionIndex === SEC_LOCALDNS}
-          focusedField={localDnsFocusedField}
-        />
-      </Box>
-
-      <Box marginY={1}>
-        <SystemField
-          timezone={ws.timezone}
-          puid={ws.puid}
-          pgid={ws.pgid}
-          vpnMode={ws.vpnMode}
-          onTimezoneChange={ws.setTimezone}
-          onPuidChange={(v) => {
-            const [p, g] = v.split("/").map(Number);
-            if (!isNaN(p)) ws.setPuid(p);
-            if (!isNaN(g)) ws.setPgid(g);
-          }}
-          onPgidChange={(v) => {
-            const n = Number(v);
-            if (!isNaN(n)) ws.setPgid(n);
-          }}
-          onVpnChange={(v) => ws.setVpnMode(v as "none" | "gluetun")}
-          isFocused={activeSectionIndex === SEC_SYSTEM}
-          focusedField={systemFocusedField}
-        />
-      </Box>
-
-      <Separator />
-
-      <StatusStrip
-        diskInfo={[]}
-        dockerOk={false}
-        portsOk={false}
-        gpuName={ws.detectedGpus.find((g) => g.vendor === ws.gpuVendor)?.name}
+      {/* Sections */}
+      <StorageField
+        storageRoot={ws.storageRoot}
+        extraPaths={ws.extraPaths}
+        onStorageRootChange={ws.setStorageRoot}
+        onExtraPathsChange={ws.setExtraPaths}
+        focusedField={storageFocusedField}
       />
 
-      <Separator />
+      <AdminField
+        username={ws.adminUsername}
+        password={ws.adminPassword}
+        onUsernameChange={ws.setAdminUsername}
+        onPasswordChange={ws.setAdminPassword}
+        focusedField={adminFocusedField}
+      />
 
-      {/* Footer */}
-      <Box gap={2}>
-        <Text
-          bold
-          color={installFocused ? colors.accent : "white"}
-          inverse={installFocused}
-        >
-          {installLabel}
-        </Text>
-        <Text
-          color={cancelFocused ? colors.accent : colors.muted}
-          inverse={cancelFocused}
-        >
-          Cancel
-        </Text>
-        <Text color={colors.muted}>  Tab: next  ?: help</Text>
+      <GpuField
+        detectedGpus={ws.detectedGpus}
+        selected={ws.gpuVendor}
+        onChange={ws.setGpuVendor}
+        isFocused={gpuIsFocused}
+        focusedIndex={gpuFocusedIndex}
+      />
+
+      <ServicesField
+        services={ws.services}
+        onChange={ws.toggleService}
+        isFocused={servicesIsFocused}
+        focusedIndex={servicesFocusedIndex}
+      />
+
+      <RemoteAccessField
+        mode={ws.remoteMode}
+        domain={ws.remoteDomain}
+        token={ws.remoteToken}
+        onModeChange={(v) => ws.setRemoteMode(v as "none" | "duckdns" | "cloudflare")}
+        onDomainChange={ws.setRemoteDomain}
+        onTokenChange={ws.setRemoteToken}
+        isFocused={activeSectionIndex === SEC_REMOTE}
+        focusedField={remoteFocusedField}
+      />
+
+      <LocalDnsField
+        enabled={ws.localDnsEnabled}
+        tld={ws.localDnsTld}
+        onEnabledChange={ws.setLocalDnsEnabled}
+        onTldChange={ws.setLocalDnsTld}
+        isFocused={activeSectionIndex === SEC_LOCALDNS}
+        focusedField={localDnsFocusedField}
+      />
+
+      <SystemField
+        timezone={ws.timezone}
+        puid={ws.puid}
+        pgid={ws.pgid}
+        vpnMode={ws.vpnMode}
+        onTimezoneChange={ws.setTimezone}
+        onPuidChange={(v) => {
+          const [p, g] = v.split("/").map(Number);
+          if (!isNaN(p)) ws.setPuid(p);
+          if (!isNaN(g)) ws.setPgid(g);
+        }}
+        onPgidChange={(v) => {
+          const n = Number(v);
+          if (!isNaN(n)) ws.setPgid(n);
+        }}
+        onVpnChange={(v) => ws.setVpnMode(v as "none" | "gluetun")}
+        isFocused={activeSectionIndex === SEC_SYSTEM}
+        focusedField={systemFocusedField}
+      />
+
+      {/* Status strip */}
+      <Box marginTop={0}>
+        <StatusStrip
+          diskInfo={[]}
+          dockerOk={false}
+          portsOk={false}
+          gpuName={ws.detectedGpus.find((g) => g.vendor === ws.gpuVendor)?.name}
+        />
+      </Box>
+
+      {/* Separator */}
+      <Text color={colors.muted}>{"─".repeat(58)}</Text>
+
+      {/* Footer with actions and keybindings */}
+      <Box justifyContent="space-between">
+        <Box gap={2}>
+          <Text
+            bold
+            color={installFocused ? "black" : "white"}
+            backgroundColor={installFocused ? "green" : undefined}
+          >
+            {` ${installLabel} `}
+          </Text>
+          <Text
+            color={cancelFocused ? "black" : colors.muted}
+            backgroundColor={cancelFocused ? "yellow" : undefined}
+          >
+            {" Cancel "}
+          </Text>
+        </Box>
+        <Box gap={1}>
+          <Text color={colors.muted}>Tab</Text>
+          <Text color={colors.muted} dimColor>next</Text>
+          <Text color={colors.muted}> Space</Text>
+          <Text color={colors.muted} dimColor>toggle</Text>
+          <Text color={colors.muted}> Enter</Text>
+          <Text color={colors.muted} dimColor>install</Text>
+          <Text color={colors.muted}> Esc</Text>
+          <Text color={colors.muted} dimColor>cancel</Text>
+        </Box>
       </Box>
     </Box>
   );

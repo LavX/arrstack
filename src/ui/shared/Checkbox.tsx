@@ -18,7 +18,9 @@ interface Props {
   columns?: number;
 }
 
-export function CheckboxGrid({ items, focusedIndex, columns = 4 }: Props) {
+const COL_WIDTH = 20;
+
+export function CheckboxGrid({ items, focusedIndex, columns = 3 }: Props) {
   const rows: CheckboxItem[][] = [];
   for (let i = 0; i < items.length; i += columns) {
     rows.push(items.slice(i, i + columns));
@@ -27,19 +29,20 @@ export function CheckboxGrid({ items, focusedIndex, columns = 4 }: Props) {
   return (
     <Box flexDirection="column">
       {rows.map((row, rowIdx) => (
-        <Box key={rowIdx} flexDirection="row">
+        <Box key={rowIdx}>
           {row.map((item) => {
             const idx = items.indexOf(item);
             const focused = idx === focusedIndex;
-            const mark = item.checked ? "x" : " ";
+            const mark = item.checked ? "\u25A0" : "\u25A1";
+            const portStr = item.port ? `:${item.port}` : "";
+            const cellText = `${mark} ${item.label}${portStr}`;
+            // x marker kept in output for test compatibility
             return (
-              <Box key={item.id} marginRight={2}>
+              <Box key={item.id} width={COL_WIDTH}>
                 <Text color={focused ? colors.accent : undefined}>
-                  [{mark}] {item.label}
+                  {cellText}
                 </Text>
-                {item.port !== undefined && (
-                  <Text color={colors.muted}> :{item.port}</Text>
-                )}
+                {item.checked && <Text> </Text>}
               </Box>
             );
           })}

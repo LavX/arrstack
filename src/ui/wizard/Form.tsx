@@ -139,33 +139,60 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
     }
 
     // Arrow keys for radio/checkbox navigation within a section
-    if (key.upArrow || key.downArrow) {
-      const isDown = key.downArrow;
+    // Both left/right AND up/down work for inline radios
+    const isArrow = key.upArrow || key.downArrow || key.leftArrow || key.rightArrow;
+    const isForward = key.downArrow || key.rightArrow;
+    if (isArrow) {
       if (activeSectionIndex === SEC_GPU) {
-        // handled by field index, advance/retreat within section
-        isDown ? advance() : retreat();
+        // cycle GPU vendor selection
+        const gpuOptions = ["none", ...ws.detectedGpus.map(g => g.vendor)].filter(
+          (v, i, a) => a.indexOf(v) === i
+        );
+        const idx = gpuOptions.indexOf(ws.gpuVendor);
+        const next = isForward
+          ? (idx + 1) % gpuOptions.length
+          : (idx - 1 + gpuOptions.length) % gpuOptions.length;
+        ws.setGpuVendor(gpuOptions[next] as "none" | "intel" | "amd" | "nvidia");
         return;
       }
       if (activeSectionIndex === SEC_REMOTE && activeFieldIndex === 0) {
-        // cycle through remote mode options
         const modes = ["none", "duckdns", "cloudflare"] as const;
         const idx = modes.indexOf(ws.remoteMode as (typeof modes)[number]);
-        const next = isDown
+        const next = isForward
           ? (idx + 1) % modes.length
           : (idx - 1 + modes.length) % modes.length;
         ws.setRemoteMode(modes[next]);
         return;
       }
       if (activeSectionIndex === SEC_SYSTEM && activeFieldIndex === 2) {
-        // cycle through vpn modes
         const vpns = ["none", "gluetun"] as const;
         const idx = vpns.indexOf(ws.vpnMode as (typeof vpns)[number]);
-        const next = isDown
+        const next = isForward
           ? (idx + 1) % vpns.length
           : (idx - 1 + vpns.length) % vpns.length;
         ws.setVpnMode(vpns[next]);
         return;
       }
+      // Up/down in services section: navigate rows
+      if (activeSectionIndex === SEC_SERVICES && (key.upArrow || key.downArrow)) {
+        const cols = 3;
+        const newIdx = key.downArrow
+          ? Math.min(activeFieldIndex + cols, ws.services.length - 1)
+          : Math.max(activeFieldIndex - cols, 0);
+        setActiveFieldIndex(newIdx);
+        return;
+      }
+      // Left/right in services section: navigate columns
+      if (activeSectionIndex === SEC_SERVICES && (key.leftArrow || key.rightArrow)) {
+        const newIdx = key.rightArrow
+          ? Math.min(activeFieldIndex + 1, ws.services.length - 1)
+          : Math.max(activeFieldIndex - 1, 0);
+        setActiveFieldIndex(newIdx);
+        return;
+      }
+      // General: up/down arrows navigate fields within and between sections
+      if (key.upArrow) { retreat(); return; }
+      if (key.downArrow) { advance(); return; }
     }
 
     // "r" outside the focused password input = regenerate password

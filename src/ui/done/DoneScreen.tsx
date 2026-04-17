@@ -16,7 +16,7 @@ export function DoneScreen({ urls, password, adminUser }: DoneScreenProps) {
 
       <Text> </Text>
 
-      <Text>Admin credentials (also saved to /opt/arrstack/admin.txt):</Text>
+      <Text>Admin credentials (also saved to ~/arrstack/admin.txt):</Text>
       <Text color={colors.accent}>{"  "}user: {adminUser}</Text>
       <Text color={colors.accent}>{"  "}pass: {password}</Text>
 

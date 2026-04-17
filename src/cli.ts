@@ -25,9 +25,9 @@ program
   .description("Install the arr media stack")
   .option("--fresh", "perform a fresh installation")
   .option("--resume", "resume a previously interrupted installation")
-  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (opts) => {
-    const installDir = opts.installDir ?? "/opt/arrstack";
+    const installDir = opts.installDir ?? `${process.env.HOME}/arrstack`;
     const existing = opts.fresh ? null : readState(installDir);
     const { waitUntilExit } = render(React.createElement(App, { existingState: existing }));
     await waitUntilExit();
@@ -36,7 +36,7 @@ program
 program
   .command("doctor")
   .description("Check system requirements and diagnose issues")
-  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (opts) => {
     await runDoctor(opts.installDir).catch((err) => {
       console.error(`Error: ${err.message}`);
@@ -47,7 +47,7 @@ program
 program
   .command("update")
   .description("Update the arr media stack to the latest version")
-  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (opts) => {
     await runUpdate(opts.installDir).catch((err) => {
       console.error(`Error: ${err.message}`);
@@ -58,7 +58,7 @@ program
 program
   .command("show-password")
   .description("Show service passwords")
-  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (opts) => {
     await showPassword(opts.installDir).catch((err) => {
       console.error(`Error: ${err.message}`);
@@ -69,7 +69,7 @@ program
 program
   .command("uninstall")
   .description("Uninstall the arr media stack")
-  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .option("--purge", "also remove config files (media data is always preserved)")
   .action(async (opts) => {
     await runUninstall(opts.installDir, opts.purge ?? false).catch((err) => {
@@ -81,7 +81,7 @@ program
 program
   .command("logs <service>")
   .description("Show logs for a service")
-  .option("--install-dir <path>", "installation directory", "/opt/arrstack")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (service, opts) => {
     await tailLogs(opts.installDir, service).catch((err) => {
       console.error(`Error: ${err.message}`);
@@ -91,7 +91,7 @@ program
 
 // If no subcommand provided (just `arrstack`), launch the TUI
 program.action(async () => {
-  const installDir = "/opt/arrstack";
+  const installDir = `${process.env.HOME}/arrstack`;
   const existing = readState(installDir);
   const { waitUntilExit } = render(React.createElement(App, { existingState: existing }));
   await waitUntilExit();

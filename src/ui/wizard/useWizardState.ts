@@ -115,7 +115,7 @@ export function buildStateFromWizard(ws: WizardState): State {
   return {
     schema_version: 1,
     installer_version: VERSION,
-    install_dir: "/opt/arrstack",
+    install_dir: `${process.env.HOME}/arrstack`,
     storage_root: ws.storageRoot,
     extra_paths: extraPaths,
     admin: { username: ws.adminUsername },

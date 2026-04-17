@@ -180,7 +180,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // Enter on Install/Cancel buttons; elsewhere behaves like Down (advance)
+    // Enter on buttons
     if (key.return) {
       if (activeSectionIndex === SEC_FOOTER && activeFieldIndex === 0) {
         onSubmit(ws.toState(), ws.adminPassword);
@@ -251,7 +251,12 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // Password regeneration is handled by PasswordInput component internally (Ctrl+R)
+    // "r" regenerates password when on username field (not password, where InkTextInput captures it)
+    if (activeSectionIndex === SEC_ADMIN && activeFieldIndex === 0 && input === "r") {
+      const { generatePassword } = require("../../lib/random.js");
+      ws.setAdminPassword(generatePassword());
+      return;
+    }
   });
 
   // Derive focused props per section

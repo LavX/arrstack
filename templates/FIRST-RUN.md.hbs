@@ -21,18 +21,32 @@ The generated admin password is shared across every service and was saved to
 ## What is already done for you
 
 - Single admin account across every service (no per-service signup)
-- 5 public Prowlarr indexers added and synced to Sonarr and Radarr
+- 8 public Prowlarr indexers added (CF-gated ones routed through FlareSolverr)
+  and synced to Sonarr and Radarr
 - qBittorrent download categories (tv, movies, music, books) created per TRaSH
 - Sonarr/Radarr root folders and qBittorrent as download client
-- Bazarr linked to Sonarr and Radarr
-- Jellyfin admin user and Movies/TV/Music libraries
-- Jellyseerr linked to Jellyfin
+- Bazarr+ linked to Sonarr and Radarr, 6 subtitle providers enabled, language
+  profile created from your wizard selection
+- Jellyfin admin user, Movies/TV/Music libraries, and full library scan
+- Jellyseerr linked to Jellyfin, Sonarr, and Radarr; libraries enabled;
+  initial setup wizard skipped
 
 ## Next steps
 
 1. Open Jellyseerr (see URL above) and sign in with the admin credentials.
 2. Request a movie or TV show. The full pipeline (Prowlarr → Sonarr/Radarr →
    qBittorrent → Jellyfin) should handle the rest.
+3. Optional — add credentials for two subtitle providers that need accounts.
+   Open Bazarr+ **Settings → Providers** (`http://{{hostIp}}:6767/settings/providers`)
+   and paste username/password for:
+   - **OpenSubtitles.com** — free account at <https://www.opensubtitles.com>
+   - **Addic7ed** — free account at <https://www.addic7ed.com>, strong for
+     English TV releases
+
+   The other four providers — opensubtitles (Bazarr+ web scraper for
+   OpenSubtitles.org, no login needed), podnapisi, yifysubtitles, and
+   embeddedsubtitles — work out of the box, so you're not blocked without
+   these credentials.
 
 If something does not work, `arrstack doctor` checks every service and prints
 what is wrong.

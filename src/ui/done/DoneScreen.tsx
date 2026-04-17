@@ -10,6 +10,7 @@ interface DoneScreenProps {
 }
 
 export function DoneScreen({ urls, password, adminUser }: DoneScreenProps) {
+  const bazarr = urls.find((u) => u.name === "Bazarr+" || u.name === "Bazarr");
   return (
     <Box flexDirection="column">
       <Text bold color={colors.primary}>arrstack is running.</Text>
@@ -36,6 +37,25 @@ export function DoneScreen({ urls, password, adminUser }: DoneScreenProps) {
       <Text>Remaining steps:</Text>
       <Text>{"  "}1. Sign in to Jellyseerr (one click)</Text>
       <Text>{"  "}2. Request a movie or show</Text>
+      {bazarr && (
+        <>
+          <Text>
+            {"  "}3. Optional: add credentials for two subtitle providers at
+          </Text>
+          <Text color={colors.accent}>
+            {"     "}{bazarr.url}/settings/providers
+          </Text>
+          <Text color={colors.muted}>
+            {"       "}OpenSubtitles.com (account required, free tier works)
+          </Text>
+          <Text color={colors.muted}>
+            {"       "}Addic7ed (account required, English TV catalog)
+          </Text>
+          <Text color={colors.muted}>
+            {"       "}All other providers work without login.
+          </Text>
+        </>
+      )}
 
       <Text> </Text>
 

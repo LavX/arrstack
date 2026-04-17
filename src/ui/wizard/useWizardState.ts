@@ -43,6 +43,7 @@ export interface WizardState {
 
   // Local DNS
   localDnsEnabled: boolean;
+  localDnsInstallDnsmasq: boolean;
   localDnsTld: string;
 
   // System
@@ -75,7 +76,7 @@ export function buildStateFromWizard(ws: WizardState): State {
   enabledIds.push("caddy"); // always included
   if (ws.remoteMode === "cloudflare") enabledIds.push("cloudflare-ddns");
   if (ws.remoteMode === "duckdns") enabledIds.push("duckdns-updater");
-  if (ws.localDnsEnabled) enabledIds.push("dnsmasq");
+  if (ws.localDnsEnabled && ws.localDnsInstallDnsmasq) enabledIds.push("dnsmasq");
   if (ws.vpnMode === "gluetun" && !enabledIds.includes("gluetun")) enabledIds.push("gluetun");
 
   // Bazarr+ bundle: when bazarr is checked, auto-add its dependencies
@@ -123,7 +124,11 @@ export function buildStateFromWizard(ws: WizardState): State {
     services_enabled: enabledIds,
     gpu,
     remote_access: remoteAccess,
-    local_dns: { enabled: ws.localDnsEnabled, tld: ws.localDnsTld },
+    local_dns: {
+      enabled: ws.localDnsEnabled,
+      tld: ws.localDnsTld,
+      install_dnsmasq: ws.localDnsInstallDnsmasq,
+    },
     vpn: {
       enabled: ws.vpnMode !== "none",
       ...(ws.vpnMode !== "none" && { provider: ws.vpnMode }),
@@ -215,6 +220,9 @@ export function useWizardState(existingState?: Partial<State> | null) {
     existingState?.remote_access?.token ?? ""
   );
 
+  const [localDnsInstallDnsmasq, setLocalDnsInstallDnsmasq] = useState(
+    existingState?.local_dns?.install_dnsmasq ?? true,
+  );
   const [localDnsEnabled, setLocalDnsEnabled] = useState(
     existingState?.local_dns?.enabled ?? false
   );
@@ -366,6 +374,7 @@ export function useWizardState(existingState?: Partial<State> | null) {
       remoteDomain,
       remoteToken,
       localDnsEnabled,
+      localDnsInstallDnsmasq,
       localDnsTld,
       timezone: tz,
       puid: puidState,
@@ -422,6 +431,8 @@ export function useWizardState(existingState?: Partial<State> | null) {
     // Local DNS
     localDnsEnabled,
     setLocalDnsEnabled,
+    localDnsInstallDnsmasq,
+    setLocalDnsInstallDnsmasq,
     localDnsTld,
     setLocalDnsTld,
 

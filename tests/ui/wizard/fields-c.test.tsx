@@ -12,7 +12,9 @@ describe("LocalDnsField", () => {
       <LocalDnsField
         enabled={false}
         tld="arrstack.local"
+        installDnsmasq={true}
         onEnabledChange={() => {}}
+        onInstallDnsmasqChange={() => {}}
         onTldChange={() => {}}
         isFocused={false}
         focusedField={-1}
@@ -26,7 +28,9 @@ describe("LocalDnsField", () => {
       <LocalDnsField
         enabled={false}
         tld="arrstack.local"
+        installDnsmasq={true}
         onEnabledChange={() => {}}
+        onInstallDnsmasqChange={() => {}}
         onTldChange={() => {}}
         isFocused={false}
         focusedField={-1}
@@ -40,7 +44,9 @@ describe("LocalDnsField", () => {
       <LocalDnsField
         enabled={true}
         tld="arrstack.local"
+        installDnsmasq={true}
         onEnabledChange={() => {}}
+        onInstallDnsmasqChange={() => {}}
         onTldChange={() => {}}
         isFocused={false}
         focusedField={-1}
@@ -54,7 +60,9 @@ describe("LocalDnsField", () => {
       <LocalDnsField
         enabled={false}
         tld="arrstack.local"
+        installDnsmasq={true}
         onEnabledChange={() => {}}
+        onInstallDnsmasqChange={() => {}}
         onTldChange={() => {}}
         isFocused={false}
         focusedField={-1}
@@ -68,7 +76,9 @@ describe("LocalDnsField", () => {
       <LocalDnsField
         enabled={true}
         tld="arrstack.local"
+        installDnsmasq={true}
         onEnabledChange={() => {}}
+        onInstallDnsmasqChange={() => {}}
         onTldChange={() => {}}
         isFocused={true}
         focusedField={0}

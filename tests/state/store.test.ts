@@ -17,7 +17,7 @@ const VALID_STATE: State = {
   services_enabled: ["sonarr", "radarr", "jellyfin"],
   gpu: { vendor: "none" },
   remote_access: { mode: "none" },
-  local_dns: { enabled: false, tld: "local" },
+  local_dns: { enabled: false, tld: "local", install_dnsmasq: true },
   vpn: { enabled: false },
   timezone: "Europe/London",
   puid: 1000,

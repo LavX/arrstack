@@ -19,7 +19,14 @@ export const StateSchema = z.object({
     domain: z.string().optional(),
     token: z.string().optional(),
   }),
-  local_dns: z.object({ enabled: z.boolean(), tld: z.string() }),
+  local_dns: z.object({
+    enabled: z.boolean(),
+    tld: z.string(),
+    // When true (default), install the dnsmasq container so hostnames
+    // resolve LAN-wide. When false, Caddy still serves vhosts on :80 but
+    // clients need their own /etc/hosts entries.
+    install_dnsmasq: z.boolean().default(true),
+  }),
   vpn: z.object({ enabled: z.boolean(), provider: z.string().optional() }),
   timezone: z.string(),
   puid: z.number(),

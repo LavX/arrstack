@@ -7,6 +7,12 @@ export const ServiceSchema = z.object({
   category: z.enum(["download", "indexer", "arr", "subtitle", "media", "request", "proxy", "dns", "ddns", "utility"]),
   image: z.string(),
   tag: z.string().default("latest"),
+  build: z
+    .object({
+      context: z.string(),
+      dockerfile: z.string().default("Dockerfile"),
+    })
+    .optional(),
   ports: z.array(z.number()),
   adminPort: z.number().optional(),
   configPath: z.string().default("/config"),

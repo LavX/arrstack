@@ -213,11 +213,15 @@ services:
     name: Caddy
     description: Automatic HTTPS reverse proxy for the media stack
     category: proxy
-    # Stock Caddy works for LAN mode. Remote-access modes (duckdns/cloudflare)
-    # need a build with the matching DNS plugins, e.g. built via xcaddy:
-    #   xcaddy build --with github.com/caddy-dns/cloudflare --with github.com/caddy-dns/duckdns
-    image: caddy
-    tag: "latest"
+    # We build Caddy locally via xcaddy so the caddy-dns/cloudflare and
+    # caddy-dns/duckdns providers are available out of the box. Remote-access
+    # modes (duckdns/cloudflare) require these plugins for DNS-01 ACME
+    # challenges. The stock caddy:latest image ships neither.
+    image: arrstack/caddy
+    tag: "local"
+    build:
+      context: ./caddy
+      dockerfile: Dockerfile
     ports: [80, 443]
     adminPort: 443
     configPath: /config
@@ -291,7 +295,7 @@ services:
       type: http
       path: /status
       port: 7889
-    default: false
+    default: true
     requiresAdminAuth: false
 
   - id: gluetun
@@ -320,3 +324,54 @@ services:
       - NET_ADMIN
     extraDevices:
       - /dev/net/tun:/dev/net/tun
+
+  - id: dnsmasq
+    name: dnsmasq
+    description: LAN-wide DNS so "*.<tld>" resolves to this host on every client
+    category: dns
+    image: jpillora/dnsmasq
+    tag: "latest"
+    # Host networking so the daemon can own UDP/TCP port 53 on the LAN without
+    # docker-proxy translation. Containerized port publishing on 53 conflicts
+    # with systemd-resolved on most distros.
+    networkMode: host
+    ports: []
+    configPath: /etc/dnsmasq.conf
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    health:
+      type: tcp
+      port: 53
+    default: false
+    requiresAdminAuth: false
+    capAdd:
+      - NET_ADMIN
+
+  - id: duckdns-updater
+    name: DuckDNS updater
+    description: Keeps the DuckDNS A record pointed at this host's public IP
+    category: ddns
+    image: lscr.io/linuxserver/duckdns
+    tag: "latest"
+    ports: []
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    default: false
+    requiresAdminAuth: false
+
+  - id: cloudflare-ddns
+    name: Cloudflare DDNS
+    description: Keeps Cloudflare DNS records for this host's subdomains in sync
+    category: ddns
+    image: favonia/cloudflare-ddns
+    tag: "latest"
+    ports: []
+    configPath: /config
+    mounts: {}
+    envVars: {}
+    dependsOn: []
+    default: false
+    requiresAdminAuth: false

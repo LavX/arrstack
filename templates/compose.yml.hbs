@@ -7,6 +7,11 @@ services:
   {{id}}:
     container_name: {{id}}
     image: {{image}}:{{tag}}
+{{#if build}}
+    build:
+      context: {{build.context}}
+      dockerfile: {{build.dockerfile}}
+{{/if}}
     restart: unless-stopped
     logging:
       driver: json-file

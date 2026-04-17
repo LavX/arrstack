@@ -11,6 +11,7 @@ import { generateApiKey } from "../lib/random.js";
 import { bcryptHash, qbitPbkdf2Hash, bazarrPbkdf2Hash } from "../auth/hash.js";
 import { renderEnvFile } from "../renderer/env.js";
 import { renderCompose } from "../renderer/compose.js";
+import { getTemplateSource } from "../renderer/engine.js";
 import { renderCaddyfile } from "../renderer/caddy.js";
 import { renderServarrConfig } from "../renderer/servarr-config.js";
 import { renderBazarrConfig } from "../renderer/bazarr-config.js";
@@ -205,6 +206,14 @@ export async function runInstall(
       localDns: state.local_dns,
     });
     writeFileSync(join(installDir, "Caddyfile"), content);
+  });
+
+  // Step 6b: Materialize Caddy build context with xcaddy Dockerfile so the
+  // cloudflare and duckdns DNS plugins are available for DNS-01 ACME.
+  await runStep("Render Caddy Dockerfile", onStep, log, async () => {
+    const caddyDir = join(installDir, "caddy");
+    mkdirSync(caddyDir, { recursive: true });
+    writeFileSync(join(caddyDir, "Dockerfile"), getTemplateSource("caddy.Dockerfile"));
   });
 
   // Step 7: Pre-write service configs

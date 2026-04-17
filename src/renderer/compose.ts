@@ -49,6 +49,7 @@ interface ServiceContext {
   id: string;
   image: string;
   tag: string;
+  build?: { context: string; dockerfile: string };
   configPath: string;
   ports: PortBinding[];
   apiKeyEnv: string | undefined;
@@ -187,6 +188,7 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       id: svc.id,
       image: svc.image,
       tag: svc.tag,
+      build: svc.build,
       configPath: svc.configPath,
       ports,
       apiKeyEnv,

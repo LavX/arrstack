@@ -21,6 +21,8 @@ import tplEncoding from "../../templates/encoding.xml.hbs" with { type: "text" }
 import tplFirstRun from "../../templates/FIRST-RUN.md.hbs" with { type: "text" };
 // @ts-ignore
 import tplDnsmasq from "../../templates/dnsmasq.conf.hbs" with { type: "text" };
+// @ts-ignore
+import tplCaddyDockerfile from "../../templates/caddy.Dockerfile" with { type: "text" };
 
 const EMBEDDED_TEMPLATES: Record<string, string> = {
   "compose.yml.hbs": tplCompose,
@@ -32,7 +34,16 @@ const EMBEDDED_TEMPLATES: Record<string, string> = {
   "encoding.xml.hbs": tplEncoding,
   "FIRST-RUN.md.hbs": tplFirstRun,
   "dnsmasq.conf.hbs": tplDnsmasq,
+  "caddy.Dockerfile": tplCaddyDockerfile,
 };
+
+export function getTemplateSource(templateName: string): string {
+  const source = EMBEDDED_TEMPLATES[templateName];
+  if (source) return source;
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const templatePath = join(__dirname, "..", "..", "templates", templateName);
+  return readFileSync(templatePath, "utf-8");
+}
 
 Handlebars.registerHelper("eq", function (a: unknown, b: unknown) {
   return a === b;

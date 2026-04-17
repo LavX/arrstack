@@ -251,12 +251,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // Ctrl+R regenerates password when in admin section
-    if (activeSectionIndex === SEC_ADMIN && key.ctrl && (input === "r" || input === "R")) {
-      const { generatePassword } = require("../../lib/random.js");
-      ws.setAdminPassword(generatePassword());
-      return;
-    }
+    // Password regeneration is handled by PasswordInput component internally (Ctrl+R)
   });
 
   // Derive focused props per section

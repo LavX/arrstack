@@ -12,6 +12,8 @@ test("runRecyclarrSync command includes recyclarr sync", async () => {
   const src = await Bun.file(
     new URL("../../src/wiring/recyclarr.ts", import.meta.url).pathname
   ).text();
-  expect(src).toContain("recyclarr sync");
-  expect(src).toContain("docker compose");
+  expect(src).toContain('"recyclarr"');
+  expect(src).toContain('"sync"');
+  expect(src).toContain('"docker"');
+  expect(src).toContain('"compose"');
 });

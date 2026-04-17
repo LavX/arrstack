@@ -10,19 +10,23 @@ export interface CheckResult {
 }
 
 async function checkDiskSpace(path: string, minGb: number): Promise<CheckResult> {
-  const result = await exec(`df -BG --output=avail "${path}" 2>/dev/null | tail -1`, { timeoutMs: 5000 });
+  const result = await exec(["df", "-Pk", path], { timeoutMs: 5000 });
   const name = `Disk space on ${path}`;
 
   if (!result.ok) {
     return { name, ok: false, message: `Could not check disk space on ${path}`, blocking: true };
   }
 
-  const match = result.stdout.trim().match(/(\d+)/);
-  if (!match) {
+  // POSIX df output: last line, 4th column is available 1K-blocks.
+  const lines = result.stdout.trim().split("\n");
+  const lastLine = lines[lines.length - 1];
+  const cols = lastLine.split(/\s+/);
+  const availKb = parseInt(cols[3], 10);
+  if (isNaN(availKb)) {
     return { name, ok: false, message: `Could not parse disk space output`, blocking: true };
   }
 
-  const availGb = parseInt(match[1], 10);
+  const availGb = Math.floor(availKb / (1024 * 1024));
   const ok = availGb >= minGb;
   return {
     name,

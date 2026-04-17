@@ -8,13 +8,15 @@ export type ExecResult =
   | { ok: true; stdout: string; stderr: string }
   | { ok: false; stderr: string; code: number | null };
 
-export async function exec(cmd: string, opts: ExecOpts = {}): Promise<ExecResult> {
+// Pass an argv array (preferred) to spawn directly with no shell, so user-controlled
+// paths/arguments can never be interpreted as shell metacharacters. Pass a string only
+// when a shell pipeline (pipes, globs, redirects) is actually needed — callers are
+// responsible for ensuring no user-controlled data is interpolated.
+export async function exec(cmdOrArgv: string | string[], opts: ExecOpts = {}): Promise<ExecResult> {
   const timeoutMs = opts.timeoutMs ?? 120_000;
+  const argv = Array.isArray(cmdOrArgv) ? cmdOrArgv : ["sh", "-c", cmdOrArgv];
 
-  const proc = spawn(["sh", "-c", cmd], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  const proc = spawn(argv, { stdout: "pipe", stderr: "pipe" });
 
   let timedOut = false;
   const timer = setTimeout(() => {
@@ -41,10 +43,8 @@ export async function exec(cmd: string, opts: ExecOpts = {}): Promise<ExecResult
   return { ok: false, stderr: stderrBuf.trimEnd(), code: exitCode };
 }
 
-export function execSync_(cmd: string): string {
-  const result = spawnSync(["sh", "-c", cmd], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+export function execSync_(cmdOrArgv: string | string[]): string {
+  const argv = Array.isArray(cmdOrArgv) ? cmdOrArgv : ["sh", "-c", cmdOrArgv];
+  const result = spawnSync(argv, { stdout: "pipe", stderr: "pipe" });
   return result.stdout.toString().trim();
 }

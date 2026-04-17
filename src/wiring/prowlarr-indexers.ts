@@ -38,10 +38,11 @@ export const PUBLIC_INDEXERS: IndexerDefinition[] = [
     fields: [{ name: "definitionFile", value: "eztv" }],
   },
   {
-    name: "TorrentGalaxy",
+    // TorrentGalaxy shut down in Oct 2024; Prowlarr now ships a clone def.
+    name: "TorrentGalaxyClone",
     implementation: "Cardigann",
     configContract: "CardigannSettings",
-    fields: [{ name: "definitionFile", value: "torrentgalaxy" }],
+    fields: [{ name: "definitionFile", value: "torrentgalaxyclone" }],
   },
 ];
 
@@ -96,9 +97,16 @@ export async function addProwlarrIndexers(
     );
 
     if (res.status !== 201 && res.status !== 200) {
-      throw new Error(
-        `Failed to add indexer "${indexer.name}": HTTP ${res.status}`
+      // Public tracker definitions disappear upstream (site shutdowns, rename
+      // to *Clone, etc.). Don't fail the whole install for a single dead
+      // indexer — log the specific failure and move on. The user can add
+      // current indexers manually via the Prowlarr UI.
+      let body = "";
+      try { body = (await res.text()).slice(0, 300); } catch { /* ignore */ }
+      console.error(
+        `[prowlarr] skipping "${indexer.name}" (HTTP ${res.status}): ${body}`,
       );
+      continue;
     }
 
     added++;

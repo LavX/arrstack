@@ -120,8 +120,12 @@ services:
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
     dependsOn: [sonarr, radarr, flaresolverr, opensubtitles-scraper]
     health:
+      # /api/system/ping is the documented unauthenticated readiness probe
+      # (bazarr/api/system/ping.py). Returns 200 {"status":"OK"} once the
+      # Flask app, DB, and scheduler are all up. Beats hitting / which
+      # returns 401 on authed instances and 200 very early on unauthed ones.
       type: http
-      path: /
+      path: /api/system/ping
       port: 6767
     default: true
     requiresAdminAuth: false

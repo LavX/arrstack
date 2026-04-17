@@ -24,4 +24,14 @@ describe("storage layout", () => {
     createStorageLayout(root, 1000, 1000);
     expect(existsSync(join(root, "torrents/tv"))).toBe(true);
   });
+
+  test("creates tv/movies inside each extra path for add-a-drive flow", () => {
+    const extra1 = mkdtempSync(join(tmpdir(), "arrstack-extra1-"));
+    const extra2 = mkdtempSync(join(tmpdir(), "arrstack-extra2-"));
+    createStorageLayout(root, 1000, 1000, [extra1, extra2]);
+    expect(existsSync(join(extra1, "tv"))).toBe(true);
+    expect(existsSync(join(extra1, "movies"))).toBe(true);
+    expect(existsSync(join(extra2, "tv"))).toBe(true);
+    expect(existsSync(join(extra2, "movies"))).toBe(true);
+  });
 });

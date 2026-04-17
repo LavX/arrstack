@@ -251,9 +251,8 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // Ctrl+R regenerates password (ASCII 18). Works even when InkTextInput is active
-    // because Ctrl+R is a control character, not a printable "r".
-    if (activeSectionIndex === SEC_ADMIN && input === "\x12") {
+    // "r" regenerates password when on username field (not password, where InkTextInput is active)
+    if (activeSectionIndex === SEC_ADMIN && activeFieldIndex !== 1 && input === "r") {
       const { generatePassword } = require("../../lib/random.js");
       ws.setAdminPassword(generatePassword());
       return;

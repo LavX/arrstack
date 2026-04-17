@@ -37,14 +37,11 @@ export function AdminField({
           {"Password".padEnd(LABEL_WIDTH)}
         </Text>
         {isPasswordFocused ? (
-          <>
-            <InkTextInput value={password} onChange={onPasswordChange} />
-            <Text color={colors.muted}>{"  Ctrl+R regenerate"}</Text>
-          </>
+          <InkTextInput value={password} onChange={onPasswordChange} />
         ) : (
           <>
             <Text color={colors.value}>{maskedPassword}</Text>
-            <Text color={colors.muted}>{"  (" + password.length + " chars)"}</Text>
+            <Text color={colors.muted}>{"  (" + password.length + " chars)  (r to regenerate)"}</Text>
           </>
         )}
       </Box>

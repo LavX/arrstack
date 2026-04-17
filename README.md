@@ -14,7 +14,7 @@ curl -fsSL https://lavx.github.io/arrstack/install.sh | bash
 
 <!-- badges: swap the placeholder URLs once CI is green and releases are tagged -->
 <p align="center">
-  <a href="https://github.com/lavx/arrstack-installer/actions"><img alt="build" src="https://img.shields.io/badge/build-passing-brightgreen" /></a>
+  <a href="https://github.com/lavx/arrstack/actions"><img alt="build" src="https://img.shields.io/badge/build-passing-brightgreen" /></a>
   <a href="#license"><img alt="license" src="https://img.shields.io/badge/license-MIT-blue" /></a>
   <a href="#requirements"><img alt="platform" src="https://img.shields.io/badge/linux-x64%20%7C%20arm64-informational" /></a>
   <a href="https://bun.sh"><img alt="bun" src="https://img.shields.io/badge/runtime-bun-f472b6" /></a>
@@ -31,7 +31,7 @@ Spinning up a self-hosted media stack is a click-fest. You write the compose fil
 
 TRaSH-Guides has an excellent writeup of what "correct" looks like. Following it by hand takes most of a Saturday, and any mistake shows up two weeks later when a release fails to hardlink and your seed ratio falls off a cliff.
 
-arrstack runs that Saturday for you. It ships as a single ~2 MB Linux binary, asks you a handful of questions in a TUI wizard, writes a TRaSH-compliant compose file, and calls every service's API at boot time to finish the wiring. Re-run the wizard later to add a drive or widen your language profile, it extends what is there instead of starting over.
+arrstack runs that Saturday for you. It ships as a single self-contained Linux binary (~100 MB, Bun runtime bundled), asks you a handful of questions in a TUI wizard, writes a TRaSH-compliant compose file, and calls every service's API at boot time to finish the wiring. Re-run the wizard later to add a drive or widen your language profile, it extends what is there instead of starting over.
 
 ## Documentation
 
@@ -49,11 +49,11 @@ The README is a tour. The full user guide lives under `docs/`.
 ## Features
 
 ### Install experience
-- Single static Linux binary (~2 MB), no runtime dependency beyond Docker
+- Single self-contained Linux binary (~100 MB, bundles the Bun runtime), no runtime dependency beyond Docker
 - Interactive TUI built on Ink (React for terminals), arrow-key nav, live validation
 - Idempotent wizard: re-running extends libraries and root folders, never clobbers
 - `Ctrl+R` in the admin field regenerates the password in place
-- Non-interactive mode for config-as-code fans: `--non-interactive` plus env vars
+- `--non-interactive` flag for unattended / CI runs (uses the same defaults the wizard would)
 
 ### Auto-wiring (the part that usually takes hours)
 - Prowlarr gets 8 public indexers pushed, plus a FlareSolverr proxy tag applied at indexer create-time
@@ -66,7 +66,7 @@ The README is a tour. The full user guide lives under `docs/`.
 
 ### Runtime polish
 - Jellyfin hardware transcoding auto-detected for Intel (VAAPI), AMD (VAAPI), NVIDIA (NVENC)
-- Caddy reverse proxy with three TLS modes: LAN, DuckDNS, Cloudflare DNS-01 wildcard
+- Caddy reverse proxy with three remote-access modes: LAN (plain HTTP), DuckDNS (Let's Encrypt), Cloudflare DNS-01 wildcard Let's Encrypt
 - Two LAN hostname modes: install dnsmasq for LAN-wide resolution, or print a single `/etc/hosts` line
 - TRaSH-compliant shared `/data` mount so hardlinks work across `torrents/` and `media/`
 - Optional gluetun + WireGuard VPN container in front of qBittorrent
@@ -75,7 +75,7 @@ The README is a tour. The full user guide lives under `docs/`.
 ## Quickstart
 
 ```bash
-# 1. Install (downloads the binary to /usr/local/bin and runs the wizard)
+# 1. Install (downloads the binary to ~/.local/bin if it is on PATH, else /usr/local/bin via sudo, then runs the wizard)
 curl -fsSL https://lavx.github.io/arrstack/install.sh | bash
 
 # 2. Check everything came up
@@ -196,7 +196,7 @@ Add a drive later by mounting it on the host, re-running `arrstack`, and enterin
 | Command | What it does |
 | --- | --- |
 | `arrstack install` | Runs the wizard and installs (default when no subcommand is given) |
-| `arrstack doctor` | Runs 40+ health checks (containers up, API reachable, hardlinks working) |
+| `arrstack doctor` | Runs preflight checks and per-service HTTP probes (Docker up, ports free, storage writable, each service API reachable) |
 | `arrstack update` | Pulls latest images, recreates containers with no config loss |
 | `arrstack show-password` | Prints the generated admin password to stdout |
 | `arrstack logs <svc>` | Tails a single service (`jellyfin`, `sonarr`, etc) |
@@ -221,7 +221,7 @@ Default `PUID` and `PGID` are the installing user's `id -u` and `id -g`. Overrid
 
 ```bash
 # Clone and set up
-git clone https://github.com/lavx/arrstack-installer
+git clone https://github.com/lavx/arrstack
 cd arrstack-installer
 bun install
 
@@ -241,14 +241,6 @@ bun run build:arm64     # -> dist/arrstack-linux-arm64
 
 The project is Bun-native: `Bun.serve`, `Bun.file`, `Bun.$`, and `bun:sqlite` for the state DB. No Node runtime is needed at install time, the compiled binary carries its own.
 
-## Roadmap
-
-- `arrstack backup` and `arrstack restore`: tarball of configs + compose, portable across hosts
-- NixOS module so the stack can be declared instead of imperatively installed
-- Readarr and Lidarr as optional services in the wizard
-- Web UI mirror of the TUI wizard for users who prefer a browser
-- Built-in Immich bridge for photo libraries alongside video
-
 ## Credits
 
 Built on the shoulders of the projects that do the actual work:
@@ -259,7 +251,7 @@ Built on the shoulders of the projects that do the actual work:
 - [Caddy](https://caddyserver.com), [Recyclarr](https://recyclarr.dev), [Trailarr](https://github.com/nandyalu/trailarr)
 - [gluetun](https://github.com/qdm12/gluetun), [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html)
 - [TRaSH-Guides](https://trash-guides.info), whose recommendations this installer encodes
-- [Bun](https://bun.sh) and [Ink](https://github.com/vadimdemedes/ink) for making a 2 MB TUI binary possible
+- [Bun](https://bun.sh) and [Ink](https://github.com/vadimdemedes/ink), which carry the TUI and the compiled single-binary distribution
 
 ## Brand and project site
 

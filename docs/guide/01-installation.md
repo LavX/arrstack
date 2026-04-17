@@ -57,10 +57,10 @@ curl -fsSL https://lavx.github.io/arrstack/install.sh | bash
 
 What the script does:
 
-1. Detects your distro and architecture (x86_64 only for now).
-2. Downloads the `arrstack` binary (about 2 MB) to `~/.local/bin/arrstack`.
-3. Ensures `~/.local/bin` is on your PATH (adds to `~/.bashrc` or `~/.zshrc` if not).
-4. Prints the next command to run: `arrstack install`.
+1. Detects your architecture (x86_64 and aarch64 are supported; Alpine is refused).
+2. Downloads the matching `arrstack` binary (about 100 MB, bundles the Bun runtime) and a `checksums.txt` from the latest GitHub Release. Verifies the SHA256.
+3. If `~/.local/bin` exists AND is already on your PATH, installs there. Otherwise installs to `/usr/local/bin` (via sudo).
+4. Execs `arrstack install` directly, which drops you into the TUI wizard.
 
 If you prefer not to pipe curl to bash, the script URL is plain text. Read it, then save and execute it by hand.
 

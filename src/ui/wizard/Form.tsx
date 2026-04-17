@@ -251,14 +251,9 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
     }
 
-    // "r" outside the focused password input = regenerate password
-    // When activeFieldIndex === 1 (password), InkTextInput owns keyboard input,
-    // so skip regeneration to avoid conflict with user typing.
-    if (
-      activeSectionIndex === SEC_ADMIN &&
-      activeFieldIndex !== 1 &&
-      input === "r"
-    ) {
+    // Shift+R (capital R) regenerates password when on the password field
+    // Lowercase "r" is consumed by InkTextInput for typing
+    if (activeSectionIndex === SEC_ADMIN && input === "R") {
       const { generatePassword } = require("../../lib/random.js");
       ws.setAdminPassword(generatePassword());
       return;

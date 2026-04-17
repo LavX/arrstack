@@ -18,6 +18,13 @@ export interface ComposeOptions {
   vpn: {
     enabled: boolean;
     provider?: string;
+    type?: "wireguard" | "openvpn";
+    private_key?: string;
+    addresses?: string;
+    countries?: string;
+    endpoint_ip?: string;
+    endpoint_port?: number;
+    server_public_key?: string;
   };
   // LAN-only when "none"; reverse-proxy-fronted otherwise. Controls whether
   // admin ports bind to 0.0.0.0 (LAN) or 127.0.0.1 (behind Caddy).
@@ -130,6 +137,30 @@ function isVpnRouted(svc: Service, vpn: ComposeOptions["vpn"]): boolean {
   return svc.id === "qbittorrent" && vpn.enabled;
 }
 
+// Translates the wizard's VPN state into the env vars gluetun expects
+// (VPN_SERVICE_PROVIDER / VPN_TYPE / WIREGUARD_* / SERVER_COUNTRIES / custom
+// endpoint tuple). Only emitted for the gluetun service and only when VPN
+// is enabled.
+function buildGluetunEnv(vpn: ComposeOptions["vpn"]): EnvEntry[] {
+  if (!vpn.enabled) return [];
+  const env: EnvEntry[] = [];
+  if (vpn.provider) env.push({ key: "VPN_SERVICE_PROVIDER", value: vpn.provider });
+  env.push({ key: "VPN_TYPE", value: vpn.type ?? "wireguard" });
+  if (vpn.private_key) env.push({ key: "WIREGUARD_PRIVATE_KEY", value: vpn.private_key });
+  if (vpn.addresses) env.push({ key: "WIREGUARD_ADDRESSES", value: vpn.addresses });
+  if (vpn.countries) env.push({ key: "SERVER_COUNTRIES", value: vpn.countries });
+  if (vpn.provider === "custom") {
+    if (vpn.endpoint_ip) env.push({ key: "VPN_ENDPOINT_IP", value: vpn.endpoint_ip });
+    if (vpn.endpoint_port !== undefined) {
+      env.push({ key: "VPN_ENDPOINT_PORT", value: String(vpn.endpoint_port) });
+    }
+    if (vpn.server_public_key) {
+      env.push({ key: "WIREGUARD_PUBLIC_KEY", value: vpn.server_public_key });
+    }
+  }
+  return env;
+}
+
 export function buildComposeContext(services: Service[], opts: ComposeOptions): ComposeContext {
   const serviceContexts: ServiceContext[] = services.map((svc) => {
     const vpnNetwork = isVpnRouted(svc, opts.vpn);
@@ -140,6 +171,9 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       key,
       value,
     }));
+    if (svc.id === "gluetun") {
+      extraEnv.push(...buildGluetunEnv(opts.vpn));
+    }
 
     const bindHost =
       ALWAYS_PUBLIC.has(svc.id) || opts.remoteMode === "none"

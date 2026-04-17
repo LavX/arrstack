@@ -117,6 +117,54 @@ describe("renderCompose", () => {
     expect(dataMountCount).toBe(4);
   });
 
+  test("gluetun emits WireGuard env vars when vpn.enabled with mullvad", () => {
+    const services = getServices(["gluetun"]);
+    const output = renderCompose(services, {
+      ...baseOpts,
+      vpn: {
+        enabled: true,
+        provider: "mullvad",
+        type: "wireguard",
+        private_key: "TESTKEY==",
+        addresses: "10.64.222.21/32",
+        countries: "Switzerland",
+      },
+    });
+    expect(output).toContain("VPN_SERVICE_PROVIDER=mullvad");
+    expect(output).toContain("VPN_TYPE=wireguard");
+    expect(output).toContain("WIREGUARD_PRIVATE_KEY=TESTKEY==");
+    expect(output).toContain("WIREGUARD_ADDRESSES=10.64.222.21/32");
+    expect(output).toContain("SERVER_COUNTRIES=Switzerland");
+  });
+
+  test("gluetun custom provider emits endpoint + server pubkey", () => {
+    const services = getServices(["gluetun"]);
+    const output = renderCompose(services, {
+      ...baseOpts,
+      vpn: {
+        enabled: true,
+        provider: "custom",
+        type: "wireguard",
+        private_key: "K",
+        addresses: "10.0.0.1/32",
+        endpoint_ip: "203.0.113.7",
+        endpoint_port: 51820,
+        server_public_key: "PUB=",
+      },
+    });
+    expect(output).toContain("VPN_SERVICE_PROVIDER=custom");
+    expect(output).toContain("VPN_ENDPOINT_IP=203.0.113.7");
+    expect(output).toContain("VPN_ENDPOINT_PORT=51820");
+    expect(output).toContain("WIREGUARD_PUBLIC_KEY=PUB=");
+  });
+
+  test("gluetun emits no VPN env vars when vpn.enabled is false", () => {
+    const services = getServices(["gluetun"]);
+    const output = renderCompose(services, baseOpts);
+    expect(output).not.toContain("VPN_SERVICE_PROVIDER");
+    expect(output).not.toContain("WIREGUARD_PRIVATE_KEY");
+  });
+
   test("gluetun gets NET_ADMIN + /dev/net/tun so its nftables kill-switch can init", () => {
     const services = getServices(["gluetun"]);
     const output = renderCompose(services, baseOpts);

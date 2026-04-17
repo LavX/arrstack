@@ -11,6 +11,7 @@ import { ServicesField } from "./ServicesField.js";
 import { RemoteAccessField } from "./RemoteAccessField.js";
 import { LocalDnsField } from "./LocalDnsField.js";
 import { SystemField } from "./SystemField.js";
+import { VpnField } from "./VpnField.js";
 import { StatusStrip } from "./StatusStrip.js";
 import { generatePassword } from "../../lib/random.js";
 
@@ -31,8 +32,17 @@ const SEC_LOCALDNS = 5;   // 1 field when disabled; 3 when enabled:
                           //   0 = hostnames toggle
                           //   1 = install dnsmasq sub-toggle
                           //   2 = tld
-const SEC_SYSTEM = 6;     // 4 fields: timezone, puid/pgid, subtitle langs, vpn radio
-const SEC_FOOTER = 7;     // 2 items: Install, Cancel
+const SEC_SYSTEM = 6;     // 3 fields: timezone, puid/pgid, subtitle langs
+const SEC_VPN = 7;        // 1 field when none; 5 when gluetun; 8 when gluetun+custom
+                          //   0 = mode radio (none | gluetun)
+                          //   1 = provider radio (mullvad | protonvpn | custom)
+                          //   2 = WG private key
+                          //   3 = WG addresses
+                          //   4 = countries (optional)
+                          //   5 = custom endpoint IP
+                          //   6 = custom endpoint port
+                          //   7 = custom server public key
+const SEC_FOOTER = 8;     // 2 items: Install, Cancel
 
 // Field counts per section
 function sectionFieldCount(
@@ -40,6 +50,8 @@ function sectionFieldCount(
   servicesCount: number,
   remoteMode: string,
   localDnsEnabled: boolean,
+  vpnMode: string,
+  vpnProvider: string,
 ): number {
   switch (section) {
     case SEC_STORAGE:  return 2;
@@ -50,13 +62,16 @@ function sectionFieldCount(
       // mode radio + domain + token (only if duckdns/cloudflare)
       return remoteMode !== "none" ? 3 : 1;
     case SEC_LOCALDNS: return localDnsEnabled ? 3 : 1;
-    case SEC_SYSTEM:   return 4;
+    case SEC_SYSTEM:   return 3;
+    case SEC_VPN:
+      if (vpnMode !== "gluetun") return 1;
+      return vpnProvider === "custom" ? 8 : 5;
     case SEC_FOOTER:   return 2; // Install, Cancel
     default:           return 1;
   }
 }
 
-const SECTION_COUNT = 8;
+const SECTION_COUNT = 9;
 
 export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) {
   const ws = useWizardState(initial ?? undefined);
@@ -65,7 +80,16 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
   const [activeFieldIndex, setActiveFieldIndex] = useState(0);
 
   function maxField(section: number) {
-    return sectionFieldCount(section, ws.services.length, ws.remoteMode, ws.localDnsEnabled) - 1;
+    return (
+      sectionFieldCount(
+        section,
+        ws.services.length,
+        ws.remoteMode,
+        ws.localDnsEnabled,
+        ws.vpnMode,
+        ws.vpnProvider,
+      ) - 1
+    );
   }
 
   function advance() {
@@ -161,13 +185,22 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         ws.setRemoteMode(modes[next]);
         return;
       }
-      if (activeSectionIndex === SEC_SYSTEM && activeFieldIndex === 2) {
+      if (activeSectionIndex === SEC_VPN && activeFieldIndex === 0) {
         const vpns = ["none", "gluetun"] as const;
         const idx = vpns.indexOf(ws.vpnMode as (typeof vpns)[number]);
         const next = isForward
           ? (idx + 1) % vpns.length
           : (idx - 1 + vpns.length) % vpns.length;
         ws.setVpnMode(vpns[next]);
+        return;
+      }
+      if (activeSectionIndex === SEC_VPN && activeFieldIndex === 1 && ws.vpnMode === "gluetun") {
+        const providers = ["mullvad", "protonvpn", "custom"] as const;
+        const idx = providers.indexOf(ws.vpnProvider as (typeof providers)[number]);
+        const next = isForward
+          ? (idx + 1) % providers.length
+          : (idx - 1 + providers.length) % providers.length;
+        ws.setVpnProvider(providers[next]);
         return;
       }
       // Left/Right in services section: move between columns
@@ -238,11 +271,18 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         ws.setRemoteMode(modes[(idx + 1) % modes.length]);
         return;
       }
-      // VPN radio: cycle to next
-      if (activeSectionIndex === SEC_SYSTEM && activeFieldIndex === 2) {
+      // VPN mode radio: cycle to next
+      if (activeSectionIndex === SEC_VPN && activeFieldIndex === 0) {
         const vpns = ["none", "gluetun"] as const;
         const idx = vpns.indexOf(ws.vpnMode as (typeof vpns)[number]);
         ws.setVpnMode(vpns[(idx + 1) % vpns.length]);
+        return;
+      }
+      // VPN provider radio: cycle to next (only visible when mode=gluetun)
+      if (activeSectionIndex === SEC_VPN && activeFieldIndex === 1 && ws.vpnMode === "gluetun") {
+        const providers = ["mullvad", "protonvpn", "custom"] as const;
+        const idx = providers.indexOf(ws.vpnProvider as (typeof providers)[number]);
+        ws.setVpnProvider(providers[(idx + 1) % providers.length]);
         return;
       }
       return;
@@ -275,6 +315,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
   const remoteFocusedField = activeSectionIndex === SEC_REMOTE ? activeFieldIndex : -1;
   const localDnsFocusedField = activeSectionIndex === SEC_LOCALDNS ? activeFieldIndex : -1;
   const systemFocusedField = activeSectionIndex === SEC_SYSTEM ? activeFieldIndex : -1;
+  const vpnFocusedField = activeSectionIndex === SEC_VPN ? activeFieldIndex : -1;
 
   const installLabel = isReconfigure ? "Apply changes" : "Install";
   const installFocused = activeSectionIndex === SEC_FOOTER && activeFieldIndex === 0;
@@ -349,7 +390,6 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         timezone={ws.timezone}
         puid={ws.puid}
         pgid={ws.pgid}
-        vpnMode={ws.vpnMode}
         subtitleLanguages={ws.subtitleLanguages}
         onTimezoneChange={ws.setTimezone}
         onPuidChange={(v) => {
@@ -360,6 +400,25 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         onSubtitleLanguagesChange={ws.setSubtitleLanguages}
         isFocused={activeSectionIndex === SEC_SYSTEM}
         focusedField={systemFocusedField}
+      />
+
+      <VpnField
+        mode={ws.vpnMode}
+        provider={ws.vpnProvider}
+        privateKey={ws.vpnPrivateKey}
+        addresses={ws.vpnAddresses}
+        countries={ws.vpnCountries}
+        endpointIp={ws.vpnEndpointIp}
+        endpointPort={ws.vpnEndpointPort}
+        serverPublicKey={ws.vpnServerPublicKey}
+        onPrivateKeyChange={ws.setVpnPrivateKey}
+        onAddressesChange={ws.setVpnAddresses}
+        onCountriesChange={ws.setVpnCountries}
+        onEndpointIpChange={ws.setVpnEndpointIp}
+        onEndpointPortChange={ws.setVpnEndpointPort}
+        onServerPublicKeyChange={ws.setVpnServerPublicKey}
+        isFocused={activeSectionIndex === SEC_VPN}
+        focusedField={vpnFocusedField}
       />
 
       {/* Status strip */}

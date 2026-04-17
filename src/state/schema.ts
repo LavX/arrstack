@@ -27,7 +27,29 @@ export const StateSchema = z.object({
     // clients need their own /etc/hosts entries.
     install_dnsmasq: z.boolean().default(true),
   }),
-  vpn: z.object({ enabled: z.boolean(), provider: z.string().optional() }),
+  vpn: z.object({
+    enabled: z.boolean(),
+    // VPN_SERVICE_PROVIDER for gluetun: "mullvad" | "protonvpn" | "custom" | etc.
+    // When vpn.enabled is false, this is omitted. When gluetun is selected but
+    // no real provider was chosen yet, "custom" is a safe placeholder.
+    provider: z.string().optional(),
+    // VPN protocol. Only wireguard is wired end-to-end in the wizard today;
+    // openvpn support would need user/password fields.
+    type: z.enum(["wireguard", "openvpn"]).optional(),
+    // WireGuard credentials. For provider-based flows (mullvad, protonvpn)
+    // the server key/endpoint comes from gluetun's built-in server list, so
+    // only private_key + addresses are required.
+    private_key: z.string().optional(),
+    addresses: z.string().optional(),
+    // Optional server selection hint (e.g. "Switzerland"). Mapped to
+    // SERVER_COUNTRIES when non-empty.
+    countries: z.string().optional(),
+    // Custom-provider-only fields. When provider === "custom" the user
+    // provides the full server tuple since gluetun has no built-in data.
+    endpoint_ip: z.string().optional(),
+    endpoint_port: z.number().optional(),
+    server_public_key: z.string().optional(),
+  }),
   timezone: z.string(),
   puid: z.number(),
   pgid: z.number(),

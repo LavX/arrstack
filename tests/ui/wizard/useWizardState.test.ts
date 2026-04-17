@@ -21,10 +21,18 @@ function makeWizardState(overrides: Partial<WizardState> = {}): WizardState {
     puid: 1000,
     pgid: 1000,
     vpnMode: "none",
+    vpnProvider: "mullvad",
+    vpnPrivateKey: "",
+    vpnAddresses: "",
+    vpnCountries: "",
+    vpnEndpointIp: "",
+    vpnEndpointPort: "",
+    vpnServerPublicKey: "",
+    subtitleLanguages: "en",
     hostname: "myserver",
     loading: false,
     ...overrides,
-  };
+  } as WizardState;
 }
 
 describe("buildStateFromWizard", () => {
@@ -188,10 +196,38 @@ describe("buildStateFromWizard", () => {
     expect(state.vpn.provider).toBeUndefined();
   });
 
-  test("sets vpn enabled with provider when vpnMode is gluetun", () => {
-    const state = buildStateFromWizard(makeWizardState({ vpnMode: "gluetun" }));
+  test("when vpnMode=gluetun, provider is the chosen VPN service (not 'gluetun')", () => {
+    const state = buildStateFromWizard(
+      makeWizardState({
+        vpnMode: "gluetun",
+        vpnProvider: "mullvad",
+        vpnPrivateKey: "kEY==",
+        vpnAddresses: "10.64.222.21/32",
+      })
+    );
     expect(state.vpn.enabled).toBe(true);
-    expect(state.vpn.provider).toBe("gluetun");
+    expect(state.vpn.provider).toBe("mullvad");
+    expect(state.vpn.type).toBe("wireguard");
+    expect(state.vpn.private_key).toBe("kEY==");
+    expect(state.vpn.addresses).toBe("10.64.222.21/32");
+  });
+
+  test("custom provider carries endpoint tuple and server pubkey", () => {
+    const state = buildStateFromWizard(
+      makeWizardState({
+        vpnMode: "gluetun",
+        vpnProvider: "custom",
+        vpnPrivateKey: "k",
+        vpnAddresses: "10.0.0.1/32",
+        vpnEndpointIp: "203.0.113.7",
+        vpnEndpointPort: "51820",
+        vpnServerPublicKey: "PUB=",
+      })
+    );
+    expect(state.vpn.provider).toBe("custom");
+    expect(state.vpn.endpoint_ip).toBe("203.0.113.7");
+    expect(state.vpn.endpoint_port).toBe(51820);
+    expect(state.vpn.server_public_key).toBe("PUB=");
   });
 
   test("api_keys is an object", () => {

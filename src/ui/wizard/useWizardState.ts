@@ -51,6 +51,16 @@ export interface WizardState {
   puid: number;
   pgid: number;
   vpnMode: "none" | "gluetun";
+  // VPN (gluetun) provider + WireGuard credentials. Only read when
+  // vpnMode === "gluetun".
+  vpnProvider: "mullvad" | "protonvpn" | "custom";
+  vpnPrivateKey: string;
+  vpnAddresses: string;    // e.g. "10.64.222.21/32"
+  vpnCountries: string;    // optional, comma-separated (e.g. "Switzerland, Sweden")
+  // custom-provider-only
+  vpnEndpointIp: string;
+  vpnEndpointPort: string; // kept as string in UI; parsed on submit
+  vpnServerPublicKey: string;
   subtitleLanguages: string; // user-entered, comma-separated "en, hu"
 
   // Meta
@@ -129,10 +139,24 @@ export function buildStateFromWizard(ws: WizardState): State {
       tld: ws.localDnsTld,
       install_dnsmasq: ws.localDnsInstallDnsmasq,
     },
-    vpn: {
-      enabled: ws.vpnMode !== "none",
-      ...(ws.vpnMode !== "none" && { provider: ws.vpnMode }),
-    },
+    vpn: (() => {
+      if (ws.vpnMode === "none") return { enabled: false };
+      const base: State["vpn"] = {
+        enabled: true,
+        provider: ws.vpnProvider,
+        type: "wireguard",
+      };
+      if (ws.vpnPrivateKey.trim()) base.private_key = ws.vpnPrivateKey.trim();
+      if (ws.vpnAddresses.trim()) base.addresses = ws.vpnAddresses.trim();
+      if (ws.vpnCountries.trim()) base.countries = ws.vpnCountries.trim();
+      if (ws.vpnProvider === "custom") {
+        if (ws.vpnEndpointIp.trim()) base.endpoint_ip = ws.vpnEndpointIp.trim();
+        const port = Number(ws.vpnEndpointPort.trim());
+        if (Number.isFinite(port) && port > 0) base.endpoint_port = port;
+        if (ws.vpnServerPublicKey.trim()) base.server_public_key = ws.vpnServerPublicKey.trim();
+      }
+      return base;
+    })(),
     timezone: ws.timezone,
     puid: ws.puid,
     pgid: ws.pgid,
@@ -234,11 +258,26 @@ export function useWizardState(existingState?: Partial<State> | null) {
   const [puidState, setPuid] = useState(existingState?.puid ?? puid);
   const [pgidState, setPgid] = useState(existingState?.pgid ?? pgid);
   const [vpnMode, setVpnMode] = useState<WizardState["vpnMode"]>(() => {
-    if (!existingState?.vpn) return "none";
-    return existingState.vpn.enabled
-      ? ((existingState.vpn.provider ?? "gluetun") as WizardState["vpnMode"])
-      : "none";
+    // vpn.enabled is what controls whether we route qbittorrent through
+    // gluetun; provider now holds a real VPN service name (mullvad, etc.),
+    // so we can no longer treat it as "gluetun vs none".
+    if (!existingState?.vpn?.enabled) return "none";
+    return "gluetun";
   });
+  const [vpnProvider, setVpnProvider] = useState<WizardState["vpnProvider"]>(() => {
+    const p = existingState?.vpn?.provider;
+    return p === "mullvad" || p === "protonvpn" || p === "custom" ? p : "mullvad";
+  });
+  const [vpnPrivateKey, setVpnPrivateKey] = useState(existingState?.vpn?.private_key ?? "");
+  const [vpnAddresses, setVpnAddresses] = useState(existingState?.vpn?.addresses ?? "");
+  const [vpnCountries, setVpnCountries] = useState(existingState?.vpn?.countries ?? "");
+  const [vpnEndpointIp, setVpnEndpointIp] = useState(existingState?.vpn?.endpoint_ip ?? "");
+  const [vpnEndpointPort, setVpnEndpointPort] = useState(
+    existingState?.vpn?.endpoint_port ? String(existingState.vpn.endpoint_port) : ""
+  );
+  const [vpnServerPublicKey, setVpnServerPublicKey] = useState(
+    existingState?.vpn?.server_public_key ?? ""
+  );
   const [subtitleLanguages, setSubtitleLanguages] = useState<string>(
     existingState?.subtitle_languages?.join(", ") ?? "en",
   );
@@ -380,6 +419,13 @@ export function useWizardState(existingState?: Partial<State> | null) {
       puid: puidState,
       pgid: pgidState,
       vpnMode,
+      vpnProvider,
+      vpnPrivateKey,
+      vpnAddresses,
+      vpnCountries,
+      vpnEndpointIp,
+      vpnEndpointPort,
+      vpnServerPublicKey,
       subtitleLanguages,
       hostname,
       loading,
@@ -445,6 +491,20 @@ export function useWizardState(existingState?: Partial<State> | null) {
     setPgid,
     vpnMode,
     setVpnMode,
+    vpnProvider,
+    setVpnProvider,
+    vpnPrivateKey,
+    setVpnPrivateKey,
+    vpnAddresses,
+    setVpnAddresses,
+    vpnCountries,
+    setVpnCountries,
+    vpnEndpointIp,
+    setVpnEndpointIp,
+    vpnEndpointPort,
+    setVpnEndpointPort,
+    vpnServerPublicKey,
+    setVpnServerPublicKey,
     subtitleLanguages,
     setSubtitleLanguages,
 

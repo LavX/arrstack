@@ -1,4 +1,4 @@
-import { request } from "undici";
+import { withRetry } from "../lib/retry.js";
 
 interface AppField {
   name: string;
@@ -53,25 +53,29 @@ async function upsertApp(
   const body = JSON.stringify(app);
 
   if (existing) {
-    const res = await request(`${baseUrl}/api/v1/applications/${existing.id}`, {
-      method: "PUT",
-      headers,
-      body,
-    });
-    if (res.statusCode !== 200 && res.statusCode !== 202) {
+    const res = await withRetry(() =>
+      fetch(`${baseUrl}/api/v1/applications/${existing.id}`, {
+        method: "PUT",
+        headers,
+        body,
+      })
+    );
+    if (res.status !== 200 && res.status !== 202) {
       throw new Error(
-        `Failed to update application "${app.name}": HTTP ${res.statusCode}`
+        `Failed to update application "${app.name}": HTTP ${res.status}`
       );
     }
   } else {
-    const res = await request(`${baseUrl}/api/v1/applications`, {
-      method: "POST",
-      headers,
-      body,
-    });
-    if (res.statusCode !== 201 && res.statusCode !== 200) {
+    const res = await withRetry(() =>
+      fetch(`${baseUrl}/api/v1/applications`, {
+        method: "POST",
+        headers,
+        body,
+      })
+    );
+    if (res.status !== 201 && res.status !== 200) {
       throw new Error(
-        `Failed to add application "${app.name}": HTTP ${res.statusCode}`
+        `Failed to add application "${app.name}": HTTP ${res.status}`
       );
     }
   }
@@ -82,13 +86,15 @@ async function triggerIndexerSync(
   baseUrl: string
 ): Promise<void> {
   const body = JSON.stringify({ name: "ApplicationIndexerSync" });
-  const res = await request(`${baseUrl}/api/v1/command`, {
-    method: "POST",
-    headers,
-    body,
-  });
-  if (res.statusCode !== 201 && res.statusCode !== 200) {
-    throw new Error(`Failed to trigger ApplicationIndexerSync: HTTP ${res.statusCode}`);
+  const res = await withRetry(() =>
+    fetch(`${baseUrl}/api/v1/command`, {
+      method: "POST",
+      headers,
+      body,
+    })
+  );
+  if (res.status !== 201 && res.status !== 200) {
+    throw new Error(`Failed to trigger ApplicationIndexerSync: HTTP ${res.status}`);
   }
 }
 
@@ -103,11 +109,13 @@ export async function registerProwlarrApps(
     "Content-Type": "application/json",
   };
 
-  const listRes = await request(`${baseUrl}/api/v1/applications`, { headers });
-  if (listRes.statusCode !== 200) {
-    throw new Error(`Failed to list applications: HTTP ${listRes.statusCode}`);
+  const listRes = await withRetry(() =>
+    fetch(`${baseUrl}/api/v1/applications`, { headers })
+  );
+  if (!listRes.ok) {
+    throw new Error(`Failed to list applications: HTTP ${listRes.status}`);
   }
-  const existingApps = (await listRes.body.json()) as Array<{ id: number; name: string }>;
+  const existingApps = (await listRes.json()) as Array<{ id: number; name: string }>;
 
   const prowlarrUrl = baseUrl;
   const sonarrApp = buildSonarrApp(prowlarrUrl, sonarrKey);

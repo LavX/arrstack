@@ -1,4 +1,4 @@
-import { fetch } from "undici";
+import { withRetry } from "../lib/retry.js";
 
 const CATEGORIES = [
   { name: "tv", savePath: "/data/torrents/tv" },
@@ -13,11 +13,13 @@ export async function configureQbit(
   base = "http://localhost:8080"
 ): Promise<void> {
   // 1. Login and extract SID cookie
-  const loginRes = await fetch(`${base}/api/v2/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ username: user, password: pass }).toString(),
-  });
+  const loginRes = await withRetry(() =>
+    fetch(`${base}/api/v2/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username: user, password: pass }).toString(),
+    })
+  );
 
   if (!loginRes.ok) {
     throw new Error(`qBittorrent login failed: ${loginRes.status}`);

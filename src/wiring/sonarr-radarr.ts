@@ -1,4 +1,4 @@
-import { fetch } from "undici";
+import { withRetry } from "../lib/retry.js";
 
 export async function configureArr(
   service: "sonarr" | "radarr",
@@ -16,7 +16,7 @@ export async function configureArr(
   const headers = { "X-Api-Key": apiKey, "Content-Type": "application/json" };
 
   // 1. Configure root folders
-  const rfRes = await fetch(`${base}/api/v3/rootfolder`, { headers });
+  const rfRes = await withRetry(() => fetch(`${base}/api/v3/rootfolder`, { headers }));
   if (!rfRes.ok) {
     throw new Error(`${service}: GET /api/v3/rootfolder failed: ${rfRes.status}`);
   }
@@ -28,11 +28,13 @@ export async function configureArr(
   );
 
   for (const path of foldersToAdd) {
-    const addRes = await fetch(`${base}/api/v3/rootfolder`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ path }),
-    });
+    const addRes = await withRetry(() =>
+      fetch(`${base}/api/v3/rootfolder`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ path }),
+      })
+    );
     if (!addRes.ok) {
       throw new Error(
         `${service}: POST /api/v3/rootfolder for "${path}" failed: ${addRes.status}`
@@ -41,7 +43,7 @@ export async function configureArr(
   }
 
   // 2. Configure qBittorrent download client
-  const dcRes = await fetch(`${base}/api/v3/downloadclient`, { headers });
+  const dcRes = await withRetry(() => fetch(`${base}/api/v3/downloadclient`, { headers }));
   if (!dcRes.ok) {
     throw new Error(
       `${service}: GET /api/v3/downloadclient failed: ${dcRes.status}`
@@ -81,11 +83,13 @@ export async function configureArr(
       ],
     };
 
-    const addDcRes = await fetch(`${base}/api/v3/downloadclient`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(clientPayload),
-    });
+    const addDcRes = await withRetry(() =>
+      fetch(`${base}/api/v3/downloadclient`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(clientPayload),
+      })
+    );
     if (!addDcRes.ok) {
       throw new Error(
         `${service}: POST /api/v3/downloadclient failed: ${addDcRes.status}`

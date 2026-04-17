@@ -1,4 +1,4 @@
-import { request } from "undici";
+import { withRetry } from "../lib/retry.js";
 
 interface IndexerField {
   name: string;
@@ -54,11 +54,13 @@ export async function addProwlarrIndexers(
     "Content-Type": "application/json",
   };
 
-  const listRes = await request(`${baseUrl}/api/v1/indexer`, { headers });
-  if (listRes.statusCode !== 200) {
-    throw new Error(`Failed to list indexers: HTTP ${listRes.statusCode}`);
+  const listRes = await withRetry(() =>
+    fetch(`${baseUrl}/api/v1/indexer`, { headers })
+  );
+  if (!listRes.ok) {
+    throw new Error(`Failed to list indexers: HTTP ${listRes.status}`);
   }
-  const existing = (await listRes.body.json()) as Array<{ name: string }>;
+  const existing = (await listRes.json()) as Array<{ name: string }>;
   const existingNames = new Set(existing.map((i) => i.name));
 
   let added = 0;
@@ -77,15 +79,17 @@ export async function addProwlarrIndexers(
       enableInteractiveSearch: true,
     });
 
-    const res = await request(`${baseUrl}/api/v1/indexer`, {
-      method: "POST",
-      headers,
-      body,
-    });
+    const res = await withRetry(() =>
+      fetch(`${baseUrl}/api/v1/indexer`, {
+        method: "POST",
+        headers,
+        body,
+      })
+    );
 
-    if (res.statusCode !== 201 && res.statusCode !== 200) {
+    if (res.status !== 201 && res.status !== 200) {
       throw new Error(
-        `Failed to add indexer "${indexer.name}": HTTP ${res.statusCode}`
+        `Failed to add indexer "${indexer.name}": HTTP ${res.status}`
       );
     }
 

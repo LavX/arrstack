@@ -275,16 +275,22 @@ services:
     category: utility
     image: nandyalu/trailarr
     tag: "latest"
-    ports: [7879]
-    adminPort: 7879
+    # Trailarr v0.8+ listens on 7889 (APP_PORT), not 7879. The old port in
+    # Prowlarr wikis/various guides is stale — verified against the container
+    # log: "Uvicorn running on http://0.0.0.0:7889".
+    ports: [7889]
+    adminPort: 7889
     configPath: /config
     mounts: {}
     envVars: {}
     dependsOn: []
     health:
+      # /status is the readiness endpoint the container itself polls during
+      # boot (see container logs: GET /status -> 200 OK). / serves the SPA
+      # which can return 200 before the API is ready.
       type: http
-      path: /
-      port: 7879
+      path: /status
+      port: 7889
     default: false
     requiresAdminAuth: false
 

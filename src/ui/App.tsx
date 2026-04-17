@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Box, Text } from "ink";
 import type { State } from "../state/schema.js";
 import { Form } from "./wizard/Form.js";
+import { DoneScreen } from "./done/DoneScreen.js";
 
 type Screen = "wizard" | "progress" | "done";
 
@@ -16,6 +17,7 @@ export function App({ existingState }: AppProps) {
   const [installResult, setInstallResult] = useState<{
     urls: Array<{ name: string; url: string; description: string }>;
     password: string;
+    adminUser: string;
   } | null>(null);
 
   function onWizardSubmit(state: State) {
@@ -30,6 +32,7 @@ export function App({ existingState }: AppProps) {
   function onInstallDone(result: {
     urls: Array<{ name: string; url: string; description: string }>;
     password: string;
+    adminUser: string;
   }) {
     setInstallResult(result);
     setScreen("done");
@@ -48,8 +51,12 @@ export function App({ existingState }: AppProps) {
       {screen === "progress" && (
         <Text>Progress will render here (iteration 5)</Text>
       )}
-      {screen === "done" && (
-        <Text>Done will render here (iteration 5)</Text>
+      {screen === "done" && installResult && (
+        <DoneScreen
+          urls={installResult.urls}
+          password={installResult.password}
+          adminUser={installResult.adminUser}
+        />
       )}
     </Box>
   );

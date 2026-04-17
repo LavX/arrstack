@@ -21,3 +21,13 @@ test("--help includes arrstack", () => {
   const { stdout } = runCli("--help");
   expect(stdout).toContain("arrstack");
 });
+
+test("--help lists all subcommands", () => {
+  const { stdout } = runCli("--help");
+  expect(stdout).toContain("install");
+  expect(stdout).toContain("doctor");
+  expect(stdout).toContain("update");
+  expect(stdout).toContain("show-password");
+  expect(stdout).toContain("uninstall");
+  expect(stdout).toContain("logs");
+});

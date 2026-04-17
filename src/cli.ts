@@ -1,5 +1,10 @@
+/** @jsxImportSource react */
 import { Command } from "commander";
 import { VERSION } from "./version.js";
+import { render } from "ink";
+import React from "react";
+import { App } from "./ui/App.js";
+import { readState } from "./state/store.js";
 
 const program = new Command();
 
@@ -16,8 +21,11 @@ program
   .option("--fresh", "perform a fresh installation")
   .option("--resume", "resume a previously interrupted installation")
   .option("--install-dir <path>", "installation directory", "/opt/arrstack")
-  .action((_opts) => {
-    console.log("not yet implemented");
+  .action(async (opts) => {
+    const installDir = opts.installDir ?? "/opt/arrstack";
+    const existing = opts.fresh ? null : readState(installDir);
+    const { waitUntilExit } = render(React.createElement(App, { existingState: existing }));
+    await waitUntilExit();
   });
 
 program
@@ -54,5 +62,13 @@ program
   .action((_service) => {
     console.log("not yet implemented");
   });
+
+// If no subcommand provided (just `arrstack`), launch the TUI
+program.action(async () => {
+  const installDir = "/opt/arrstack";
+  const existing = readState(installDir);
+  const { waitUntilExit } = render(React.createElement(App, { existingState: existing }));
+  await waitUntilExit();
+});
 
 program.parse(process.argv);

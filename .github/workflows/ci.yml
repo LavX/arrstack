@@ -1,5 +1,13 @@
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -7,5 +15,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+        with:
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
       - run: bun test
+
+  caddy-dockerfile:
+    # Catches xcaddy regressions (e.g. Caddy builder's Go version drifting
+    # below a plugin's required minimum) before users hit them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Caddy image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --load \
+            -f templates/caddy.Dockerfile \
+            -t arrstack-caddy:ci \
+            templates/
+      - name: Verify DNS plugins registered
+        run: |
+          docker run --rm arrstack-caddy:ci caddy list-modules | \
+            grep -E '^dns\.providers\.(cloudflare|duckdns)$'

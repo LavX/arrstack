@@ -1,0 +1,63 @@
+name: Publish Caddy image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'templates/caddy.Dockerfile'
+      - '.github/workflows/caddy-image.yml'
+  schedule:
+    # Mondays 07:00 UTC. Picks up upstream Caddy and plugin security fixes
+    # even when our Dockerfile has not changed.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: caddy-image
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/lavx/arrstack-caddy
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: templates
+          file: templates/caddy.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify DNS plugins in published image
+        run: |
+          docker pull ghcr.io/lavx/arrstack-caddy:latest
+          docker run --rm ghcr.io/lavx/arrstack-caddy:latest caddy list-modules | \
+            grep -E '^dns\.providers\.(cloudflare|duckdns)$'

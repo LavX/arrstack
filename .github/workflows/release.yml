@@ -1,10 +1,33 @@
 name: Release
+
 on:
   push:
-    tags: ["v*"]
+    tags: ['v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -16,26 +39,61 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
-      - run: bun test
-      - run: bun build --compile --minify --target=${{ matrix.target }} src/cli.ts --outfile dist/${{ matrix.artifact }}
+        with:
+          bun-version: latest
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - run: bun run prepare
+      - name: Compile ${{ matrix.artifact }}
+        run: |
+          bun build --compile --minify \
+            --target=${{ matrix.target }} \
+            src/cli.ts \
+            --outfile dist/${{ matrix.artifact }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  smoke:
+    # Sanity-check the x86_64 binary actually starts. arm64 needs QEMU and
+    # the ROI is not there for a one-liner --help invocation.
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: arrstack-linux-x64
+          path: dist
+      - run: |
+          chmod +x dist/arrstack-linux-x64
+          dist/arrstack-linux-x64 --help
 
   release:
-    needs: build
+    needs: [build, smoke]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-      - run: |
-          sha256sum arrstack-linux-x64/arrstack-linux-x64 arrstack-linux-arm64/arrstack-linux-arm64 > checksums.txt
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Compute SHA256 checksums
+        working-directory: dist
+        run: sha256sum arrstack-linux-x64 arrstack-linux-arm64 > checksums.txt
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            arrstack-linux-x64/arrstack-linux-x64
-            arrstack-linux-arm64/arrstack-linux-arm64
-            checksums.txt
+            dist/arrstack-linux-x64
+            dist/arrstack-linux-arm64
+            dist/checksums.txt
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1,9 +1,14 @@
 import { test, expect } from "bun:test";
 import { spawnSync } from "bun";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const cliPath = join(repoRoot, "src", "cli.ts");
 
 function runCli(...args: string[]) {
-  const result = spawnSync(["bun", "run", "src/cli.ts", ...args], {
-    cwd: "/home/lavx/arrstack-installer",
+  const result = spawnSync(["bun", "run", cliPath, ...args], {
+    cwd: repoRoot,
   });
   return {
     stdout: result.stdout.toString(),

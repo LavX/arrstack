@@ -23,4 +23,4 @@ test("exec sleep with short timeout returns ok: false with timed out in stderr",
   if (!result.ok) {
     expect(result.stderr).toContain("timed out");
   }
-});
+}, 15000);

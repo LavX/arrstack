@@ -56,6 +56,13 @@ else
   printf "Installed to /usr/local/bin/arrstack\n"
 fi
 
-exec arrstack "$@"
+# When run as `curl ... | bash`, stdin is the curl pipe, not a TTY, so Ink
+# (React for the terminal) can't enter raw mode and bails. Re-attach stdin
+# to the controlling terminal if one exists; otherwise just print next
+# steps so the user can launch the wizard themselves.
+if [ -r /dev/tty ]; then
+  exec arrstack "$@" </dev/tty
+fi
+printf "Installed. Run 'arrstack' to launch the wizard.\n"
 }
 main "$@"

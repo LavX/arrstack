@@ -60,7 +60,12 @@ export async function runDoctor(installDir: string): Promise<void> {
 
   // --- Preflight checks ---
   section("System checks");
-  const preflightResults = await runPreflight(state.storage_root);
+  // Post-install: skip 80/443-free checks. Our own Caddy is supposed to be
+  // holding them. Container status + HTTP health below surface the real
+  // "is Caddy up?" answer.
+  const preflightResults = await runPreflight(state.storage_root, {
+    skipPortChecks: true,
+  });
   for (const check of preflightResults) {
     if (check.ok) {
       pass(check.name, check.message);

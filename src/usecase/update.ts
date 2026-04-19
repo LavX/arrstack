@@ -1,9 +1,12 @@
-import { existsSync, openSync, writeSync, closeSync, fsyncSync } from "node:fs";
+import { existsSync, openSync, writeSync, closeSync, fsyncSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readState } from "../state/store.js";
 import { exec } from "../lib/exec.js";
 import { getServicesByIds } from "../catalog/index.js";
 import type { Service } from "../catalog/schema.js";
+import type { State } from "../state/schema.js";
+import { renderCaddyfile } from "../renderer/caddy.js";
+import { renderCompose } from "../renderer/compose.js";
 
 export interface UpdateDeps {
   runStreaming: (argv: string[], onLine: (line: string) => void) => Promise<{ ok: boolean; code: number | null }>;
@@ -61,6 +64,18 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     logAndEcho("[update] capturing current image IDs");
     const before = await d.captureImages(composeFile);
     phaseTimes["capture-before"] = d.now() - captureBeforeStart;
+
+    // Regenerate installer-owned config files from the templates shipped with
+    // the CURRENT binary. Without this, a Caddyfile/compose.yml bug fixed in a
+    // newer installer version stays baked into the user's install dir forever
+    // — `arrstack update` would pull new images but Caddy would still serve
+    // the old config. State-derived files are deterministic, so rewriting is
+    // safe; the .env (which holds secrets like admin password / encryption
+    // key) is intentionally left alone.
+    const renderStart = d.now();
+    logAndEcho("[update] rendering docker-compose.yml + Caddyfile from current templates");
+    regenerateInstallerConfig(installDir, state, logAndEcho);
+    phaseTimes["render-config"] = d.now() - renderStart;
 
     const buildStart = d.now();
     logAndEcho("[update] docker compose build");
@@ -143,6 +158,39 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     try { fsyncSync(fd); } catch { /* ignore */ }
     closeSync(fd);
   }
+}
+
+function regenerateInstallerConfig(
+  installDir: string,
+  state: State,
+  log: (line: string) => void
+): void {
+  const services = getServicesByIds(state.services_enabled);
+
+  const composePath = join(installDir, "docker-compose.yml");
+  const composeContent = renderCompose(services, {
+    installDir,
+    storageRoot: state.storage_root,
+    extraPaths: state.extra_paths,
+    puid: state.puid,
+    pgid: state.pgid,
+    timezone: state.timezone,
+    apiKeys: state.api_keys,
+    gpu: state.gpu,
+    vpn: state.vpn,
+    remoteMode: state.remote_access.mode,
+  });
+  writeFileSync(composePath, composeContent);
+  log(`[update]   wrote ${composePath}`);
+
+  const caddyfilePath = join(installDir, "Caddyfile");
+  const caddyContent = renderCaddyfile(services, {
+    mode: state.remote_access.mode,
+    domain: state.remote_access.domain,
+    localDns: state.local_dns,
+  });
+  writeFileSync(caddyfilePath, caddyContent);
+  log(`[update]   wrote ${caddyfilePath}`);
 }
 
 async function runHealthChecks(

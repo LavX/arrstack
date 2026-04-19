@@ -38,7 +38,17 @@ async function checkDiskSpace(path: string, minGb: number): Promise<CheckResult>
   };
 }
 
-export async function runPreflight(storageRoot: string): Promise<CheckResult[]> {
+export interface PreflightOptions {
+  // Skip the 80/443-free check. Set by `doctor` on an already-installed box
+  // where OUR Caddy is expected to be holding those ports — otherwise doctor
+  // always reports a spurious failure post-install.
+  skipPortChecks?: boolean;
+}
+
+export async function runPreflight(
+  storageRoot: string,
+  opts: PreflightOptions = {}
+): Promise<CheckResult[]> {
   const results: CheckResult[] = [];
 
   // 1. Docker installed
@@ -75,15 +85,18 @@ export async function runPreflight(storageRoot: string): Promise<CheckResult[]> 
     results.push(await checkDiskSpace(storageRoot, 10));
   }
 
-  // 5. Ports 80 and 443 free
-  for (const port of [80, 443]) {
-    const free = await checkPortFree(port);
-    results.push({
-      name: `Port ${port} free`,
-      ok: free,
-      message: free ? `Port ${port} is available` : `Port ${port} is already in use`,
-      blocking: true,
-    });
+  // 5. Ports 80 and 443 free (skipped post-install; our own Caddy holds them
+  // then, and flagging that as a failure just confuses users running `doctor`).
+  if (!opts.skipPortChecks) {
+    for (const port of [80, 443]) {
+      const free = await checkPortFree(port);
+      results.push({
+        name: `Port ${port} free`,
+        ok: free,
+        message: free ? `Port ${port} is available` : `Port ${port} is already in use`,
+        blocking: true,
+      });
+    }
   }
 
   return results;

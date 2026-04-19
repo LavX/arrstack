@@ -1,13 +1,17 @@
-{{#if (eq mode "none")}}
 {{#if localDnsEnabled}}
 {{#each services}}
 # Hostname vhost on HTTP. Resolved via dnsmasq if installed, otherwise add
 # "HOST_IP {{id}}.{{../localDnsTld}}" to the client's /etc/hosts.
+#
+# Emitted in every remote_access mode: when duckdns/cloudflare is also on,
+# this HTTP vhost is the LAN-only escape hatch that still works when Let's
+# Encrypt hasn't issued the wildcard cert yet (or when the box can't reach
+# LE at all). Without it, hitting http://{svc}.{tld} would fall through to
+# Caddy's default welcome page instead of the service.
 http://{{id}}.{{../localDnsTld}} {
 	reverse_proxy {{id}}:{{port}}
 }
 {{/each}}
-{{/if}}
 {{/if}}
 {{#if (eq mode "cloudflare")}}
 # One wildcard cert for *.{{domain}} instead of per-service certs. Each POST

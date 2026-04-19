@@ -62,6 +62,31 @@ describe("renderCaddyfile", () => {
     expect(output).not.toContain("CF_API_TOKEN");
   });
 
+  test("duckdns + local DNS emits BOTH the wildcard HTTPS block AND the LAN HTTP vhosts", () => {
+    const output = renderCaddyfile(services, {
+      mode: "duckdns",
+      domain: "myhome.duckdns.org",
+      localDns: { enabled: true, tld: "arrstack.local" },
+    });
+    // Wildcard HTTPS still there
+    expect(output).toContain("*.myhome.duckdns.org {");
+    expect(output).toContain("@sonarr host sonarr.myhome.duckdns.org");
+    // ...plus the per-service LAN vhost so http://{svc}.arrstack.local works
+    // without waiting on the public cert.
+    expect(output).toContain("http://sonarr.arrstack.local");
+    expect(output).toContain("http://radarr.arrstack.local");
+  });
+
+  test("cloudflare + local DNS also emits LAN HTTP vhosts", () => {
+    const output = renderCaddyfile(services, {
+      mode: "cloudflare",
+      domain: "example.com",
+      localDns: { enabled: true, tld: "arrstack.local" },
+    });
+    expect(output).toContain("*.example.com {");
+    expect(output).toContain("http://sonarr.arrstack.local");
+  });
+
   test("cloudflare mode has no DUCKDNS_TOKEN reference", () => {
     const output = renderCaddyfile(services, {
       mode: "cloudflare",

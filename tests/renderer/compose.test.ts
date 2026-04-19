@@ -98,6 +98,20 @@ describe("renderCompose", () => {
     expect(output).toContain("0.0.0.0:443:443");
   });
 
+  test("caddy mounts the rendered Caddyfile read-only into /etc/caddy/Caddyfile", () => {
+    // Without this mount Caddy starts with its built-in default site and
+    // serves the "Caddy works!" welcome page for every vhost the user
+    // configured.
+    const services = getServices(["caddy"]);
+    const output = renderCompose(services, {
+      ...baseOpts,
+      installDir: "/home/lavx/arrstack",
+    });
+    expect(output).toContain(
+      "/home/lavx/arrstack/Caddyfile:/etc/caddy/Caddyfile:ro"
+    );
+  });
+
   test("extra scan paths are mounted at /data/extra-N inside media containers", () => {
     const services = getServices(["sonarr", "jellyfin"]);
     const opts = { ...baseOpts, extraPaths: ["/mnt/hdd2", "/mnt/ssd1"] };

@@ -34,6 +34,9 @@ export interface ComposeOptions {
 interface DataMount {
   src: string;
   dst: string;
+  // Bind mode. Only set for volumes that should be read-only inside the
+  // container (e.g. Caddyfile). Omitted = default rw.
+  mode?: "ro";
 }
 
 interface EnvEntry {
@@ -209,6 +212,19 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
 
     const caddyImage = resolveCaddyImage(svc, opts.remoteMode);
 
+    const dataMounts = buildDataMounts(svc, opts.storageRoot, opts.extraPaths);
+    if (svc.id === "caddy") {
+      // The renderer writes {installDir}/Caddyfile to disk, but the container
+      // needs it at /etc/caddy/Caddyfile. Without this explicit mount Caddy
+      // falls back to its built-in "Caddy works!" welcome page on every
+      // vhost — which is the bug the user hit at http://{svc}.arrstack.local.
+      dataMounts.push({
+        src: `${opts.installDir}/Caddyfile`,
+        dst: "/etc/caddy/Caddyfile",
+        mode: "ro",
+      });
+    }
+
     return {
       id: svc.id,
       image: caddyImage.image,
@@ -219,7 +235,7 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       apiKeyEnv,
       apiKey,
       extraEnv,
-      dataMounts: buildDataMounts(svc, opts.storageRoot, opts.extraPaths),
+      dataMounts,
       devices: buildDevices(svc, opts.gpu),
       capAdd: svc.capAdd,
       groupAdd: buildGroupAdd(svc, opts.gpu),

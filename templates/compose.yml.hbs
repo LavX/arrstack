@@ -43,7 +43,7 @@ services:
     volumes:
       - {{../installDir}}/config/{{id}}:{{configPath}}
 {{#each dataMounts}}
-      - {{src}}:{{dst}}
+      - {{src}}:{{dst}}{{#if mode}}:{{mode}}{{/if}}
 {{/each}}
 {{#if devices}}
     devices:

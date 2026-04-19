@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and help
-    url: https://github.com/lavx/arrstack-installer/discussions
+    url: https://github.com/lavx/arrstack/discussions
     about: Ask a question, share a setup, or get help in Discussions.
   - name: Documentation
     url: https://lavx.github.io/arrstack/

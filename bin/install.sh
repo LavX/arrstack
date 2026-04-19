@@ -4,7 +4,7 @@ set -Eeuo pipefail
 trap 'printf "\nAborted.\n" >&2; exit 130' INT
 trap 'rm -rf "${_TMPDIR:-}" 2>/dev/null' EXIT
 
-REPO="LavX/arrstack-installer"
+REPO="LavX/arrstack"
 VERSION="${ARRSTACK_VERSION:-latest}"
 
 ARCH=$(uname -m)

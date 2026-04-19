@@ -5,7 +5,11 @@ trap 'printf "\nAborted.\n" >&2; exit 130' INT
 trap 'rm -rf "${_TMPDIR:-}" 2>/dev/null' EXIT
 
 REPO="LavX/arrstack"
-VERSION="${ARRSTACK_VERSION:-latest}"
+# Do not name this VERSION: /etc/os-release (sourced below) defines its own
+# VERSION (e.g. Fedora "43 (KDE Plasma Desktop Edition)") that would overwrite
+# ours, making DL_BASE include literal spaces and parens and trip
+# "curl: (3) URL rejected: Malformed input to a URL function".
+REQUESTED_VERSION="${ARRSTACK_VERSION:-latest}"
 
 ARCH=$(uname -m)
 case "$ARCH" in
@@ -24,10 +28,10 @@ fi
 _TMPDIR=$(mktemp -d)
 printf "Downloading arrstack...\n"
 
-if [[ "$VERSION" == "latest" ]]; then
+if [[ "$REQUESTED_VERSION" == "latest" ]]; then
   DL_BASE="https://github.com/$REPO/releases/latest/download"
 else
-  DL_BASE="https://github.com/$REPO/releases/download/$VERSION"
+  DL_BASE="https://github.com/$REPO/releases/download/$REQUESTED_VERSION"
 fi
 
 curl -fsSL "$DL_BASE/$BINARY" -o "$_TMPDIR/arrstack"

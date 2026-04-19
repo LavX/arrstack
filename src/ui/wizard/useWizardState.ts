@@ -118,9 +118,20 @@ export function buildStateFromWizard(ws: WizardState): State {
     ...(ws.videoGid !== null && { video_gid: ws.videoGid }),
   };
 
+  // For duckdns mode the user types just the subdomain (e.g. "lavx") because
+  // the field hint is ".duckdns.org". Store the FQDN in state so every
+  // downstream consumer (Caddyfile wildcard, ACME DNS-01, done-screen URLs,
+  // /etc/hosts helper) sees one canonical form: "lavx.duckdns.org".
+  const normalizedDomain =
+    ws.remoteMode === "duckdns" && ws.remoteDomain
+      ? ws.remoteDomain.endsWith(".duckdns.org")
+        ? ws.remoteDomain
+        : `${ws.remoteDomain}.duckdns.org`
+      : ws.remoteDomain;
+
   const remoteAccess: State["remote_access"] = {
     mode: ws.remoteMode,
-    ...(ws.remoteDomain && { domain: ws.remoteDomain }),
+    ...(normalizedDomain && { domain: normalizedDomain }),
     ...(ws.remoteToken && { token: ws.remoteToken }),
   };
 
@@ -237,9 +248,20 @@ export function useWizardState(existingState?: Partial<State> | null) {
   const [remoteMode, setRemoteMode] = useState<WizardState["remoteMode"]>(
     (existingState?.remote_access?.mode as WizardState["remoteMode"]) ?? "none"
   );
-  const [remoteDomain, setRemoteDomain] = useState(
-    existingState?.remote_access?.domain ?? ""
-  );
+  const [remoteDomain, setRemoteDomain] = useState(() => {
+    // The duckdns field only collects the subdomain; strip the FQDN suffix
+    // we appended on the previous install so the user doesn't see
+    // "lavx.duckdns.org" in a field hinted ".duckdns.org" (and double-append
+    // on re-save).
+    const stored = existingState?.remote_access?.domain ?? "";
+    if (
+      existingState?.remote_access?.mode === "duckdns" &&
+      stored.endsWith(".duckdns.org")
+    ) {
+      return stored.slice(0, -".duckdns.org".length);
+    }
+    return stored;
+  });
   const [remoteToken, setRemoteToken] = useState(
     existingState?.remote_access?.token ?? ""
   );

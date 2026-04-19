@@ -4,7 +4,13 @@ import { Box, Text } from "ink";
 import { colors } from "../shared/theme.js";
 
 interface DoneScreenProps {
-  urls: Array<{ name: string; url: string; description: string }>;
+  urls: Array<{
+    name: string;
+    url: string;
+    // LAN fallback (http://{hostIp}:{port}); omitted when `url` is already that.
+    localUrl?: string;
+    description: string;
+  }>;
   password: string;
   adminUser: string;
   publicAccess?: {
@@ -34,11 +40,18 @@ export function DoneScreen({
       <Text> </Text>
 
       <Text>Open in browser:</Text>
-      {urls.map(({ name, url, description }) => (
-        <Box key={name}>
-          <Text>{name.padEnd(14)}</Text>
-          <Text>{url}</Text>
-          <Text color={colors.muted}>{"  "}{description}</Text>
+      {urls.map(({ name, url, localUrl, description }) => (
+        <Box key={name} flexDirection="column">
+          <Box>
+            <Text>{name.padEnd(14)}</Text>
+            <Text>{url}</Text>
+            <Text color={colors.muted}>{"  "}{description}</Text>
+          </Box>
+          {localUrl && (
+            <Text color={colors.muted}>
+              {"              "}LAN fallback: {localUrl}
+            </Text>
+          )}
         </Box>
       ))}
 
@@ -149,20 +162,26 @@ export function DoneScreen({
             {"     "}If the cert is trusted and the page loads, you're done.
           </Text>
           <Text color={colors.muted}>
-            {"     "}LAN tip: if your router doesn't hairpin-NAT, use the
+            {"     "}LAN tip: if your router doesn't hairpin-NAT, either use
           </Text>
           <Text color={colors.muted}>
-            {"     "}http://{publicAccess.hostIp}:&lt;port&gt; URLs above from
+            {"     "}the LAN fallback URLs listed above, or run
+          </Text>
+          <Text color={colors.accent}>
+            {"       "}arrstack hosts
           </Text>
           <Text color={colors.muted}>
-            {"     "}inside the house and the public URLs from outside.
+            {"     "}to map every *.{publicAccess.domain} name to
+          </Text>
+          <Text color={colors.muted}>
+            {"     "}{publicAccess.hostIp} in /etc/hosts (sudo required).
           </Text>
         </>
       )}
 
       <Text> </Text>
 
-      <Text color={colors.muted}>Day-two: arrstack doctor | arrstack update | arrstack show-password</Text>
+      <Text color={colors.muted}>Day-two: arrstack doctor | arrstack update | arrstack hosts | arrstack show-password</Text>
     </Box>
   );
 }

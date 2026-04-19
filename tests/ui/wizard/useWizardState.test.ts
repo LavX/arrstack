@@ -161,7 +161,7 @@ describe("buildStateFromWizard", () => {
     expect(state.remote_access.mode).toBe("none");
   });
 
-  test("sets remote_access domain and token for duckdns", () => {
+  test("sets remote_access domain and token for duckdns (appends .duckdns.org)", () => {
     const state = buildStateFromWizard(
       makeWizardState({
         remoteMode: "duckdns",
@@ -170,8 +170,19 @@ describe("buildStateFromWizard", () => {
       })
     );
     expect(state.remote_access.mode).toBe("duckdns");
-    expect(state.remote_access.domain).toBe("mystack");
+    expect(state.remote_access.domain).toBe("mystack.duckdns.org");
     expect(state.remote_access.token).toBe("abc123");
+  });
+
+  test("duckdns FQDN is not double-suffixed when user types it in full", () => {
+    const state = buildStateFromWizard(
+      makeWizardState({
+        remoteMode: "duckdns",
+        remoteDomain: "mystack.duckdns.org",
+        remoteToken: "abc123",
+      })
+    );
+    expect(state.remote_access.domain).toBe("mystack.duckdns.org");
   });
 
   test("omits remote domain/token when blank", () => {

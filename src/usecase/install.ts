@@ -48,7 +48,12 @@ export interface StepUpdate {
 }
 
 export interface InstallResult {
-  urls: Array<{ name: string; url: string; description: string }>;
+  // `url` is the canonical URL for the chosen access mode (public HTTPS in
+  // duckdns/cloudflare, hostname HTTP in local-DNS, direct host:port otherwise).
+  // `localUrl` is the LAN fallback a user can always reach from the same subnet
+  // even without hairpin-NAT or local DNS — present only when `url` is NOT
+  // already that direct host:port URL.
+  urls: Array<{ name: string; url: string; localUrl?: string; description: string }>;
   password: string;
   adminUser: string;
   // Populated only when remote_access.mode is duckdns or cloudflare. Drives
@@ -119,11 +124,35 @@ export async function getHostIp(): Promise<string> {
   return r.ok ? r.stdout.trim().split(" ")[0] : "localhost";
 }
 
+// DuckDNS subdomains (what the wizard collects) must be turned into the FQDN
+// (e.g. "lavx" -> "lavx.duckdns.org") before any renderer consumes them —
+// otherwise Caddy tries to issue *.lavx (not a real TLD, ACME fails) and the
+// URLs on the done screen dead-end. buildStateFromWizard already does this on
+// submit; this is the belt-and-suspenders for callers that build or load
+// State through any other path.
+function normalizeState(state: State): State {
+  if (
+    state.remote_access.mode === "duckdns" &&
+    state.remote_access.domain &&
+    !state.remote_access.domain.endsWith(".duckdns.org")
+  ) {
+    return {
+      ...state,
+      remote_access: {
+        ...state.remote_access,
+        domain: `${state.remote_access.domain}.duckdns.org`,
+      },
+    };
+  }
+  return state;
+}
+
 export async function runInstall(
-  state: State,
+  rawState: State,
   adminPassword: string,
   onStep: (update: StepUpdate) => void
 ): Promise<InstallResult> {
+  const state = normalizeState(rawState);
   const installDir = state.install_dir;
   const logPath = join(installDir, "install.log");
 
@@ -606,19 +635,24 @@ export async function runInstall(
   const localDnsEnabled = state.local_dns.enabled;
   const localDnsTld = state.local_dns.tld;
 
-  const urls: Array<{ name: string; url: string; description: string }> = services
+  const urls: InstallResult["urls"] = services
     .filter((svc) => svc.adminPort !== undefined)
     .filter((svc) => !((mode !== "none" || localDnsEnabled) && svc.id === "caddy"))
     .map((svc) => {
+      const direct = `http://${hostIp}:${svc.adminPort}`;
       let url: string;
       if ((mode === "duckdns" || mode === "cloudflare") && domain) {
         url = `https://${svc.id}.${domain}`;
       } else if (localDnsEnabled && localDnsTld) {
         url = `http://${svc.id}.${localDnsTld}`;
       } else {
-        url = `http://${hostIp}:${svc.adminPort}`;
+        url = direct;
       }
-      return { name: svc.name, url, description: svc.description };
+      // Show the LAN fallback whenever the canonical URL isn't already it.
+      // Users without hairpin-NAT or without dnsmasq/hosts entries still
+      // need something that works on the LAN.
+      const localUrl = url === direct ? undefined : direct;
+      return { name: svc.name, url, localUrl, description: svc.description };
     });
 
   const publicAccess =

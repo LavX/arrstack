@@ -11,6 +11,7 @@ import { showPassword } from "./usecase/show-password.js";
 import { runUninstall } from "./usecase/uninstall.js";
 import { tailLogs } from "./usecase/logs.js";
 import { purgeInstallDir } from "./usecase/cleanup.js";
+import { runHosts, revertHosts } from "./usecase/hosts.js";
 import { exec } from "./lib/exec.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -94,6 +95,21 @@ program
   .option("--purge", "also remove config files (media data is always preserved)")
   .action(async (opts) => {
     await runUninstall(opts.installDir, opts.purge ?? false).catch((err) => {
+      console.error(`Error: ${err.message}`);
+      process.exit(1);
+    });
+  });
+
+program
+  .command("hosts")
+  .description(
+    "Map arrstack hostnames to this host's LAN IP in /etc/hosts (uses sudo). Lets LAN clients reach https://{svc}.{domain} without hairpin-NAT."
+  )
+  .option("--revert", "remove the arrstack block from /etc/hosts instead of writing it")
+  .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
+  .action(async (opts) => {
+    const action = opts.revert ? revertHosts() : runHosts(opts.installDir);
+    await action.catch((err) => {
       console.error(`Error: ${err.message}`);
       process.exit(1);
     });

@@ -35,7 +35,10 @@ else
   DL_BASE="https://github.com/$REPO/releases/download/$REQUESTED_VERSION"
 fi
 
-curl -fsSL "$DL_BASE/$BINARY" -o "$_TMPDIR/arrstack"
+# Download the binary under its release filename so the checksum file
+# (which lists entries as "<hash>  arrstack-linux-x64") matches what
+# sha256sum -c finds on disk.
+curl -fsSL "$DL_BASE/$BINARY" -o "$_TMPDIR/$BINARY"
 curl -fsSL "$DL_BASE/checksums.txt" -o "$_TMPDIR/checksums.txt"
 
 (cd "$_TMPDIR" && grep "$BINARY" checksums.txt | sha256sum -c --quiet) || {
@@ -43,13 +46,13 @@ curl -fsSL "$DL_BASE/checksums.txt" -o "$_TMPDIR/checksums.txt"
 }
 printf "Verified.\n"
 
-chmod +x "$_TMPDIR/arrstack"
+chmod +x "$_TMPDIR/$BINARY"
 
 if [[ -d "$HOME/.local/bin" ]] && echo "$PATH" | grep -q "$HOME/.local/bin"; then
-  cp "$_TMPDIR/arrstack" "$HOME/.local/bin/arrstack"
+  cp "$_TMPDIR/$BINARY" "$HOME/.local/bin/arrstack"
   printf "Installed to %s/.local/bin/arrstack\n" "$HOME"
 else
-  sudo cp "$_TMPDIR/arrstack" "/usr/local/bin/arrstack"
+  sudo cp "$_TMPDIR/$BINARY" "/usr/local/bin/arrstack"
   printf "Installed to /usr/local/bin/arrstack\n"
 fi
 

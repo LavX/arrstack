@@ -13,8 +13,9 @@ REQUESTED_VERSION="${ARRSTACK_VERSION:-latest}"
 
 ARCH=$(uname -m)
 case "$ARCH" in
-  x86_64)  BINARY="arrstack-linux-x64" ;;
-  aarch64) BINARY="arrstack-linux-arm64" ;;
+  x86_64|amd64)       BINARY="arrstack-linux-x64" ;;
+  aarch64|arm64)      BINARY="arrstack-linux-arm64" ;;
+  armv7l|armv6l|i*86) printf "32-bit architectures are not supported: %s\n" "$ARCH" >&2; exit 1 ;;
   *) printf "Unsupported architecture: %s\n" "$ARCH" >&2; exit 1 ;;
 esac
 

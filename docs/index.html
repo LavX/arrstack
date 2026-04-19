@@ -9,16 +9,27 @@
   <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
   <meta name="color-scheme" content="dark light">
 
-  <!-- Open Graph / Twitter (SEO agent: expand image + handles) -->
+  <!-- Open Graph / Twitter. Image points at GitHub's auto-generated repo
+       social card because we don't ship a custom PNG yet; this at least
+       renders a branded preview in Slack/LinkedIn/Discord/Mastodon. -->
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="arrstack">
+  <meta property="og:locale" content="en_US">
   <meta property="og:title" content="arrstack: 12 services. One binary. 90 seconds.">
-  <meta property="og:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Bazarr+/Jellyfin/Jellyseerr homelab stack.">
+  <meta property="og:description" content="Open-source TUI installer for a pre-wired Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr homelab stack on Linux.">
   <meta property="og:url" content="https://lavx.github.io/arrstack/">
-  <meta property="og:image" content="https://lavx.github.io/arrstack/assets/og-image.png">
+  <meta property="og:image" content="https://opengraph.githubassets.com/1/LavX/arrstack">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="600">
+  <meta property="og:image:alt" content="arrstack on GitHub, a single-binary Linux installer for the arr media stack.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="arrstack: 12 services. One binary. 90 seconds.">
-  <meta name="twitter:description" content="Open-source TUI installer for a pre-wired Sonarr/Radarr/Bazarr+/Jellyfin/Jellyseerr homelab stack.">
-  <meta name="twitter:image" content="https://lavx.github.io/arrstack/assets/og-image.png">
+  <meta name="twitter:description" content="Open-source TUI installer for a pre-wired Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr homelab stack on Linux.">
+  <meta name="twitter:image" content="https://opengraph.githubassets.com/1/LavX/arrstack">
+  <meta name="twitter:image:alt" content="arrstack on GitHub, a single-binary Linux installer for the arr media stack.">
+  <meta name="keywords" content="arrstack, arr stack, self-hosted media server, sonarr, radarr, bazarr, prowlarr, jellyfin, jellyseerr, qbittorrent, tdarr, flaresolverr, docker compose installer, trash guides, homelab, linux, plex alternative">
+  <meta name="author" content="LavX">
+  <meta name="robots" content="index, follow, max-image-preview:large">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="canonical" href="https://lavx.github.io/arrstack/">
@@ -27,21 +38,42 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
 
-  <!-- JSON-LD: SoftwareApplication. SEO agent: expand with aggregateRating, screenshot, releaseNotes, offers. -->
+  <!-- JSON-LD: SoftwareApplication + SourceCode dual-graph so GitHub /
+       release metadata and the installable itself both show up in rich
+       results. Version tracks the last git tag. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "arrstack",
-    "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "Linux",
-    "url": "https://lavx.github.io/arrstack/",
-    "downloadUrl": "https://github.com/lavx/arrstack/releases",
-    "softwareVersion": "1.0",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "license": "https://opensource.org/licenses/MIT",
-    "author": { "@type": "Person", "name": "LavX", "url": "https://lavx.github.io" },
-    "description": "Single-binary TUI installer for a pre-wired Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr Docker stack."
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "arrstack",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux x86_64, Linux arm64",
+        "url": "https://lavx.github.io/arrstack/",
+        "downloadUrl": "https://github.com/LavX/arrstack/releases",
+        "softwareVersion": "1.0.0",
+        "datePublished": "2026-04-19",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://opensource.org/licenses/MIT",
+        "author": { "@type": "Person", "name": "LavX", "url": "https://lavx.github.io" },
+        "description": "Single-binary TUI installer for a pre-wired Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr Docker stack.",
+        "image": "https://opengraph.githubassets.com/1/LavX/arrstack",
+        "sameAs": [
+          "https://github.com/LavX/arrstack",
+          "https://github.com/LavX/arrstack/releases/latest"
+        ]
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "name": "arrstack",
+        "codeRepository": "https://github.com/LavX/arrstack",
+        "programmingLanguage": "TypeScript",
+        "runtimePlatform": "Bun",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": { "@type": "Person", "name": "LavX", "url": "https://lavx.github.io" }
+      }
+    ]
   }
   </script>
 </head>
@@ -60,7 +92,7 @@
           <li><a href="#wiring">auto-wiring</a></li>
           <li><a href="#remote">remote</a></li>
           <li><a href="#faq">faq</a></li>
-          <li><a href="https://github.com/lavx/arrstack" rel="noopener">github</a></li>
+          <li><a href="https://github.com/LavX/arrstack" rel="noopener">github</a></li>
         </ul>
       </nav>
     </div>
@@ -98,7 +130,7 @@
           </div>
 
           <div class="cta-row" style="margin-top: var(--s-5);">
-            <a class="btn btn-primary" href="https://github.com/lavx/arrstack" rel="noopener">
+            <a class="btn btn-primary" href="https://github.com/LavX/arrstack" rel="noopener">
               <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.22.48-2.69-1.07-2.69-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.66.07-.52.28-.87.5-1.07-1.77-.2-3.64-.89-3.64-3.95 0-.87.31-1.58.82-2.14-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.6 7.6 0 0 1 8 3.92c.68 0 1.36.09 2 .27 1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.14 0 3.07-1.87 3.74-3.65 3.94.29.25.54.74.54 1.49v2.21c0 .21.15.46.55.38A8 8 0 0 0 8 0z"/></svg>
               GitHub
             </a>
@@ -455,9 +487,9 @@ address=/jellyfin.arrstack.local/192.168.1.20
       <nav class="footer-col" aria-label="Links">
         <h4 class="footer-h">Links</h4>
         <ul class="footer-list mono">
-          <li><a href="https://github.com/lavx/arrstack" rel="noopener">GitHub repo</a></li>
+          <li><a href="https://github.com/LavX/arrstack" rel="noopener">GitHub repo</a></li>
           <li><a href="https://github.com/LavX/arrstack/blob/main/docs/README.md" rel="noopener">Docs index</a></li>
-          <li><a href="https://github.com/lavx/arrstack/blob/main/LICENSE" rel="noopener">MIT LICENSE</a></li>
+          <li><a href="https://github.com/LavX/arrstack/blob/main/LICENSE" rel="noopener">MIT LICENSE</a></li>
           <li><a href="http://github.com/lavx" rel="noopener">http://github.com/lavx</a></li>
         </ul>
       </nav>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://lavx.github.io/arrstack/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/README.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/01-installation.html</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/02-first-run.html</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/03-daily-use.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/04-remote-access.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/05-extra-drives.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/06-vpn.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/07-providers-setup.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/08-backup-restore.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/guide/09-updating.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/troubleshooting/common-errors.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/troubleshooting/diagnostic-commands.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/troubleshooting/gpu-transcoding-debug.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/troubleshooting/per-service-faq.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://lavx.github.io/arrstack/troubleshooting/reinstall-recovery.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+</urlset>

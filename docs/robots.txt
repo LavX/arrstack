@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Maintainer-only trees are excluded by Jekyll already, but nudge crawlers
+# away from the raw install script and any copied assets underscore-prefixed
+# files in case Pages ever stops honoring _config.yml excludes.
+Disallow: /install.sh
+Disallow: /_internal/
+
+Sitemap: https://lavx.github.io/arrstack/sitemap.xml

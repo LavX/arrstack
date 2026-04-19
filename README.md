@@ -2,20 +2,20 @@
   <img src="docs/assets/logomark.svg" alt="arrstack" width="160" />
 </p>
 
-<h1 align="center">arrstack-installer</h1>
+<h1 align="center">arrstack</h1>
 
-<p align="center"><strong>12 services. One binary. 90 seconds.</strong></p>
+<p align="center"><strong>Single-binary installer for a self-hosted Sonarr, Radarr, Bazarr+, Jellyfin, and Jellyseerr stack on Linux.</strong></p>
 
-<p align="center"><em>The arr stack, pre-wired. Jellyseerr on :5055, zero setup screen.</em></p>
+<p align="center"><em>12 services. One binary. 90 seconds. Jellyseerr on :5055, zero setup screen.</em></p>
 
 ```bash
 curl -fsSL https://lavx.github.io/arrstack/install.sh | bash
 ```
 
-<!-- badges: swap the placeholder URLs once CI is green and releases are tagged -->
 <p align="center">
-  <a href="https://github.com/lavx/arrstack/actions"><img alt="build" src="https://img.shields.io/badge/build-passing-brightgreen" /></a>
-  <a href="#license"><img alt="license" src="https://img.shields.io/badge/license-MIT-blue" /></a>
+  <a href="https://github.com/LavX/arrstack/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/LavX/arrstack/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/LavX/arrstack/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/LavX/arrstack?sort=semver" /></a>
+  <a href="https://github.com/LavX/arrstack/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/LavX/arrstack" /></a>
   <a href="#requirements"><img alt="platform" src="https://img.shields.io/badge/linux-x64%20%7C%20arm64-informational" /></a>
   <a href="https://bun.sh"><img alt="bun" src="https://img.shields.io/badge/runtime-bun-f472b6" /></a>
   <a href="https://lavx.github.io/arrstack/"><img alt="homepage" src="https://img.shields.io/badge/docs-lavx.github.io%2Farrstack-000" /></a>
@@ -228,7 +228,7 @@ Default `PUID` and `PGID` are the installing user's `id -u` and `id -g`. Overrid
 
 ```bash
 # Clone and set up
-git clone https://github.com/lavx/arrstack
+git clone https://github.com/LavX/arrstack
 cd arrstack-installer
 bun install
 

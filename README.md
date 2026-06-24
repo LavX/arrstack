@@ -69,7 +69,7 @@ The README is a tour. The full user guide lives under `docs/`.
 - Caddy reverse proxy with three remote-access modes: LAN (plain HTTP), DuckDNS (Let's Encrypt), Cloudflare DNS-01 wildcard Let's Encrypt
 - Two LAN hostname modes: install dnsmasq for LAN-wide resolution, or print a single `/etc/hosts` line
 - TRaSH-compliant shared `/data` mount so hardlinks work across `torrents/` and `media/`
-- Optional gluetun + WireGuard VPN container in front of qBittorrent
+- Optional gluetun + WireGuard VPN container in front of qBittorrent (Mullvad, Proton, NordVPN, or any custom WireGuard provider; for NordVPN you paste an access token and the WireGuard key is derived for you)
 - Per-service log rotation capped at 50 MB
 
 ## Quickstart

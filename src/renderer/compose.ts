@@ -48,6 +48,22 @@ interface PortBinding {
   binding: string; // e.g. "127.0.0.1:8989:8989" or "0.0.0.0:443:443"
 }
 
+// A depends_on edge. `condition` upgrades it to compose long-form
+// (`gluetun: { condition: service_healthy }`); without it the template emits
+// the short-form list entry (`- gluetun`).
+interface DependsOnEntry {
+  service: string;
+  condition?: string;
+}
+
+interface Healthcheck {
+  test: string;
+  interval: string;
+  timeout: string;
+  retries: number;
+  start_period: string;
+}
+
 interface ServiceContext {
   id: string;
   image: string;
@@ -62,7 +78,12 @@ interface ServiceContext {
   devices: string[];
   capAdd: string[];
   groupAdd: string[];
-  dependsOn: string[];
+  dependsOn: DependsOnEntry[];
+  // When any dependsOn entry carries a condition, the whole block must be
+  // rendered in compose long-form (a map of service -> {condition}); the two
+  // forms can't be mixed on one service.
+  dependsOnLongForm: boolean;
+  healthcheck?: Healthcheck;
   vpnNetwork: boolean;
 }
 
@@ -168,6 +189,19 @@ function isVpnRouted(svc: Service, vpn: ComposeOptions["vpn"]): boolean {
   return svc.id === "qbittorrent" && vpn.enabled;
 }
 
+// gluetun ships a built-in HEALTHCHECK, but we render one explicitly so that
+// `depends_on: { gluetun: { condition: service_healthy } }` keeps working even
+// if a future image drops it. `/gluetun-entrypoint healthcheck` pings the
+// tunnel; start_period covers the WireGuard handshake + firewall setup before
+// the first probe counts against retries.
+const GLUETUN_HEALTHCHECK: Healthcheck = {
+  test: '["CMD", "/gluetun-entrypoint", "healthcheck"]',
+  interval: "10s",
+  timeout: "10s",
+  retries: 6,
+  start_period: "30s",
+};
+
 // Translates the wizard's VPN state into the env vars gluetun expects
 // (VPN_SERVICE_PROVIDER / VPN_TYPE / WIREGUARD_* / SERVER_COUNTRIES / custom
 // endpoint tuple). Only emitted for the gluetun service and only when VPN
@@ -193,6 +227,14 @@ function buildGluetunEnv(vpn: ComposeOptions["vpn"]): EnvEntry[] {
 }
 
 export function buildComposeContext(services: Service[], opts: ComposeOptions): ComposeContext {
+  // Every VPN-routed service runs inside gluetun's netns and gets `ports: []`,
+  // so its WebUI port has to be published by gluetun instead. Collect those
+  // ports once and hand them to the gluetun service below. Generic, so any
+  // future routed service (not just qBittorrent) is exposed automatically.
+  const vpnRoutedPorts: number[] = opts.vpn.enabled
+    ? services.filter((svc) => isVpnRouted(svc, opts.vpn)).flatMap((svc) => svc.ports)
+    : [];
+
   const serviceContexts: ServiceContext[] = services.map((svc) => {
     const vpnNetwork = isVpnRouted(svc, opts.vpn);
     const apiKeyEnv = svc.apiKeyEnv;
@@ -206,9 +248,24 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       extraEnv.push(...buildGluetunEnv(opts.vpn));
     }
 
-    const ports: PortBinding[] = vpnNetwork
-      ? []
-      : svc.ports.map((p) => ({ binding: `0.0.0.0:${p}:${p}` }));
+    // gluetun publishes its own declared ports plus every VPN-routed service's
+    // ports. VPN-routed services themselves publish nothing (they share
+    // gluetun's network). Everything else binds its declared ports directly.
+    const ownPorts =
+      svc.id === "gluetun" ? [...svc.ports, ...vpnRoutedPorts] : vpnNetwork ? [] : svc.ports;
+    const ports: PortBinding[] = ownPorts.map((p) => ({ binding: `0.0.0.0:${p}:${p}` }));
+
+    // VPN-routed services must wait for gluetun to be *healthy* (tunnel up)
+    // before they attach to its netns, otherwise a gluetun restart mid-boot
+    // leaves a stale namespace path and `docker compose up` aborts with the
+    // cryptic `lstat /proc/<pid>/ns/net: no such file or directory`.
+    const dependsOn: DependsOnEntry[] = svc.dependsOn.map((service) => ({ service }));
+    if (vpnNetwork) {
+      dependsOn.push({ service: "gluetun", condition: "service_healthy" });
+    }
+    const dependsOnLongForm = dependsOn.some((d) => d.condition !== undefined);
+
+    const healthcheck = svc.id === "gluetun" ? GLUETUN_HEALTHCHECK : undefined;
 
     const caddyImage = resolveCaddyImage(svc, opts.remoteMode);
 
@@ -239,7 +296,9 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
       devices: buildDevices(svc, opts.gpu),
       capAdd: svc.capAdd,
       groupAdd: buildGroupAdd(svc, opts.gpu),
-      dependsOn: svc.dependsOn,
+      dependsOn,
+      dependsOnLongForm,
+      healthcheck,
       vpnNetwork,
     };
   });

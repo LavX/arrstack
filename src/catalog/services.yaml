@@ -309,13 +309,16 @@ services:
     mounts: {}
     envVars: {}
     dependsOn: []
+    # The installer's host-side health gate only probes http services. gluetun's
+    # control server (:8000) isn't published to the host, so an http probe would
+    # always time out; a tcp type makes the installer skip it. Boot ordering for
+    # the VPN-routed qBittorrent is enforced at the docker layer instead, via the
+    # compose-level healthcheck + `depends_on: { gluetun: service_healthy }`.
     health:
-      type: http
-      path: /v1/openvpn/status
+      type: tcp
       port: 8000
     default: false
     requiresAdminAuth: false
-    networkMode: host
     # gluetun builds its own kill-switch with iptables/nftables on boot. Without
     # NET_ADMIN it exits with "Could not fetch rule set generation id: Permission
     # denied (you must be root)" before reaching the healthcheck. /dev/net/tun

@@ -9,8 +9,14 @@ export async function configureArr(
     qbitUser: string;
     qbitPass: string;
     category: string;
+    // Docker network host Sonarr/Radarr use to reach qBittorrent. Normally the
+    // "qbittorrent" container, but when qBittorrent is routed through the VPN it
+    // shares gluetun's network namespace and has no name of its own, so it is
+    // reachable as "gluetun". Defaults to "qbittorrent" for the non-VPN case.
+    qbitHost?: string;
   }
 ): Promise<void> {
+  const qbitHost = opts.qbitHost ?? "qbittorrent";
   const port = service === "sonarr" ? 8989 : 7878;
   const base = `http://localhost:${port}`;
   const headers = { "X-Api-Key": apiKey, "Content-Type": "application/json" };
@@ -55,7 +61,7 @@ export async function configureArr(
     (c) =>
       c.implementation === "QBittorrent" &&
       c.fields.some(
-        (f) => f.name === "host" && f.value === "qbittorrent"
+        (f) => f.name === "host" && f.value === qbitHost
       )
   );
 
@@ -68,7 +74,7 @@ export async function configureArr(
       implementation: "QBittorrent",
       configContract: "QBittorrentSettings",
       fields: [
-        { name: "host", value: "qbittorrent" },
+        { name: "host", value: qbitHost },
         { name: "port", value: 8080 },
         { name: "useSsl", value: false },
         { name: "urlBase", value: "" },

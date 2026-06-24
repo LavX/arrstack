@@ -47,12 +47,78 @@ describe("renderCompose", () => {
     expect(output).toContain("driver: bridge");
   });
 
-  test("qbittorrent with VPN uses service network mode and no ports", () => {
+  test("qbittorrent with VPN routes through gluetun and publishes no ports of its own", () => {
     const services = getServices(["gluetun", "qbittorrent"]);
     const opts = { ...baseOpts, vpn: { enabled: true, provider: "mullvad" } };
+    const ctx = buildComposeContext(services, opts);
+    const qbit = ctx.services.find((s) => s.id === "qbittorrent")!;
+    expect(qbit.vpnNetwork).toBe(true);
+    expect(qbit.ports).toEqual([]);
+    expect(renderCompose(services, opts)).toContain('network_mode: "service:gluetun"');
+  });
+
+  test("VPN: gluetun publishes the routed qBittorrent WebUI port so host/LAN can reach it", () => {
+    // qBittorrent has no IP of its own inside gluetun's netns; the 8080 WebUI
+    // port must be published BY gluetun or the WebUI (and the installer's health
+    // gate on localhost:8080) is unreachable. This was the "did not become
+    // healthy within 180s" bug.
+    const services = getServices(["gluetun", "qbittorrent"]);
+    const opts = { ...baseOpts, vpn: { enabled: true, provider: "mullvad" } };
+    const ctx = buildComposeContext(services, opts);
+    const glue = ctx.services.find((s) => s.id === "gluetun")!;
+    expect(glue.ports).toContainEqual({ binding: "0.0.0.0:8080:8080" });
+    expect(renderCompose(services, opts)).toContain("0.0.0.0:8080:8080");
+  });
+
+  test("VPN: qBittorrent depends on a HEALTHY gluetun (kills the netns race)", () => {
+    const services = getServices(["gluetun", "qbittorrent"]);
+    const opts = { ...baseOpts, vpn: { enabled: true, provider: "mullvad" } };
+    const ctx = buildComposeContext(services, opts);
+    const qbit = ctx.services.find((s) => s.id === "qbittorrent")!;
+    expect(qbit.dependsOn).toContainEqual({
+      service: "gluetun",
+      condition: "service_healthy",
+    });
+    expect(renderCompose(services, opts)).toContain("condition: service_healthy");
+  });
+
+  test("VPN: gluetun gets a compose-level healthcheck so service_healthy can resolve", () => {
+    const services = getServices(["gluetun", "qbittorrent"]);
+    const opts = { ...baseOpts, vpn: { enabled: true, provider: "mullvad" } };
+    const ctx = buildComposeContext(services, opts);
+    const glue = ctx.services.find((s) => s.id === "gluetun")!;
+    expect(glue.healthcheck).toBeDefined();
     const output = renderCompose(services, opts);
-    expect(output).toContain('network_mode: "service:gluetun"');
-    expect(output).not.toContain("8080:8080");
+    expect(output).toContain("healthcheck:");
+    expect(output).toContain("/gluetun-entrypoint");
+    expect(output).toContain("start_period:");
+  });
+
+  test("VPN off: qBittorrent publishes its own 8080 and has no gluetun dependency", () => {
+    const services = getServices(["qbittorrent"]);
+    const output = renderCompose(services, baseOpts);
+    expect(output).toContain("0.0.0.0:8080:8080");
+    expect(output).not.toContain("service:gluetun");
+  });
+
+  test("gluetun nordvpn provider emits provider env, no custom endpoint tuple", () => {
+    const services = getServices(["gluetun"]);
+    const output = renderCompose(services, {
+      ...baseOpts,
+      vpn: {
+        enabled: true,
+        provider: "nordvpn",
+        type: "wireguard",
+        private_key: "NORDKEY==",
+        countries: "Netherlands",
+      },
+    });
+    expect(output).toContain("VPN_SERVICE_PROVIDER=nordvpn");
+    expect(output).toContain("VPN_TYPE=wireguard");
+    expect(output).toContain("WIREGUARD_PRIVATE_KEY=NORDKEY==");
+    expect(output).toContain("SERVER_COUNTRIES=Netherlands");
+    expect(output).not.toContain("VPN_ENDPOINT_IP");
+    expect(output).not.toContain("WIREGUARD_PUBLIC_KEY");
   });
 
   test("PUID and PGID are in environment", () => {

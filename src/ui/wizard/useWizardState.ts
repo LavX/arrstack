@@ -53,7 +53,7 @@ export interface WizardState {
   vpnMode: "none" | "gluetun";
   // VPN (gluetun) provider + WireGuard credentials. Only read when
   // vpnMode === "gluetun".
-  vpnProvider: "mullvad" | "protonvpn" | "custom";
+  vpnProvider: "mullvad" | "protonvpn" | "nordvpn" | "custom";
   vpnPrivateKey: string;
   vpnAddresses: string;    // e.g. "10.64.222.21/32"
   vpnCountries: string;    // optional, comma-separated (e.g. "Switzerland, Sweden")
@@ -288,7 +288,9 @@ export function useWizardState(existingState?: Partial<State> | null) {
   });
   const [vpnProvider, setVpnProvider] = useState<WizardState["vpnProvider"]>(() => {
     const p = existingState?.vpn?.provider;
-    return p === "mullvad" || p === "protonvpn" || p === "custom" ? p : "mullvad";
+    return p === "mullvad" || p === "protonvpn" || p === "nordvpn" || p === "custom"
+      ? p
+      : "mullvad";
   });
   const [vpnPrivateKey, setVpnPrivateKey] = useState(existingState?.vpn?.private_key ?? "");
   const [vpnAddresses, setVpnAddresses] = useState(existingState?.vpn?.addresses ?? "");

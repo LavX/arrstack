@@ -33,19 +33,23 @@ export async function configureQbit(
     throw new Error(`qBittorrent login failed: ${loginRes.status} ${body}${hint}`);
   }
 
-  const body = await loginRes.text();
-  if (body.trim() !== "Ok.") {
-    throw new Error(`qBittorrent login rejected: ${body.trim()}`);
+  // qBittorrent 5.x returns 204 No Content (empty body) on a successful login;
+  // older builds returned 200 with the body "Ok.". Wrong credentials still come
+  // back with loginRes.ok true and the body "Fails.", so reject on that rather
+  // than requiring an exact "Ok." (which 5.x never sends).
+  const body = (await loginRes.text()).trim();
+  if (body === "Fails.") {
+    throw new Error("qBittorrent login failed: incorrect username or password");
   }
 
-  // 2. Extract SID from Set-Cookie header
+  // 2. Reuse the session cookie verbatim. qBittorrent 5.x renamed it from `SID`
+  // to `QBT_SID_<port>` (e.g. QBT_SID_8080), so take the first name=value pair
+  // from Set-Cookie instead of matching a hard-coded cookie name.
   const setCookie = loginRes.headers.get("set-cookie") ?? "";
-  const sidMatch = setCookie.match(/SID=([^;]+)/);
-  if (!sidMatch) {
-    throw new Error("qBittorrent login did not return a SID cookie");
+  const cookieHeader = setCookie.split(";")[0]?.trim() ?? "";
+  if (!/sid/i.test(cookieHeader)) {
+    throw new Error("qBittorrent login did not return a session cookie");
   }
-  const sid = sidMatch[1];
-  const cookieHeader = `SID=${sid}`;
 
   // 3. Create categories
   for (const cat of CATEGORIES) {

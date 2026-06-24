@@ -26,7 +26,7 @@ http://{{id}}.{{../localDnsTld}} {
 {{#each services}}
 	@{{id}} host {{id}}.{{../domain}}
 	handle @{{id}} {
-		reverse_proxy {{id}}:{{port}}
+		reverse_proxy {{upstream}}:{{port}}
 	}
 {{/each}}
 	# Unknown subdomain: don't leak a random service, just 404.
@@ -48,7 +48,7 @@ http://{{id}}.{{../localDnsTld}} {
 {{#each services}}
 	@{{id}} host {{id}}.{{../domain}}
 	handle @{{id}} {
-		reverse_proxy {{id}}:{{port}}
+		reverse_proxy {{upstream}}:{{port}}
 	}
 {{/each}}
 	# Unknown subdomain: don't leak a random service, just 404.

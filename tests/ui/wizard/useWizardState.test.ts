@@ -223,6 +223,24 @@ describe("buildStateFromWizard", () => {
     expect(state.vpn.addresses).toBe("10.64.222.21/32");
   });
 
+  test("nordvpn provider round-trips through state (built-in provider, no endpoint tuple)", () => {
+    const state = buildStateFromWizard(
+      makeWizardState({
+        vpnMode: "gluetun",
+        vpnProvider: "nordvpn",
+        vpnPrivateKey: "NORDKEY==",
+        vpnCountries: "Netherlands",
+      })
+    );
+    expect(state.vpn.enabled).toBe(true);
+    expect(state.vpn.provider).toBe("nordvpn");
+    expect(state.vpn.type).toBe("wireguard");
+    expect(state.vpn.private_key).toBe("NORDKEY==");
+    expect(state.vpn.countries).toBe("Netherlands");
+    expect(state.vpn.endpoint_ip).toBeUndefined();
+    expect(state.vpn.server_public_key).toBeUndefined();
+  });
+
   test("custom provider carries endpoint tuple and server pubkey", () => {
     const state = buildStateFromWizard(
       makeWizardState({

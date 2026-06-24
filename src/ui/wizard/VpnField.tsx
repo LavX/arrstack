@@ -7,7 +7,7 @@ import { Radio, RadioOption } from "../shared/Radio.js";
 import { colors, LABEL_WIDTH } from "../shared/theme.js";
 
 export type VpnMode = "none" | "gluetun";
-export type VpnProvider = "mullvad" | "protonvpn" | "custom";
+export type VpnProvider = "mullvad" | "protonvpn" | "nordvpn" | "custom";
 
 interface VpnFieldProps {
   mode: VpnMode;
@@ -42,6 +42,7 @@ const MODE_OPTIONS: RadioOption[] = [
 const PROVIDER_OPTIONS: RadioOption[] = [
   { value: "mullvad", label: "mullvad" },
   { value: "protonvpn", label: "protonvpn" },
+  { value: "nordvpn", label: "nordvpn" },
   { value: "custom", label: "custom" },
 ];
 
@@ -65,6 +66,7 @@ export function VpnField({
 }: VpnFieldProps) {
   const enabled = mode === "gluetun";
   const isCustom = provider === "custom";
+  const isNord = provider === "nordvpn";
 
   return (
     <SectionBox title="VPN" isFocused={isFocused}>
@@ -97,17 +99,29 @@ export function VpnField({
           </Box>
 
           <TextInput
-            label="WG private key"
+            label={isNord ? "NordVPN token" : "WG private key"}
             value={privateKey}
             onChange={onPrivateKeyChange}
-            hint="from your provider's WireGuard config"
+            hint={
+              isNord
+                ? "access token, the WireGuard key is derived for you"
+                : "from your provider's WireGuard config"
+            }
             isFocused={focusedField === 2}
           />
+          {isNord && (
+            <Box>
+              <Text>{"".padEnd(LABEL_WIDTH)}</Text>
+              <Text color={colors.muted}>
+                create one: https://my.nordaccount.com/dashboard/nordvpn/access-tokens/
+              </Text>
+            </Box>
+          )}
           <TextInput
             label="WG addresses"
             value={addresses}
             onChange={onAddressesChange}
-            hint="e.g. 10.64.222.21/32"
+            hint={isNord ? "optional, leave blank for NordVPN" : "e.g. 10.64.222.21/32"}
             isFocused={focusedField === 3}
           />
           <TextInput

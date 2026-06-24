@@ -71,6 +71,11 @@ describe("bazarr config.yaml", () => {
     const output = renderBazarrConfig(opts);
     expect(output).toContain("openrouter_encryption_key: 'abcdef0123456789'");
   });
+
+  test("marks Bazarr+ onboarding complete so first visit lands on the dashboard, not /setup", () => {
+    const output = renderBazarrConfig(opts);
+    expect(output).toContain("setup_complete: true");
+  });
 });
 
 describe("qbittorrent.conf", () => {

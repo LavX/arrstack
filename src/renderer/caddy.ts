@@ -13,11 +13,17 @@ export interface CaddyOptions {
     enabled: boolean;
     tld: string;
   };
+  // When VPN is on, qBittorrent shares gluetun's netns and has no container
+  // name of its own, so Caddy must proxy its vhost to gluetun instead.
+  vpn?: { enabled: boolean };
 }
 
 interface CaddyServiceEntry {
   id: string;
   port: number;
+  // Docker network host Caddy reverse-proxies to. Usually the same as `id`;
+  // becomes "gluetun" for qBittorrent when VPN routing is on.
+  upstream: string;
 }
 
 interface CaddyContext {
@@ -29,9 +35,14 @@ interface CaddyContext {
 }
 
 export function buildCaddyContext(services: Service[], opts: CaddyOptions): CaddyContext {
+  const vpnEnabled = opts.vpn?.enabled ?? false;
   const entries: CaddyServiceEntry[] = services
     .filter((svc) => svc.adminPort !== undefined)
-    .map((svc) => ({ id: svc.id, port: svc.adminPort as number }));
+    .map((svc) => ({
+      id: svc.id,
+      port: svc.adminPort as number,
+      upstream: vpnEnabled && svc.id === "qbittorrent" ? "gluetun" : svc.id,
+    }));
 
   return {
     mode: opts.mode,

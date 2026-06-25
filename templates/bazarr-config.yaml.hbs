@@ -6,6 +6,12 @@ auth:
   password: {{passwordHash}}
 general:
   auto_update: false
+  # The installer pre-wires Sonarr/Radarr, providers, and a language profile via
+  # the API, so the instance is already configured. Mark Bazarr+'s first-run
+  # onboarding wizard complete (general.setup_complete in bazarr/app/config.py)
+  # so a fresh visit lands on the dashboard instead of being redirected to /setup.
+  setup_complete: true
+  instance_name: 'Bazarr+'
   base_url: ''
   branch: master
   concurrent_jobs: 4

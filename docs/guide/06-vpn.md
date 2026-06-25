@@ -1,6 +1,6 @@
 # 06. VPN (gluetun + WireGuard)
 
-arrstack routes **qBittorrent only** through a VPN by default. Prowlarr, Sonarr, Radarr, and the rest use your normal internet connection. This page covers enabling gluetun, pasting a WireGuard config from Mullvad or Proton (or any provider via the custom path), and understanding the kill-switch behavior so your torrent traffic never leaks.
+arrstack routes **qBittorrent only** through a VPN by default. Prowlarr, Sonarr, Radarr, and the rest use your normal internet connection. This page covers enabling gluetun, pasting a WireGuard config from Mullvad, Proton, or NordVPN (or any other provider via the custom path), and understanding the kill-switch behavior so your torrent traffic never leaks.
 
 ## TL;DR
 
@@ -18,6 +18,14 @@ docker exec qbittorrent curl -s ifconfig.me
 
 ## What routes where
 
+> **Only qBittorrent is routed through the VPN.** Every other service (Sonarr,
+> Radarr, Prowlarr, Bazarr+, Jellyfin, Jellyseerr, FlareSolverr, Recyclarr,
+> Trailarr, and the rest) uses your host's **normal internet connection**, not
+> NordVPN. This is intentional: the arr apps and media server work better (and in
+> some cases only work) on your real connection, and the torrent client is the
+> only thing that needs an anonymizing exit. To confirm it on your own box, see
+> [Verifying routing](#verifying-the-split-which-service-uses-which-network) below.
+
 | Service       | Network              | Outbound IP |
 |---------------|----------------------|-------------|
 | qBittorrent   | `network_mode: service:gluetun` | VPN exit |
@@ -29,6 +37,33 @@ docker exec qbittorrent curl -s ifconfig.me
 | Everything else | stack bridge                  | Your ISP |
 
 qBittorrent has no IP of its own, it uses gluetun's network namespace. If gluetun is down, qBittorrent has no network at all. That is the kill switch.
+
+## Verifying the split (which service uses which network)
+
+You can prove exactly where each service exits. qBittorrent should report your VPN
+exit IP; every other service should report your normal (ISP) IP.
+
+```bash
+# qBittorrent -> should be your NordVPN exit IP
+docker exec qbittorrent curl -s https://ifconfig.me; echo
+
+# Sonarr (or any other arr/media service) -> should be your normal/ISP IP
+docker exec sonarr curl -s https://ifconfig.me; echo
+
+# Your host's own public IP, for comparison with Sonarr's
+curl -s https://ifconfig.me; echo
+```
+
+If qBittorrent's IP differs from the other two (a NordVPN address) while Sonarr
+matches your host, the split is working as designed. If qBittorrent's IP equals
+your ISP IP, the tunnel is not up, check `arrstack logs gluetun`.
+
+This is structural, not luck: only qBittorrent is rendered with
+`network_mode: service:gluetun`, so its *only* possible route is gluetun's tunnel
+(that is also the kill switch). Every other service sits on the `arrstack` bridge
+and egresses through the host, so it cannot use the VPN even if the tunnel is up.
+To route something else through the VPN you would have to add it to gluetun's
+network namespace too; arrstack does not do this by default.
 
 ## Kill-switch behavior
 
@@ -53,7 +88,7 @@ On the VPN screen:
 | Field                | Options |
 |----------------------|---------|
 | Enable gluetun       | on / off |
-| Provider             | `mullvad`, `protonvpn`, `custom` |
+| Provider             | `mullvad`, `protonvpn`, `nordvpn`, `custom` |
 | Protocol             | `wireguard` (only protocol wired end-to-end today) |
 | Private key          | `WIREGUARD_PRIVATE_KEY` from your provider config |
 | Addresses            | Tunnel IP/CIDR, e.g. `10.64.222.21/32` |
@@ -92,6 +127,25 @@ Endpoint = 185.65.134.66:51820
 5. Paste in the wizard under provider `protonvpn`.
 
 ProtonVPN's free tier does not allow P2P. You need Plus or higher. Port forwarding works but requires `natpmpc` inside the container, which gluetun handles.
+
+### NordVPN
+
+NordVPN uses WireGuard via its NordLynx protocol. You do not paste a `.conf` file or hunt for a private key, you paste a **NordVPN access token** and arrstack derives the WireGuard key for you.
+
+1. Create an access token at **https://my.nordaccount.com/dashboard/nordvpn/access-tokens/** ("Generate new token", then copy the 64-character value). The wizard prints this same link right under the token field.
+2. In the wizard, pick provider `nordvpn` and paste the token into the **NordVPN token** field.
+3. Leave **WG addresses** blank. gluetun fills in NordLynx's default tunnel address automatically.
+4. Optionally set **Countries** (e.g. `Netherlands`), which maps to gluetun's `SERVER_COUNTRIES`.
+
+At install time arrstack calls NordVPN's credentials API with your token, pulls the NordLynx private key, and writes it into gluetun's config as `WIREGUARD_PRIVATE_KEY`. The **token** is what gets saved in `state.json` (so reconfigure and `--resume` keep working); the derived key only lives in the generated `docker-compose.yml`. gluetun ships a built-in NordVPN server list, so unlike the `custom` path you never provide an endpoint IP, port, or server public key. NordVPN allows P2P and gluetun picks a P2P-capable server when you torrent.
+
+Already extracted the NordLynx key yourself? Running
+
+```bash
+curl -s -u token:YOUR_TOKEN https://api.nordvpn.com/v1/users/services/credentials
+```
+
+returns a `nordlynx_private_key`. You can paste that 44-character key into the field instead of the token and arrstack will use it as-is (it only auto-derives when the value looks like a 64-character token).
 
 ### AirVPN and other providers (use `custom`)
 

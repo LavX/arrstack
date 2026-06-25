@@ -94,4 +94,39 @@ describe("renderCaddyfile", () => {
     });
     expect(output).not.toContain("DUCKDNS_TOKEN");
   });
+
+  test("VPN: qBittorrent's local-DNS vhost proxies to gluetun, not qbittorrent", () => {
+    // qBittorrent is in gluetun's netns under VPN, so there is no reachable
+    // `qbittorrent` endpoint; the vhost must target gluetun.
+    const svc = getServicesByIds(["qbittorrent", "sonarr"]);
+    const output = renderCaddyfile(svc, {
+      mode: "none",
+      localDns: { enabled: true, tld: "arrstack.local" },
+      vpn: { enabled: true },
+    });
+    expect(output).toContain("http://qbittorrent.arrstack.local");
+    expect(output).toContain("reverse_proxy gluetun:8080");
+    expect(output).not.toContain("reverse_proxy qbittorrent:8080");
+    expect(output).toContain("reverse_proxy sonarr:8989"); // others unaffected
+  });
+
+  test("VPN: qBittorrent proxies to gluetun in remote (duckdns) mode too", () => {
+    const svc = getServicesByIds(["qbittorrent"]);
+    const output = renderCaddyfile(svc, {
+      mode: "duckdns",
+      domain: "myhome.duckdns.org",
+      vpn: { enabled: true },
+    });
+    expect(output).toContain("reverse_proxy gluetun:8080");
+    expect(output).not.toContain("reverse_proxy qbittorrent:8080");
+  });
+
+  test("no VPN: qBittorrent's vhost proxies to itself", () => {
+    const svc = getServicesByIds(["qbittorrent"]);
+    const output = renderCaddyfile(svc, {
+      mode: "none",
+      localDns: { enabled: true, tld: "arrstack.local" },
+    });
+    expect(output).toContain("reverse_proxy qbittorrent:8080");
+  });
 });

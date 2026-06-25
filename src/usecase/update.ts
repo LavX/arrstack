@@ -1,4 +1,4 @@
-import { existsSync, openSync, writeSync, closeSync, fsyncSync, writeFileSync } from "node:fs";
+import { existsSync, openSync, writeSync, closeSync, fsyncSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { readState } from "../state/store.js";
 import { exec } from "../lib/exec.js";
@@ -7,6 +7,7 @@ import type { Service } from "../catalog/schema.js";
 import type { State } from "../state/schema.js";
 import { renderCaddyfile } from "../renderer/caddy.js";
 import { renderCompose } from "../renderer/compose.js";
+import { resolveVpnWireguardKey } from "../wiring/nordvpn.js";
 
 export interface UpdateDeps {
   runStreaming: (argv: string[], onLine: (line: string) => void) => Promise<{ ok: boolean; code: number | null }>;
@@ -74,7 +75,7 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     // key) is intentionally left alone.
     const renderStart = d.now();
     logAndEcho("[update] rendering docker-compose.yml + Caddyfile from current templates");
-    regenerateInstallerConfig(installDir, state, logAndEcho);
+    await regenerateInstallerConfig(installDir, state, logAndEcho);
     phaseTimes["render-config"] = d.now() - renderStart;
 
     const buildStart = d.now();
@@ -160,14 +161,33 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
   }
 }
 
-function regenerateInstallerConfig(
+async function regenerateInstallerConfig(
   installDir: string,
   state: State,
   log: (line: string) => void
-): void {
+): Promise<void> {
   const services = getServicesByIds(state.services_enabled);
 
   const composePath = join(installDir, "docker-compose.yml");
+
+  // state.vpn holds the NordVPN access token (not the WG key) for nordvpn
+  // installs; resolve it to the real key before re-rendering compose, or the
+  // regenerated file would carry the token as WIREGUARD_PRIVATE_KEY and gluetun
+  // would reject it on the next `up`. NordVPN's temporary tokens expire after
+  // ~30 days, so if the refresh fails, fall back to the WireGuard key already
+  // baked into the current compose file rather than aborting the whole update.
+  let effectiveVpn = state.vpn;
+  try {
+    effectiveVpn = await resolveVpnWireguardKey(state.vpn);
+  } catch (err) {
+    const existing = existingWireguardKey(composePath);
+    if (!existing) throw err;
+    effectiveVpn = { ...state.vpn, private_key: existing };
+    log(
+      `[update]   warning: could not refresh the NordVPN key ` +
+        `(${(err as Error).message}); reusing the existing WireGuard key`,
+    );
+  }
   const composeContent = renderCompose(services, {
     installDir,
     storageRoot: state.storage_root,
@@ -177,7 +197,7 @@ function regenerateInstallerConfig(
     timezone: state.timezone,
     apiKeys: state.api_keys,
     gpu: state.gpu,
-    vpn: state.vpn,
+    vpn: effectiveVpn,
     remoteMode: state.remote_access.mode,
   });
   writeFileSync(composePath, composeContent);
@@ -188,9 +208,24 @@ function regenerateInstallerConfig(
     mode: state.remote_access.mode,
     domain: state.remote_access.domain,
     localDns: state.local_dns,
+    // Without this, an update re-renders qBittorrent's vhost back to
+    // `reverse_proxy qbittorrent:8080`, which is unreachable under VPN.
+    vpn: { enabled: state.vpn.enabled },
   });
   writeFileSync(caddyfilePath, caddyContent);
   log(`[update]   wrote ${caddyfilePath}`);
+}
+
+// Recover the WireGuard private key already written into the current compose
+// file, so an update can keep working when a NordVPN token can no longer be
+// refreshed (e.g. an expired temporary token). Returns undefined if absent.
+function existingWireguardKey(composePath: string): string | undefined {
+  try {
+    const m = readFileSync(composePath, "utf-8").match(/WIREGUARD_PRIVATE_KEY=(\S+)/);
+    return m?.[1];
+  } catch {
+    return undefined;
+  }
 }
 
 async function runHealthChecks(

@@ -18,6 +18,14 @@ services:
       options:
         max-size: "50m"
         max-file: "3"
+{{#if healthcheck}}
+    healthcheck:
+      test: {{healthcheck.test}}
+      interval: {{healthcheck.interval}}
+      timeout: {{healthcheck.timeout}}
+      retries: {{healthcheck.retries}}
+      start_period: {{healthcheck.start_period}}
+{{/if}}
 {{#if vpnNetwork}}
     network_mode: "service:gluetun"
 {{else}}
@@ -65,8 +73,15 @@ services:
 {{/if}}
 {{#if dependsOn}}
     depends_on:
+{{#if dependsOnLongForm}}
 {{#each dependsOn}}
-      - {{this}}
+      {{service}}:
+        condition: {{#if condition}}{{condition}}{{else}}service_started{{/if}}
 {{/each}}
+{{else}}
+{{#each dependsOn}}
+      - {{service}}
+{{/each}}
+{{/if}}
 {{/if}}
 {{/each}}

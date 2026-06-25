@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import os from "node:os";
-import { statfsSync } from "node:fs";
+import { statfsSync, readFileSync } from "node:fs";
 import { detectGpus, type GpuInfo } from "../../platform/gpu.js";
 import { resolveRenderVideoGids } from "../../platform/groups.js";
 import { isDockerInstalled, isDockerRunning, isComposeV2 } from "../../platform/docker.js";
@@ -53,7 +53,7 @@ export interface WizardState {
   vpnMode: "none" | "gluetun";
   // VPN (gluetun) provider + WireGuard credentials. Only read when
   // vpnMode === "gluetun".
-  vpnProvider: "mullvad" | "protonvpn" | "custom";
+  vpnProvider: "mullvad" | "protonvpn" | "nordvpn" | "custom";
   vpnPrivateKey: string;
   vpnAddresses: string;    // e.g. "10.64.222.21/32"
   vpnCountries: string;    // optional, comma-separated (e.g. "Switzerland, Sweden")
@@ -187,6 +187,18 @@ function detectTimezone(): string {
   }
 }
 
+// Read the admin password from a previous install/attempt (admin.txt, mode 600)
+// so the wizard reuses it instead of generating a fresh one. Returns null when
+// there is no readable admin.txt.
+function readExistingAdminPassword(installDir: string): string | null {
+  try {
+    const m = readFileSync(`${installDir}/admin.txt`, "utf-8").match(/^password:\s*(.+)$/m);
+    return m ? m[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 // Services managed automatically by the installer, hidden from the user grid
 // Infrastructure: caddy, ddns containers, dnsmasq
 // Bazarr+ deps: flaresolverr, opensubtitles-scraper, ai-subtitle-translator (bundled with Bazarr+)
@@ -228,7 +240,12 @@ export function useWizardState(existingState?: Partial<State> | null) {
   const [adminUsername, setAdminUsername] = useState(
     existingState?.admin?.username ?? "admin"
   );
-  const [adminPassword, setAdminPassword] = useState(generatePassword);
+  const [adminPassword, setAdminPassword] = useState(() => {
+    // Reuse the password from a prior install/attempt so reconfigure and
+    // --resume don't rotate it out from under already-running containers.
+    const dir = existingState?.install_dir ?? `${process.env.HOME ?? "."}/arrstack`;
+    return readExistingAdminPassword(dir) ?? generatePassword();
+  });
 
   const [detectedGpus, setDetectedGpus] = useState<GpuInfo[]>([]);
   const [gpuVendor, setGpuVendor] = useState<WizardState["gpuVendor"]>(
@@ -288,7 +305,9 @@ export function useWizardState(existingState?: Partial<State> | null) {
   });
   const [vpnProvider, setVpnProvider] = useState<WizardState["vpnProvider"]>(() => {
     const p = existingState?.vpn?.provider;
-    return p === "mullvad" || p === "protonvpn" || p === "custom" ? p : "mullvad";
+    return p === "mullvad" || p === "protonvpn" || p === "nordvpn" || p === "custom"
+      ? p
+      : "mullvad";
   });
   const [vpnPrivateKey, setVpnPrivateKey] = useState(existingState?.vpn?.private_key ?? "");
   const [vpnAddresses, setVpnAddresses] = useState(existingState?.vpn?.addresses ?? "");

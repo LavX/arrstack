@@ -195,7 +195,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
         return;
       }
       if (activeSectionIndex === SEC_VPN && activeFieldIndex === 1 && ws.vpnMode === "gluetun") {
-        const providers = ["mullvad", "protonvpn", "custom"] as const;
+        const providers = ["mullvad", "protonvpn", "nordvpn", "custom"] as const;
         const idx = providers.indexOf(ws.vpnProvider as (typeof providers)[number]);
         const next = isForward
           ? (idx + 1) % providers.length
@@ -280,7 +280,7 @@ export function Form({ initial, isReconfigure, onSubmit, onCancel }: FormProps) 
       }
       // VPN provider radio: cycle to next (only visible when mode=gluetun)
       if (activeSectionIndex === SEC_VPN && activeFieldIndex === 1 && ws.vpnMode === "gluetun") {
-        const providers = ["mullvad", "protonvpn", "custom"] as const;
+        const providers = ["mullvad", "protonvpn", "nordvpn", "custom"] as const;
         const idx = providers.indexOf(ws.vpnProvider as (typeof providers)[number]);
         ws.setVpnProvider(providers[(idx + 1) % providers.length]);
         return;

@@ -386,6 +386,16 @@ export async function runInstall(
       api_keys: apiKeys,
       install_started_at: installStartedAt,
     });
+    // Persist the admin password early (mode 600). state.json never stores it,
+    // so without this a resumed install would generate a *new* password, rewrite
+    // qBittorrent.conf with a new hash, and then fail to log into the qbit
+    // container still running from the failed attempt (compose up does not
+    // recreate an unchanged container). The wizard reads this back on resume.
+    writeFileSync(
+      join(installDir, "admin.txt"),
+      `username: ${state.admin.username}\npassword: ${adminPassword}\ngenerated: ${installStartedAt}\n`,
+      { mode: 0o600 }
+    );
   });
 
   // Step 9a: Prepare custom Caddy image (only when remote mode needs DNS

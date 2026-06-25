@@ -1,4 +1,4 @@
-import { existsSync, openSync, writeSync, closeSync, fsyncSync, writeFileSync } from "node:fs";
+import { existsSync, openSync, writeSync, closeSync, fsyncSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { readState } from "../state/store.js";
 import { exec } from "../lib/exec.js";
@@ -168,13 +168,26 @@ async function regenerateInstallerConfig(
 ): Promise<void> {
   const services = getServicesByIds(state.services_enabled);
 
+  const composePath = join(installDir, "docker-compose.yml");
+
   // state.vpn holds the NordVPN access token (not the WG key) for nordvpn
   // installs; resolve it to the real key before re-rendering compose, or the
   // regenerated file would carry the token as WIREGUARD_PRIVATE_KEY and gluetun
-  // would reject it on the next `up`.
-  const effectiveVpn = await resolveVpnWireguardKey(state.vpn);
-
-  const composePath = join(installDir, "docker-compose.yml");
+  // would reject it on the next `up`. NordVPN's temporary tokens expire after
+  // ~30 days, so if the refresh fails, fall back to the WireGuard key already
+  // baked into the current compose file rather than aborting the whole update.
+  let effectiveVpn = state.vpn;
+  try {
+    effectiveVpn = await resolveVpnWireguardKey(state.vpn);
+  } catch (err) {
+    const existing = existingWireguardKey(composePath);
+    if (!existing) throw err;
+    effectiveVpn = { ...state.vpn, private_key: existing };
+    log(
+      `[update]   warning: could not refresh the NordVPN key ` +
+        `(${(err as Error).message}); reusing the existing WireGuard key`,
+    );
+  }
   const composeContent = renderCompose(services, {
     installDir,
     storageRoot: state.storage_root,
@@ -201,6 +214,18 @@ async function regenerateInstallerConfig(
   });
   writeFileSync(caddyfilePath, caddyContent);
   log(`[update]   wrote ${caddyfilePath}`);
+}
+
+// Recover the WireGuard private key already written into the current compose
+// file, so an update can keep working when a NordVPN token can no longer be
+// refreshed (e.g. an expired temporary token). Returns undefined if absent.
+function existingWireguardKey(composePath: string): string | undefined {
+  try {
+    const m = readFileSync(composePath, "utf-8").match(/WIREGUARD_PRIVATE_KEY=(\S+)/);
+    return m?.[1];
+  } catch {
+    return undefined;
+  }
 }
 
 async function runHealthChecks(

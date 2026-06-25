@@ -7,6 +7,7 @@ import type { Service } from "../catalog/schema.js";
 import type { State } from "../state/schema.js";
 import { renderCaddyfile } from "../renderer/caddy.js";
 import { renderCompose } from "../renderer/compose.js";
+import { resolveVpnWireguardKey } from "../wiring/nordvpn.js";
 
 export interface UpdateDeps {
   runStreaming: (argv: string[], onLine: (line: string) => void) => Promise<{ ok: boolean; code: number | null }>;
@@ -74,7 +75,7 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     // key) is intentionally left alone.
     const renderStart = d.now();
     logAndEcho("[update] rendering docker-compose.yml + Caddyfile from current templates");
-    regenerateInstallerConfig(installDir, state, logAndEcho);
+    await regenerateInstallerConfig(installDir, state, logAndEcho);
     phaseTimes["render-config"] = d.now() - renderStart;
 
     const buildStart = d.now();
@@ -160,12 +161,18 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
   }
 }
 
-function regenerateInstallerConfig(
+async function regenerateInstallerConfig(
   installDir: string,
   state: State,
   log: (line: string) => void
-): void {
+): Promise<void> {
   const services = getServicesByIds(state.services_enabled);
+
+  // state.vpn holds the NordVPN access token (not the WG key) for nordvpn
+  // installs; resolve it to the real key before re-rendering compose, or the
+  // regenerated file would carry the token as WIREGUARD_PRIVATE_KEY and gluetun
+  // would reject it on the next `up`.
+  const effectiveVpn = await resolveVpnWireguardKey(state.vpn);
 
   const composePath = join(installDir, "docker-compose.yml");
   const composeContent = renderCompose(services, {
@@ -177,7 +184,7 @@ function regenerateInstallerConfig(
     timezone: state.timezone,
     apiKeys: state.api_keys,
     gpu: state.gpu,
-    vpn: state.vpn,
+    vpn: effectiveVpn,
     remoteMode: state.remote_access.mode,
   });
   writeFileSync(composePath, composeContent);
@@ -188,6 +195,9 @@ function regenerateInstallerConfig(
     mode: state.remote_access.mode,
     domain: state.remote_access.domain,
     localDns: state.local_dns,
+    // Without this, an update re-renders qBittorrent's vhost back to
+    // `reverse_proxy qbittorrent:8080`, which is unreachable under VPN.
+    vpn: { enabled: state.vpn.enabled },
   });
   writeFileSync(caddyfilePath, caddyContent);
   log(`[update]   wrote ${caddyfilePath}`);

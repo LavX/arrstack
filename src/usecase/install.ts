@@ -34,7 +34,7 @@ import { seedArrAdmin } from "../wiring/arr-auth.js";
 import { configureTrailarr } from "../wiring/trailarr.js";
 import { configureArr } from "../wiring/sonarr-radarr.js";
 import { configureQbit } from "../wiring/qbittorrent.js";
-import { deriveNordVpnPrivateKey, isNordVpnToken } from "../wiring/nordvpn.js";
+import { isNordVpnToken, resolveVpnWireguardKey } from "../wiring/nordvpn.js";
 import { setupJellyfin } from "../wiring/jellyfin.js";
 import { linkJellyseerr } from "../wiring/jellyseerr.js";
 import { configureBazarrLanguages } from "../wiring/bazarr.js";
@@ -235,8 +235,7 @@ export async function runInstall(
     isNordVpnToken(state.vpn.private_key)
   ) {
     await runStep("Derive NordVPN WireGuard key", onStep, log, async () => {
-      const key = await deriveNordVpnPrivateKey(state.vpn.private_key!);
-      effectiveVpn = { ...state.vpn, private_key: key };
+      effectiveVpn = await resolveVpnWireguardKey(state.vpn);
     });
   }
 

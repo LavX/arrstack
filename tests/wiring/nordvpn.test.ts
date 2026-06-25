@@ -1,5 +1,11 @@
 import { describe, expect, test, afterEach } from "bun:test";
-import { isNordVpnToken, deriveNordVpnPrivateKey } from "../../src/wiring/nordvpn";
+import {
+  isNordVpnToken,
+  deriveNordVpnPrivateKey,
+  resolveVpnWireguardKey,
+} from "../../src/wiring/nordvpn";
+
+const A_TOKEN = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
 describe("isNordVpnToken", () => {
   test("true for a 64-char hex access token", () => {
@@ -57,5 +63,40 @@ describe("deriveNordVpnPrivateKey", () => {
     await expect(deriveNordVpnPrivateKey("tok", "http://nord.test/creds")).rejects.toThrow(
       /nordlynx_private_key/,
     );
+  });
+});
+
+describe("resolveVpnWireguardKey", () => {
+  const origFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = origFetch;
+  });
+
+  test("derives the WG key for a NordVPN token (used by install AND update)", async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ nordlynx_private_key: "WGKEY==" }), { status: 200 })) as any;
+    const out = await resolveVpnWireguardKey({
+      enabled: true,
+      provider: "nordvpn",
+      private_key: A_TOKEN,
+    });
+    expect(out.private_key).toBe("WGKEY==");
+  });
+
+  test("leaves an already-extracted WG key untouched (no API call)", async () => {
+    let called = false;
+    globalThis.fetch = (async () => {
+      called = true;
+      return new Response("{}", { status: 200 });
+    }) as any;
+    const vpn = { enabled: true, provider: "nordvpn", private_key: "AlreadyAWgKeyNot64Hex=" };
+    const out = await resolveVpnWireguardKey(vpn);
+    expect(out.private_key).toBe(vpn.private_key);
+    expect(called).toBe(false);
+  });
+
+  test("leaves non-nordvpn providers unchanged", async () => {
+    const vpn = { enabled: true, provider: "mullvad", private_key: A_TOKEN };
+    expect(await resolveVpnWireguardKey(vpn)).toEqual(vpn);
   });
 });

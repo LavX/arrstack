@@ -18,6 +18,14 @@ docker exec qbittorrent curl -s ifconfig.me
 
 ## What routes where
 
+> **Only qBittorrent is routed through the VPN.** Every other service (Sonarr,
+> Radarr, Prowlarr, Bazarr+, Jellyfin, Jellyseerr, FlareSolverr, Recyclarr,
+> Trailarr, and the rest) uses your host's **normal internet connection**, not
+> NordVPN. This is intentional: the arr apps and media server work better (and in
+> some cases only work) on your real connection, and the torrent client is the
+> only thing that needs an anonymizing exit. To confirm it on your own box, see
+> [Verifying routing](#verifying-the-split-which-service-uses-which-network) below.
+
 | Service       | Network              | Outbound IP |
 |---------------|----------------------|-------------|
 | qBittorrent   | `network_mode: service:gluetun` | VPN exit |
@@ -29,6 +37,33 @@ docker exec qbittorrent curl -s ifconfig.me
 | Everything else | stack bridge                  | Your ISP |
 
 qBittorrent has no IP of its own, it uses gluetun's network namespace. If gluetun is down, qBittorrent has no network at all. That is the kill switch.
+
+## Verifying the split (which service uses which network)
+
+You can prove exactly where each service exits. qBittorrent should report your VPN
+exit IP; every other service should report your normal (ISP) IP.
+
+```bash
+# qBittorrent -> should be your NordVPN exit IP
+docker exec qbittorrent curl -s https://ifconfig.me; echo
+
+# Sonarr (or any other arr/media service) -> should be your normal/ISP IP
+docker exec sonarr curl -s https://ifconfig.me; echo
+
+# Your host's own public IP, for comparison with Sonarr's
+curl -s https://ifconfig.me; echo
+```
+
+If qBittorrent's IP differs from the other two (a NordVPN address) while Sonarr
+matches your host, the split is working as designed. If qBittorrent's IP equals
+your ISP IP, the tunnel is not up, check `arrstack logs gluetun`.
+
+This is structural, not luck: only qBittorrent is rendered with
+`network_mode: service:gluetun`, so its *only* possible route is gluetun's tunnel
+(that is also the kill switch). Every other service sits on the `arrstack` bridge
+and egresses through the host, so it cannot use the VPN even if the tunnel is up.
+To route something else through the VPN you would have to add it to gluetun's
+network namespace too; arrstack does not do this by default.
 
 ## Kill-switch behavior
 

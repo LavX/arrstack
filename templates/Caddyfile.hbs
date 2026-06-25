@@ -9,7 +9,7 @@
 # LE at all). Without it, hitting http://{svc}.{tld} would fall through to
 # Caddy's default welcome page instead of the service.
 http://{{id}}.{{../localDnsTld}} {
-	reverse_proxy {{id}}:{{port}}
+	reverse_proxy {{upstream}}:{{port}}
 }
 {{/each}}
 {{/if}}

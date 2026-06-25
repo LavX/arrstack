@@ -50,3 +50,22 @@ export async function deriveNordVpnPrivateKey(
   }
   return key;
 }
+
+// Resolve the WireGuard private key just before rendering compose. For a NordVPN
+// install the persisted state holds the access *token*, not the WG key, so both
+// the installer and `arrstack update` must turn it into the real key here (the
+// state file deliberately keeps the token so reconfigure/--resume stay valid).
+// A value that already looks like a WG key is returned unchanged.
+export async function resolveVpnWireguardKey<
+  T extends { enabled: boolean; provider?: string; private_key?: string },
+>(vpn: T): Promise<T> {
+  if (
+    vpn.enabled &&
+    vpn.provider === "nordvpn" &&
+    vpn.private_key &&
+    isNordVpnToken(vpn.private_key)
+  ) {
+    return { ...vpn, private_key: await deriveNordVpnPrivateKey(vpn.private_key) };
+  }
+  return vpn;
+}

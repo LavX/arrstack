@@ -219,7 +219,7 @@ services:
     description: Automatically sync TRaSH Guide settings to Sonarr and Radarr
     category: utility
     image: ghcr.io/recyclarr/recyclarr
-    tag: "latest"
+    tag: "8"
     ports: []
     configPath: /config
     mounts: {}

@@ -206,7 +206,8 @@ Add a drive later by mounting it on the host, re-running `arrstack`, and enterin
 | `arrstack uninstall` | `docker compose down` only. Preserves `config/`, `state.json`, `admin.txt`, and media. Add `--purge` to also delete `<install-dir>/config/`; `state.json`, `admin.txt`, and media still survive |
 
 Global flags: `--verbose`, `--non-interactive`.
-`install` flags: `--fresh`, `--resume`, `--install-dir <path>`.
+`install` flags: `--fresh`, `--resume`, `--yes`, `--install-dir <path>`.
+`--yes` finishes an existing install without the wizard and requires `--resume`.
 
 ## Configuration reference
 

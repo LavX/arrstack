@@ -37,6 +37,14 @@ arrstack install --resume
 arrstack install --resume --install-dir /opt/arrstack
 ```
 
+For a script, remote shell, or any non-interactive run, add `--yes`. It skips
+the wizard, reads `state.json` and `admin.txt`, and reruns the full pipeline
+without rotating the password:
+
+```bash
+arrstack install --resume --yes
+```
+
 ### arrstack install --fresh
 
 Ignores any existing `state.json` and walks the wizard from scratch. Your previous config directory and media are still on disk, but the new install will generate a new `state.json` and may pick different API keys and ports.

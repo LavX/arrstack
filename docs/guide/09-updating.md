@@ -26,7 +26,7 @@ arrstack doctor
 
 Duration: 30 seconds to 5 minutes depending on image sizes and download speed. To update a single service, use `docker compose` directly.
 
-`arrstack update` does not re-run the Jellyfin or Jellyseerr bootstrap. If those were never configured because an install failed early, use `arrstack install --resume`.
+`arrstack update` does not re-run the Jellyfin or Jellyseerr bootstrap. If those were never configured because an install failed early, use `arrstack install --resume`, or `arrstack install --resume --yes` to finish without the wizard.
 
 ## Image tag policy
 

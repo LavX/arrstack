@@ -40,6 +40,8 @@ sudo -E arrstack install --install-dir /opt/arrstack  # or run elevated
 **Fix.** Finish the install so the wiring steps run:
 ```bash
 arrstack install --resume
+# or, without the wizard:
+arrstack install --resume --yes
 ```
 On arrstack 1.2.1 and later, `arrstack update` also seeds a missing Sonarr/Radarr/Prowlarr admin user, but it does not run the Jellyfin or Jellyseerr setup. Use `--resume` when Jellyfin login is also broken.
 

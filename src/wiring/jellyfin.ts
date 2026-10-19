@@ -12,24 +12,16 @@ async function readBody(res: Response): Promise<string> {
 // Jellyfin's /health returns 200 before the default user record is created
 // internally, so the first POST /Startup/User can 500. Poll /Startup/User (GET)
 // until it returns 200, which is Jellyfin's signal that the startup API is ready.
-// Returns the current user record so a resumed install can detect a user that
-// was created by an earlier attempt and skip the POST (Jellyfin answers 403
-// once the first user exists).
-async function waitForJellyfinStartupReady(
-  base: string,
-  timeoutMs = 60_000,
-): Promise<{ Name?: string } | null> {
+// On Jellyfin 12 this GET also creates the default first user ("root").
+async function waitForJellyfinStartupReady(base: string, timeoutMs = 60_000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
       const r = await fetch(`${base}/Startup/User`);
-      if (r.ok) {
-        return (await r.json().catch(() => null)) as { Name?: string } | null;
-      }
+      if (r.ok) return;
     } catch { /* retry */ }
     await new Promise((r) => setTimeout(r, 1500));
   }
-  return null;
 }
 
 async function isStartupComplete(base: string): Promise<boolean> {
@@ -136,20 +128,20 @@ export async function setupJellyfin(
       throw new Error(`Startup/Configuration failed: HTTP ${configRes.status}\n${await readBody(configRes)}`);
     }
 
-    const startupUser = await waitForJellyfinStartupReady(base);
+    await waitForJellyfinStartupReady(base);
 
-    // A previous attempt may have created the first user before failing later
-    // (or the user answered part of the startup wizard). POSTing /Startup/User
-    // again returns 403, so only create the user when none exists.
-    if (!startupUser?.Name) {
-      const userRes = await fetchWithRetry(`${base}/Startup/User`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ Name: adminUser, Password: adminPass }),
-      });
-      if (!userRes.ok) {
-        throw new Error(`Startup/User failed: HTTP ${userRes.status}\n${await readBody(userRes)}`);
-      }
+    // Jellyfin 12 creates a default first user ("root") on the GET above, so
+    // this POST is what renames it and sets the admin password. It returns 403
+    // when the first user already has a password (a previous attempt or a
+    // partly completed wizard), which is fine: authenticate below will use the
+    // stored credentials.
+    const userRes = await fetchWithRetry(`${base}/Startup/User`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ Name: adminUser, Password: adminPass }),
+    });
+    if (!userRes.ok && userRes.status !== 403) {
+      throw new Error(`Startup/User failed: HTTP ${userRes.status}\n${await readBody(userRes)}`);
     }
   }
 

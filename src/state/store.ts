@@ -48,6 +48,29 @@ export function adminTxtGuardMessage(installDir: string): string | null {
   );
 }
 
+export interface AdminCredentials {
+  username: string;
+  password: string;
+}
+
+/**
+ * Read the credentials the installer wrote at install time. Returns null when
+ * admin.txt is absent, unreadable, or incomplete, so callers can skip recovery
+ * work instead of crashing or rotating the password.
+ */
+export function readAdminCredentials(installDir: string): AdminCredentials | null {
+  const p = join(installDir, "admin.txt");
+  try {
+    const text = readFileSync(p, "utf-8");
+    const username = text.match(/^username:\s*(.+)$/m)?.[1]?.trim();
+    const password = text.match(/^password:\s*(.+)$/m)?.[1]?.trim();
+    if (!username || !password) return null;
+    return { username, password };
+  } catch {
+    return null;
+  }
+}
+
 export function writeState(installDir: string, state: State): void {
   const statePath = join(installDir, STATE_FILE);
   const tmpPath = `${statePath}.tmp`;

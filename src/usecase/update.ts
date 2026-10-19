@@ -1,6 +1,6 @@
 import { existsSync, openSync, writeSync, closeSync, fsyncSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { readState, writeState } from "../state/store.js";
+import { readState, writeState, readAdminCredentials } from "../state/store.js";
 import { exec } from "../lib/exec.js";
 import { getServicesByIds } from "../catalog/index.js";
 import type { Service } from "../catalog/schema.js";
@@ -9,12 +9,19 @@ import { renderCaddyfile } from "../renderer/caddy.js";
 import { renderCompose } from "../renderer/compose.js";
 import { resolveVpnWireguardKey } from "../wiring/nordvpn.js";
 import { configureBazarrProviderHub } from "../wiring/bazarr-providerhub.js";
+import {
+  seedArrAdmin,
+  ARR_AUTH_TARGETS,
+  type ArrAuthOptions,
+  type SeedArrAdminResult,
+} from "../wiring/arr-auth.js";
 
 export interface UpdateDeps {
   runStreaming: (argv: string[], onLine: (line: string) => void) => Promise<{ ok: boolean; code: number | null }>;
   captureImages: (composeFile: string) => Promise<Map<string, string>>;
   pruneImages: () => Promise<{ ok: boolean; message: string }>;
   checkHealth: (url: string, timeoutMs: number) => Promise<boolean>;
+  seedArrAdmin: (opts: ArrAuthOptions) => Promise<SeedArrAdminResult>;
   now: () => number;
 }
 
@@ -41,6 +48,7 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     captureImages: deps?.captureImages ?? defaultCaptureImages,
     pruneImages: deps?.pruneImages ?? defaultPruneImages,
     checkHealth: deps?.checkHealth ?? defaultCheckHealth,
+    seedArrAdmin: deps?.seedArrAdmin ?? seedArrAdmin,
     now: deps?.now ?? Date.now,
   };
 
@@ -125,6 +133,14 @@ export async function runUpdate(installDir: string, deps?: Partial<UpdateDeps>):
     const services = getServicesByIds(state.services_enabled);
     await runHealthChecks(services, d.checkHealth, logAndEcho);
     phaseTimes["health"] = d.now() - healthStart;
+
+    // Recovery: an install that failed before the wiring steps (image pull
+    // error, health gate timeout) leaves the arr containers running but with no
+    // admin user, so the password in admin.txt cannot log in. Seed any arr that
+    // has no user yet. Best-effort: never fail an update over this.
+    const seedStart = d.now();
+    await reseedArrAdmins(installDir, state, d.seedArrAdmin, logAndEcho);
+    phaseTimes["seed-arr-admins"] = d.now() - seedStart;
 
     // Provider Hub: keep the default subtitle providers installed + enabled on
     // existing installs too (the built-in providers are being retired).
@@ -287,6 +303,43 @@ async function runHealthChecks(
       }
     })
   );
+}
+
+async function reseedArrAdmins(
+  installDir: string,
+  state: State,
+  seed: UpdateDeps["seedArrAdmin"],
+  log: (line: string) => void,
+): Promise<void> {
+  const targets = ARR_AUTH_TARGETS.filter((t) => state.services_enabled.includes(t.id));
+  if (targets.length === 0) return;
+
+  const creds = readAdminCredentials(installDir);
+  if (!creds) {
+    log("[update]   admin.txt missing or unreadable; skipping arr admin recovery");
+    return;
+  }
+
+  for (const target of targets) {
+    try {
+      const result = await seed({
+        apiKey: state.api_keys[target.id] ?? "",
+        username: state.admin.username,
+        password: creds.password,
+        baseUrl: `http://localhost:${target.port}`,
+        apiVersion: target.apiVersion,
+      });
+      log(
+        `[update]   ${target.id}: ${
+          result === "seeded" ? "seeded admin credentials" : "admin login already configured"
+        }`,
+      );
+    } catch (err) {
+      log(
+        `[update]   warning: could not verify ${target.id} admin login: ${(err as Error).message}`,
+      );
+    }
+  }
 }
 
 function diffImages(before: Map<string, string>, after: Map<string, string>): UpdateSummary[] {

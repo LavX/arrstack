@@ -31,6 +31,24 @@ sudo -E arrstack install --install-dir /opt/arrstack  # or run elevated
 
 ---
 
+### admin.txt credentials are rejected after a failed install
+
+**Symptom.** The install failed at `docker compose pull` or the health gate, you started the containers by hand with `docker compose up -d`, and now the username/password in `admin.txt` does not log in to Sonarr, Radarr, Prowlarr, or Jellyfin.
+
+**Cause.** The installer writes `admin.txt` before it touches Docker, but it creates the arr admin users and the Jellyfin admin user during the wiring steps that run *after* the containers are healthy. An install that aborts early never reaches them. The containers still answer health checks, so everything looks up, but no login exists yet. Running `docker compose up -d` by hand does not run the wiring.
+
+**Fix.** Finish the install so the wiring steps run:
+```bash
+arrstack install --resume
+```
+On arrstack 1.2.1 and later, `arrstack update` also seeds a missing Sonarr/Radarr/Prowlarr admin user, but it does not run the Jellyfin or Jellyseerr setup. Use `--resume` when Jellyfin login is also broken.
+
+`arrstack doctor` prints an "Install incomplete" warning when `state.json` has no `install_completed_at` timestamp, which is the signature of this state.
+
+**Prevention.** Let the installer finish instead of starting containers manually after a failed step. Re-run `arrstack install --resume` once the underlying image or config problem is fixed.
+
+---
+
 ### Jellyseerr EACCES on /app/config/logs
 
 **Symptom.** `jellyseerr | Error: EACCES: permission denied, mkdir '/app/config/logs'` followed by exit 1.

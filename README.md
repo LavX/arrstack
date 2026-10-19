@@ -200,7 +200,7 @@ Add a drive later by mounting it on the host, re-running `arrstack`, and enterin
 | --- | --- |
 | `arrstack install` | Runs the wizard and installs (default when no subcommand is given) |
 | `arrstack doctor` | Three passes: preflight (Docker installed + running, Compose v2 present, 10 GB free on `/` and on `storage_root`, ports 80 and 443 free), `docker compose ps` container state, then an HTTP probe on every service that declares an HTTP healthcheck |
-| `arrstack update` | `docker compose pull` then `docker compose up -d`. Configs and media untouched |
+| `arrstack update` | Pulls images, recreates containers, health-checks them, and seeds any missing Sonarr/Radarr/Prowlarr admin login. Configs and media untouched |
 | `arrstack show-password` | Prints `<install-dir>/admin.txt` (username, password, timestamp) to stdout |
 | `arrstack logs <svc>` | Follows `docker compose logs -f <svc>` for one service (`jellyfin`, `sonarr`, etc) |
 | `arrstack uninstall` | `docker compose down` only. Preserves `config/`, `state.json`, `admin.txt`, and media. Add `--purge` to also delete `<install-dir>/config/`; `state.json`, `admin.txt`, and media still survive |

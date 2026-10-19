@@ -10,7 +10,7 @@ test("setupJellyfin is exported and is async", () => {
   result.catch(() => {});
 });
 
-test("setupJellyfin skips Startup/User when a previous attempt created the user", async () => {
+test("setupJellyfin tolerates 403 from Startup/User when the first user already has a password", async () => {
   const origFetch = globalThis.fetch;
   const calls: string[] = [];
   globalThis.fetch = (async (url: any, init: any) => {
@@ -21,7 +21,7 @@ test("setupJellyfin skips Startup/User when a previous attempt created the user"
       return new Response(JSON.stringify({ StartupWizardCompleted: false }), { status: 200 });
     }
     if (u.endsWith("/Startup/User") && method === "GET") {
-      return new Response(JSON.stringify({ Name: "admin" }), { status: 200 });
+      return new Response(JSON.stringify({ Name: "root" }), { status: 200 });
     }
     if (u.endsWith("/Startup/User") && method === "POST") {
       return new Response("first user exists", { status: 403 });
@@ -47,8 +47,48 @@ test("setupJellyfin skips Startup/User when a previous attempt created the user"
     globalThis.fetch = origFetch;
   }
 
-  expect(calls).not.toContain("POST http://jellyfin.test/Startup/User");
+  expect(calls).toContain("POST http://jellyfin.test/Startup/User");
   expect(calls).toContain("POST http://jellyfin.test/Startup/Complete");
+});
+
+test("setupJellyfin renames the default first user on a fresh install", async () => {
+  const origFetch = globalThis.fetch;
+  let startupUserBody: any = null;
+  globalThis.fetch = (async (url: any, init: any) => {
+    const u = String(url);
+    const method = init?.method ?? "GET";
+    if (u.endsWith("/System/Info/Public")) {
+      return new Response(JSON.stringify({ StartupWizardCompleted: false }), { status: 200 });
+    }
+    if (u.endsWith("/Startup/User") && method === "GET") {
+      return new Response(JSON.stringify({ Name: "root" }), { status: 200 });
+    }
+    if (u.endsWith("/Startup/User") && method === "POST") {
+      startupUserBody = JSON.parse(init.body);
+      return new Response("", { status: 204 });
+    }
+    if (u.endsWith("/Users/AuthenticateByName")) {
+      return new Response(
+        JSON.stringify({
+          AccessToken: "tok-123",
+          User: { Id: "user-1", Policy: { IsAdministrator: true } },
+        }),
+        { status: 200 },
+      );
+    }
+    if (u.endsWith("/Library/VirtualFolders") && method === "GET") {
+      return new Response("[]", { status: 200 });
+    }
+    return new Response("{}", { status: 200 });
+  }) as any;
+
+  try {
+    await setupJellyfin("admin", "pw", [], "http://jellyfin.test");
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+
+  expect(startupUserBody).toEqual({ Name: "admin", Password: "pw" });
 });
 
 // Jellyfin 12.x disables legacy X-Emby-Authorization by default. The standard

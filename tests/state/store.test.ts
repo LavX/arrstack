@@ -7,6 +7,7 @@ import {
   writeState,
   adminTxtUnreadable,
   adminTxtGuardMessage,
+  readAdminCredentials,
 } from "../../src/state/store.js";
 import type { State } from "../../src/state/schema.js";
 
@@ -100,6 +101,25 @@ test("adminTxtUnreadable: true when admin.txt exists but can't be read", () => {
   chmodSync(p, 0o000);
   expect(adminTxtUnreadable(TMP)).toBe(true);
   chmodSync(p, 0o600); // let afterEach clean up
+});
+
+test("readAdminCredentials parses username and password from admin.txt", () => {
+  mkdirSync(TMP, { recursive: true });
+  writeFileSync(
+    join(TMP, "admin.txt"),
+    "username: admin\npassword: UXsr-v3H8-JpMZ-gqCm\ngenerated: 2026-06-24T23:31:10.664Z\n",
+  );
+  expect(readAdminCredentials(TMP)).toEqual({
+    username: "admin",
+    password: "UXsr-v3H8-JpMZ-gqCm",
+  });
+});
+
+test("readAdminCredentials returns null when admin.txt is absent or incomplete", () => {
+  mkdirSync(TMP, { recursive: true });
+  expect(readAdminCredentials(TMP)).toBeNull();
+  writeFileSync(join(TMP, "admin.txt"), "username: admin\n");
+  expect(readAdminCredentials(TMP)).toBeNull();
 });
 
 test("adminTxtGuardMessage: null when admin.txt is absent or readable", () => {

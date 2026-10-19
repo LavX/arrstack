@@ -1,6 +1,6 @@
 {
   "name": "arrstack-installer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "bin": {
     "arrstack": "src/cli.ts"

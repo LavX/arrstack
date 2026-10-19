@@ -16,11 +16,23 @@ export interface ArrAuthOptions {
   apiVersion: "v1" | "v3";
 }
 
+// Shared by install and update so both know every arr app whose login is
+// seeded through the API. Ports match the catalog's adminPort values.
+export const ARR_AUTH_TARGETS = [
+  { id: "prowlarr", port: 9696, apiVersion: "v1" },
+  { id: "sonarr", port: 8989, apiVersion: "v3" },
+  { id: "radarr", port: 7878, apiVersion: "v3" },
+] as const;
+
+export type ArrAuthTarget = (typeof ARR_AUTH_TARGETS)[number];
+
 async function readBody(res: Response): Promise<string> {
   try { return (await res.text()).slice(0, 400); } catch { return ""; }
 }
 
-export async function seedArrAdmin(opts: ArrAuthOptions): Promise<void> {
+export type SeedArrAdminResult = "seeded" | "exists";
+
+export async function seedArrAdmin(opts: ArrAuthOptions): Promise<SeedArrAdminResult> {
   const hostUrl = `${opts.baseUrl}/api/${opts.apiVersion}/config/host`;
 
   const getRes = await fetchWithRetry(hostUrl, {
@@ -31,10 +43,12 @@ export async function seedArrAdmin(opts: ArrAuthOptions): Promise<void> {
   }
   const current = (await getRes.json()) as Record<string, unknown>;
 
-  // If the admin user is already set, don't re-PUT — some arr versions reject
-  // identical password updates as "Must match" validation noise on reconfigure.
-  if (current.username === opts.username && current.password) {
-    return;
+  // Any existing user wins. Do not overwrite a username/password the user
+  // changed in the UI, even when it differs from the installer default. Only a
+  // genuinely unseeded instance (the state left behind when an install aborts
+  // before the wiring steps) gets credentials written.
+  if (current.username && current.password) {
+    return "exists";
   }
 
   const updated = {
@@ -58,4 +72,5 @@ export async function seedArrAdmin(opts: ArrAuthOptions): Promise<void> {
       `PUT ${hostUrl} failed: HTTP ${putRes.status}\n${await readBody(putRes)}`,
     );
   }
+  return "seeded";
 }

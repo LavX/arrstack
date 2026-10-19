@@ -72,6 +72,7 @@ function makeDeps(overrides: Partial<UpdateDeps> = {}): { deps: UpdateDeps; call
       return { ok: true, message: "Total reclaimed space: 0B" };
     },
     checkHealth: async () => true,
+    seedArrAdmin: async () => "exists",
     now: Date.now,
     ...overrides,
   };
@@ -210,6 +211,64 @@ test("runUpdate attempts the Bazarr Provider Hub wiring when bazarr is enabled",
   }
   const logTxt = readFileSync(join(dir, "update.log"), "utf-8");
   expect(logTxt.toLowerCase()).toContain("provider hub");
+});
+
+test("runUpdate seeds arr admin credentials from admin.txt after a failed install", async () => {
+  // Regression for #6: an install that aborts at docker compose pull leaves the
+  // arr containers running with no user in SQLite, so the admin.txt password is
+  // rejected. update must seed it on the next run.
+  const dir = makeInstallDir();
+  writeFileSync(join(dir, "admin.txt"), "username: admin\npassword: s3cret-pw\ngenerated: now\n");
+  const calls: any[] = [];
+  const { deps } = makeDeps({
+    seedArrAdmin: async (opts) => {
+      calls.push(opts);
+      return "seeded";
+    },
+  });
+
+  await silently(() => runUpdate(dir, deps));
+
+  expect(calls).toHaveLength(1);
+  expect(calls[0].username).toBe("admin");
+  expect(calls[0].password).toBe("s3cret-pw");
+  expect(calls[0].baseUrl).toBe("http://localhost:8989");
+  expect(calls[0].apiVersion).toBe("v3");
+  const logTxt = readFileSync(join(dir, "update.log"), "utf-8");
+  expect(logTxt).toContain("sonarr: seeded admin credentials");
+});
+
+test("runUpdate skips arr admin seeding when admin.txt is missing", async () => {
+  const dir = makeInstallDir();
+  let called = false;
+  const { deps } = makeDeps({
+    seedArrAdmin: async () => {
+      called = true;
+      return "seeded";
+    },
+  });
+
+  await silently(() => runUpdate(dir, deps));
+
+  expect(called).toBe(false);
+  const logTxt = readFileSync(join(dir, "update.log"), "utf-8");
+  expect(logTxt).toContain("admin.txt missing or unreadable");
+});
+
+test("runUpdate logs a warning and continues when arr admin seeding fails", async () => {
+  const dir = makeInstallDir();
+  writeFileSync(join(dir, "admin.txt"), "username: admin\npassword: pw\ngenerated: now\n");
+  const { deps } = makeDeps({
+    seedArrAdmin: async () => {
+      throw new Error("HTTP 500");
+    },
+  });
+
+  await silently(() => runUpdate(dir, deps));
+
+  const logTxt = readFileSync(join(dir, "update.log"), "utf-8");
+  expect(logTxt).toContain("warning: could not verify sonarr admin login");
+  expect(logTxt).toContain("done.");
 });
 
 test("runUpdate summary reports changed service images", async () => {

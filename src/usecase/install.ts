@@ -30,7 +30,7 @@ import {
   repushProwlarrIndexersToApps,
 } from "../wiring/prowlarr-flaresolverr.js";
 import { linkJellyseerrToArrs } from "../wiring/jellyseerr-arr.js";
-import { seedArrAdmin } from "../wiring/arr-auth.js";
+import { seedArrAdmin, ARR_AUTH_TARGETS } from "../wiring/arr-auth.js";
 import { configureTrailarr } from "../wiring/trailarr.js";
 import { configureArr } from "../wiring/sonarr-radarr.js";
 import { configureQbit } from "../wiring/qbittorrent.js";
@@ -569,11 +569,7 @@ export async function runInstall(
   // Step 12c2: Seed admin credentials on each arr app. Sonarr/Radarr/Prowlarr
   // store users in SQLite, so the config.xml preset alone doesn't pre-create
   // an account. PUT /api/v{N}/config/host with username/password does.
-  for (const { id, port, version } of [
-    { id: "prowlarr", port: 9696, version: "v1" as const },
-    { id: "sonarr", port: 8989, version: "v3" as const },
-    { id: "radarr", port: 7878, version: "v3" as const },
-  ]) {
+  for (const { id, port, apiVersion } of ARR_AUTH_TARGETS) {
     if (!has(id)) continue;
     await runStep(`Seeding ${id} admin credentials`, onStep, log, async () => {
       await seedArrAdmin({
@@ -581,7 +577,7 @@ export async function runInstall(
         username: state.admin.username,
         password: adminPassword,
         baseUrl: `http://localhost:${port}`,
-        apiVersion: version,
+        apiVersion,
       });
     });
   }

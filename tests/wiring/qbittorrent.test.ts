@@ -1,36 +1,33 @@
 import { describe, expect, test, afterEach } from "bun:test";
 import { configureQbit } from "../../src/wiring/qbittorrent";
 
-// NEVER call configureQbit() without an explicit base URL in these tests.
-// The default is http://localhost:8080 — on any developer host with an
-// arrstack install running, hitting that repeatedly will exceed qBittorrent's
-// failed-login threshold (5 attempts) and get the host IP banned until the
-// container is restarted. The ban is shared across all future login attempts
-// including the installer's own, so the *next* `arrstack install` run fails
-// with "qBittorrent login failed: 403". Always point tests at an unreachable
-// port so they only exercise the connection-refused path.
-const UNREACHABLE = "http://127.0.0.1:19999";
-
+// NEVER call configureQbit() against the default localhost:8080 in these
+// tests. On any developer host with an arrstack install running, repeated
+// failed logins exceed qBittorrent's threshold and ban the host IP until the
+// container restarts. Every test here mocks fetch or supplies a fake base URL.
 describe("configureQbit", () => {
+  const origFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = origFetch;
+  });
+
   test("is an async function", () => {
     expect(configureQbit).toBeInstanceOf(Function);
-    const result = configureQbit("admin", "pass", UNREACHABLE);
-    expect(result).toBeInstanceOf(Promise);
-    result.catch(() => {});
+    expect(configureQbit.constructor.name).toBe("AsyncFunction");
   });
 
-  test("accepts a custom base URL", () => {
-    const result = configureQbit("admin", "pass", "http://127.0.0.1:19998");
-    expect(result).toBeInstanceOf(Promise);
-    result.catch(() => {});
-  });
-
-  test("rejects when the API is unreachable", async () => {
-    await expect(configureQbit("admin", "pass", UNREACHABLE)).rejects.toThrow();
+  test("rejects when the request layer fails", async () => {
+    globalThis.fetch = (async () => {
+      throw new Error("boom");
+    }) as any;
+    await expect(configureQbit("admin", "pass", "http://qbit.test")).rejects.toThrow("boom");
   });
 
   test("rejects when login is rejected", async () => {
-    await expect(configureQbit("baduser", "badpass", UNREACHABLE)).rejects.toThrow();
+    globalThis.fetch = (async () => new Response("Forbidden", { status: 403 })) as any;
+    await expect(configureQbit("baduser", "badpass", "http://qbit.test")).rejects.toThrow(
+      /login failed: 403/,
+    );
   });
 });
 

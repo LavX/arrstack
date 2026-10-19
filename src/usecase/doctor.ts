@@ -72,6 +72,20 @@ export async function runDoctor(installDir: string): Promise<void> {
 
   let allOk = true;
 
+  // A failed install (most often an image pull failure) writes state.json
+  // before the docker steps but never reaches the wiring steps. Containers can
+  // still be started by hand and answer health checks while no arr admin user
+  // exists, so admin.txt credentials fail to log in. Surface that here.
+  if (!state.install_completed_at) {
+    section("Install state");
+    allOk = false;
+    fail(
+      "Install incomplete",
+      "state.json has no install_completed_at timestamp",
+      "Run: arrstack install --resume to finish service wiring (arr logins, Jellyfin setup)",
+    );
+  }
+
   // --- Preflight checks ---
   section("System checks");
   // Post-install: skip 80/443-free checks. Our own Caddy is supposed to be

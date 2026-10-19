@@ -18,11 +18,15 @@ arrstack doctor
 ## What `arrstack update` does
 
 1. Reads `state.json` to find the install directory and compose file.
-2. Runs `docker compose pull` against the generated `docker-compose.yml` so every enabled service fetches its latest image.
-3. Runs `docker compose up -d`, which recreates only the containers whose images changed.
-4. Prints a hint to run `arrstack doctor` next, which re-probes every service HTTP endpoint.
+2. Re-renders `docker-compose.yml` and `Caddyfile` from the current binary's templates, so installer fixes reach an existing install.
+3. Runs `docker compose pull` against the generated `docker-compose.yml` so every enabled service fetches its latest image.
+4. Runs `docker compose up -d`, which recreates only the containers whose images changed.
+5. Health-checks every enabled service and seeds a missing Sonarr, Radarr, or Prowlarr admin user from `admin.txt`. This repairs arr logins left behind by an install that aborted before its wiring steps.
+6. Prunes dangling images and prints a hint to run `arrstack doctor` next.
 
-Duration: 30 seconds to 5 minutes depending on image sizes and download speed. Health checks, image pruning, and single-service updates are not built in yet, run them with `docker compose` directly if you need them.
+Duration: 30 seconds to 5 minutes depending on image sizes and download speed. To update a single service, use `docker compose` directly.
+
+`arrstack update` does not re-run the Jellyfin or Jellyseerr bootstrap. If those were never configured because an install failed early, use `arrstack install --resume`.
 
 ## Image tag policy
 

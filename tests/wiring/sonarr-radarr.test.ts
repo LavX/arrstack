@@ -2,55 +2,43 @@ import { describe, expect, test, mock, afterEach } from "bun:test";
 import { configureArr } from "../../src/wiring/sonarr-radarr";
 
 describe("configureArr", () => {
+  const origFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = origFetch;
+  });
+
+  const optsFor = (category: "tv" | "movies") => ({
+    rootFolder: category === "tv" ? "/data/media/tv" : "/data/media/movies",
+    extraFolders: [],
+    qbitUser: "admin",
+    qbitPass: "pass",
+    category,
+  });
+
   test("is an async function", () => {
     expect(configureArr).toBeInstanceOf(Function);
-    // Calling with bad args should return a Promise (even if it rejects)
-    const result = configureArr("sonarr", "key", {
-      rootFolder: "/data/media/tv",
-      extraFolders: [],
-      qbitUser: "admin",
-      qbitPass: "pass",
-      category: "tv",
-    });
-    expect(result).toBeInstanceOf(Promise);
-    // Suppress unhandled rejection for this test
-    result.catch(() => {});
+    expect(configureArr.constructor.name).toBe("AsyncFunction");
   });
 
-  test("uses port 8989 for sonarr and 7878 for radarr", () => {
-    // We verify the port selection logic indirectly: both calls return a
-    // Promise, proving the function runs and doesn't throw synchronously.
-    const sonarrPromise = configureArr("sonarr", "key", {
-      rootFolder: "/data/media/tv",
-      extraFolders: [],
-      qbitUser: "admin",
-      qbitPass: "pass",
-      category: "tv",
-    });
-    sonarrPromise.catch(() => {});
-    expect(sonarrPromise).toBeInstanceOf(Promise);
+  test("uses port 8989 for sonarr and 7878 for radarr", async () => {
+    const urls: string[] = [];
+    globalThis.fetch = (async (url: any) => {
+      urls.push(String(url));
+      return new Response("[]", { status: 200 });
+    }) as any;
 
-    const radarrPromise = configureArr("radarr", "key", {
-      rootFolder: "/data/media/movies",
-      extraFolders: [],
-      qbitUser: "admin",
-      qbitPass: "pass",
-      category: "movies",
-    });
-    radarrPromise.catch(() => {});
-    expect(radarrPromise).toBeInstanceOf(Promise);
+    await configureArr("sonarr", "key", optsFor("tv"));
+    await configureArr("radarr", "key", optsFor("movies"));
+
+    expect(urls.some((u) => u.startsWith("http://localhost:8989/"))).toBe(true);
+    expect(urls.some((u) => u.startsWith("http://localhost:7878/"))).toBe(true);
   });
 
-  test("rejects when the API is unreachable", async () => {
-    await expect(
-      configureArr("sonarr", "key", {
-        rootFolder: "/data/media/tv",
-        extraFolders: [],
-        qbitUser: "admin",
-        qbitPass: "pass",
-        category: "tv",
-      })
-    ).rejects.toThrow();
+  test("rejects when the request layer fails", async () => {
+    globalThis.fetch = (async () => {
+      throw new Error("boom");
+    }) as any;
+    await expect(configureArr("sonarr", "key", optsFor("tv"))).rejects.toThrow("boom");
   });
 });
 

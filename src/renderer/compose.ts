@@ -296,6 +296,12 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
     ? services.filter((svc) => isVpnRouted(svc, opts.vpn)).flatMap((svc) => svc.ports)
     : [];
 
+  // Catalog dependsOn edges describe the full stack, but the wizard lets users
+  // deselect services. A dangling edge (Sonarr -> Prowlarr when Prowlarr is
+  // unchecked) makes `docker compose` reject the whole project with
+  // "depends on undefined service". Drop edges to services not being rendered.
+  const enabledIds = new Set(services.map((svc) => svc.id));
+
   const serviceContexts: ServiceContext[] = services.map((svc) => {
     const vpnNetwork = isVpnRouted(svc, opts.vpn);
     const apiKeyEnv = svc.apiKeyEnv;
@@ -320,7 +326,9 @@ export function buildComposeContext(services: Service[], opts: ComposeOptions): 
     // before they attach to its netns, otherwise a gluetun restart mid-boot
     // leaves a stale namespace path and `docker compose up` aborts with the
     // cryptic `lstat /proc/<pid>/ns/net: no such file or directory`.
-    const dependsOn: DependsOnEntry[] = svc.dependsOn.map((service) => ({ service }));
+    const dependsOn: DependsOnEntry[] = svc.dependsOn
+      .filter((service) => enabledIds.has(service))
+      .map((service) => ({ service }));
     if (vpnNetwork) {
       dependsOn.push({ service: "gluetun", condition: "service_healthy" });
     }

@@ -10,9 +10,12 @@ export interface RetryOpts {
 }
 
 function defaultShouldRetry(err: unknown): boolean {
-  // Undici throws TypeError/AggregateError on connection refused / socket hang up.
+  // Undici/Bun throw TypeError/AggregateError on connection refused, socket
+  // hang up, and sockets closed while a request is in flight. Jellyfin's
+  // Startup/Configuration restarts internal services and can close the socket
+  // mid-request, which is transient even though it is not ECONNREFUSED.
   const msg = err instanceof Error ? err.message : String(err);
-  return /ECONN|socket hang up|fetch failed|network|UND_ERR/i.test(msg);
+  return /ECONN|socket hang up|socket connection was closed|connection closed unexpectedly|fetch failed|network|UND_ERR/i.test(msg);
 }
 
 export async function withRetry<T>(

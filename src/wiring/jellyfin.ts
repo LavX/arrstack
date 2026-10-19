@@ -12,15 +12,24 @@ async function readBody(res: Response): Promise<string> {
 // Jellyfin's /health returns 200 before the default user record is created
 // internally, so the first POST /Startup/User can 500. Poll /Startup/User (GET)
 // until it returns 200, which is Jellyfin's signal that the startup API is ready.
-async function waitForJellyfinStartupReady(base: string, timeoutMs = 60_000): Promise<void> {
+// Returns the current user record so a resumed install can detect a user that
+// was created by an earlier attempt and skip the POST (Jellyfin answers 403
+// once the first user exists).
+async function waitForJellyfinStartupReady(
+  base: string,
+  timeoutMs = 60_000,
+): Promise<{ Name?: string } | null> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
       const r = await fetch(`${base}/Startup/User`);
-      if (r.ok) return;
+      if (r.ok) {
+        return (await r.json().catch(() => null)) as { Name?: string } | null;
+      }
     } catch { /* retry */ }
     await new Promise((r) => setTimeout(r, 1500));
   }
+  return null;
 }
 
 async function isStartupComplete(base: string): Promise<boolean> {
@@ -46,6 +55,10 @@ async function authenticate(
   adminUser: string,
   adminPass: string,
 ): Promise<AuthResult> {
+  // Jellyfin 10.11+ parses the standard Authorization header. 12.x disables
+  // the legacy X-Emby-Authorization fallback by default, and without Client /
+  // Device / DeviceId / Version in the header AuthenticateByName returns 400
+  // ("Value cannot be null. Parameter 'request.App'").
   const authHeader =
     'MediaBrowser Client="arrstack", Device="installer", DeviceId="arrstack", Version="1.0.0"';
   const authRes = await withRetry(() =>
@@ -53,6 +66,9 @@ async function authenticate(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: authHeader,
+        // Older Jellyfin builds only read the legacy header. 10.11+ prefer
+        // Authorization, and 12.x ignores this when legacy auth is disabled.
         "X-Emby-Authorization": authHeader,
       },
       body: JSON.stringify({ Username: adminUser, Pw: adminPass }),
@@ -120,23 +136,30 @@ export async function setupJellyfin(
       throw new Error(`Startup/Configuration failed: HTTP ${configRes.status}\n${await readBody(configRes)}`);
     }
 
-    await waitForJellyfinStartupReady(base);
+    const startupUser = await waitForJellyfinStartupReady(base);
 
-    const userRes = await fetchWithRetry(`${base}/Startup/User`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ Name: adminUser, Password: adminPass }),
-    });
-    if (!userRes.ok) {
-      throw new Error(`Startup/User failed: HTTP ${userRes.status}\n${await readBody(userRes)}`);
+    // A previous attempt may have created the first user before failing later
+    // (or the user answered part of the startup wizard). POSTing /Startup/User
+    // again returns 403, so only create the user when none exists.
+    if (!startupUser?.Name) {
+      const userRes = await fetchWithRetry(`${base}/Startup/User`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ Name: adminUser, Password: adminPass }),
+      });
+      if (!userRes.ok) {
+        throw new Error(`Startup/User failed: HTTP ${userRes.status}\n${await readBody(userRes)}`);
+      }
     }
   }
 
   // Authenticate with the (now-existing) admin user
   const auth = await authenticate(base, adminUser, adminPass);
+  const tokenHeader = `${auth.authHeader}, Token="${auth.token}"`;
   const authedHeaders = {
     "Content-Type": "application/json",
-    "X-Emby-Authorization": `${auth.authHeader}, Token="${auth.token}"`,
+    Authorization: tokenHeader,
+    "X-Emby-Authorization": tokenHeader,
   };
 
   await ensureAdmin(base, auth, authedHeaders);

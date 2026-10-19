@@ -20,6 +20,22 @@ test("withRetry retries on ECONNREFUSED-style errors", async () => {
   expect(calls).toBe(3);
 });
 
+test("withRetry retries when the socket closes mid-request (Jellyfin startup)", async () => {
+  let calls = 0;
+  const result = await withRetry(
+    async () => {
+      calls++;
+      if (calls < 3) {
+        throw new Error("The socket connection was closed unexpectedly. For more information, pass `verbose: true`");
+      }
+      return "ok";
+    },
+    { baseMs: 1, attempts: 5 },
+  );
+  expect(result).toBe("ok");
+  expect(calls).toBe(3);
+});
+
 test("withRetry does not retry on non-transient errors", async () => {
   let calls = 0;
   await expect(

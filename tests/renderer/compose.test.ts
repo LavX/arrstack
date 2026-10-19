@@ -31,6 +31,26 @@ describe("renderCompose", () => {
     expect(output).toContain("8989:8989");
   });
 
+  test("drops depends_on edges to services that are not rendered", () => {
+    // Catalog says Sonarr dependsOn Prowlarr, but the wizard lets users deselect
+    // Prowlarr. A dangling edge makes `docker compose` reject the project with
+    // "depends on undefined service", so it must not be emitted.
+    const services = getServices(["sonarr"]);
+    const ctx = buildComposeContext(services, baseOpts);
+    const sonarr = ctx.services.find((s) => s.id === "sonarr")!;
+    expect(sonarr.dependsOn.map((d) => d.service)).not.toContain("prowlarr");
+
+    const output = renderCompose(services, baseOpts);
+    expect(output).not.toContain("- prowlarr");
+  });
+
+  test("keeps depends_on edges when both services are rendered", () => {
+    const services = getServices(["sonarr", "prowlarr"]);
+    const ctx = buildComposeContext(services, baseOpts);
+    const sonarr = ctx.services.find((s) => s.id === "sonarr")!;
+    expect(sonarr.dependsOn.map((d) => d.service)).toContain("prowlarr");
+  });
+
   test("logging block is present", () => {
     const services = getServices(["sonarr"]);
     const output = renderCompose(services, baseOpts);

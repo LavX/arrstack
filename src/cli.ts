@@ -7,6 +7,7 @@ import { App } from "./ui/App.js";
 import { readState, adminTxtGuardMessage } from "./state/store.js";
 import { runDoctor } from "./usecase/doctor.js";
 import { runUpdate } from "./usecase/update.js";
+import { runResume } from "./usecase/resume.js";
 import { showPassword } from "./usecase/show-password.js";
 import { runUninstall } from "./usecase/uninstall.js";
 import { tailLogs } from "./usecase/logs.js";
@@ -44,6 +45,7 @@ program
   .description("Install the arr media stack")
   .option("--fresh", "perform a fresh installation")
   .option("--resume", "resume a previously interrupted installation")
+  .option("--yes", "skip the wizard and finish an existing install non-interactively (requires --resume)")
   .option("--install-dir <path>", "installation directory", `${process.env.HOME}/arrstack`)
   .action(async (opts) => {
     const installDir = opts.installDir ?? `${process.env.HOME}/arrstack`;
@@ -67,6 +69,27 @@ program
     // --fresh purges the dir (removing admin.txt) just above, so only guard a
     // resume/reconfigure over an existing install.
     if (!opts.fresh) guardAdminTxtReadable(installDir);
+
+    if (opts.yes) {
+      if (!opts.resume) {
+        console.error("\n--yes requires --resume. Use 'arrstack install --resume --yes' to finish an existing install.\n");
+        process.exit(1);
+      }
+      try {
+        const result = await runResume(installDir);
+        console.log("\nInstall complete.");
+        for (const url of result.urls) {
+          console.log(`  ${url.name}: ${url.url}`);
+        }
+        console.log(`  Admin user: ${result.adminUser} (password in ${join(installDir, "admin.txt")})`);
+        console.log(`  Verify: arrstack doctor --install-dir ${installDir}`);
+      } catch (err: any) {
+        console.error(`\nInstall failed: ${err.message ?? String(err)}`);
+        process.exit(1);
+      }
+      return;
+    }
+
     const existing = opts.fresh ? null : readState(installDir);
     const { waitUntilExit } = render(React.createElement(App, { existingState: existing }));
     await waitUntilExit();

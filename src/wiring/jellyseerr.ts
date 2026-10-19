@@ -29,55 +29,59 @@ export async function linkJellyseerr(
 ): Promise<void> {
   await waitForJellyseerrReady(base);
 
-  // 1. Bootstrap: create the admin + store the Jellyfin connection.
-  const bootstrap = await withRetry(() =>
-    fetch(`${base}/api/v1/auth/jellyfin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: jellyfinUser,
-        password: jellyfinPass,
-        hostname: "jellyfin",
-        port: 8096,
-        useSsl: false,
-        urlBase: "",
-        // MediaServerType enum (PLEX=1, JELLYFIN=2, EMBY=3). Without this the
-        // endpoint returns HTTP 500 {"message":"NO_ADMIN_USER"}.
-        serverType: 2,
-        email: jellyfinUser,
+  // 1. Bootstrap: create the admin + store the Jellyfin connection. On a
+  // resumed install the hostname is already configured and Seerr answers 500
+  // "Jellyfin hostname already configured", so retry without the hostname
+  // fields to log in to the existing admin instead.
+  const login = (withHostname: boolean) =>
+    withRetry(() =>
+      fetch(`${base}/api/v1/auth/jellyfin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: jellyfinUser,
+          password: jellyfinPass,
+          email: jellyfinUser,
+          // MediaServerType enum (PLEX=1, JELLYFIN=2, EMBY=3). Without this the
+          // endpoint returns HTTP 500 {"message":"NO_ADMIN_USER"}.
+          serverType: 2,
+          ...(withHostname
+            ? { hostname: "jellyfin", port: 8096, useSsl: false, urlBase: "" }
+            : {}),
+        }),
       }),
-    })
-  );
+    );
+
+  const bootstrap = await login(true);
+  let sessionRes = bootstrap;
   if (!bootstrap.ok) {
-    throw new Error(`Jellyseerr auth failed: HTTP ${bootstrap.status}\n${await readBody(bootstrap)}`);
+    const existing = await login(false);
+    if (!existing.ok) {
+      throw new Error(
+        `Jellyseerr auth failed: HTTP ${bootstrap.status} (bootstrap), ` +
+          `${existing.status} (existing login)\n${await readBody(existing)}`,
+      );
+    }
+    sessionRes = existing;
+  } else {
+    // The session cookie that bootstrap returns is racy: Jellyseerr creates
+    // the admin user, saves settings, and fires startJobs() before the
+    // response flushes, but subsequent GETs with that cookie intermittently
+    // return 403 ("You do not have permission to access this endpoint")
+    // because the session/user join hasn't materialised yet. Re-logging in
+    // with the same credentials (no hostname — Jellyfin is configured now)
+    // returns a cookie that's reliably bound to the admin user.
+    const relogin = await login(false);
+    if (!relogin.ok) {
+      throw new Error(`Jellyseerr re-login failed: HTTP ${relogin.status}\n${await readBody(relogin)}`);
+    }
+    sessionRes = relogin;
   }
 
-  // The session cookie that bootstrap returns is racy: Jellyseerr creates the
-  // admin user, saves settings, and fires startJobs() before the response
-  // flushes, but subsequent GETs with that cookie intermittently return 403
-  // ("You do not have permission to access this endpoint") because the
-  // session/user join hasn't materialised yet. Re-logging in with the same
-  // credentials (no hostname — Jellyfin is already configured now) returns a
-  // cookie that's reliably bound to the admin user.
-  const relogin = await withRetry(() =>
-    fetch(`${base}/api/v1/auth/jellyfin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: jellyfinUser,
-        password: jellyfinPass,
-        email: jellyfinUser,
-        serverType: 2,
-      }),
-    })
-  );
-  if (!relogin.ok) {
-    throw new Error(`Jellyseerr re-login failed: HTTP ${relogin.status}\n${await readBody(relogin)}`);
-  }
   const cookie =
-    (relogin.headers.get("set-cookie") ?? "").match(/connect\.sid=[^;]+/)?.[0] ?? "";
+    (sessionRes.headers.get("set-cookie") ?? "").match(/connect\.sid=[^;]+/)?.[0] ?? "";
   if (!cookie) {
-    throw new Error("Jellyseerr re-login did not return a session cookie");
+    throw new Error("Jellyseerr login did not return a session cookie");
   }
   const authedHeaders = { "Content-Type": "application/json", Cookie: cookie };
 
@@ -94,34 +98,72 @@ export async function linkJellyseerr(
     await new Promise((r) => setTimeout(r, 500));
   }
 
-  // 2. Sync the Jellyfin library list so Jellyseerr knows what exists.
+  // 2. Sync the Jellyfin library list so Jellyseerr knows what exists. Seerr
+  // 3.x replaced the old `?sync=true` shortcut with POST /library/sync; keep
+  // the legacy call as a fallback for older Jellyseerr builds.
+  let libs: Library[] = [];
+  let seerrLibraryApi = false;
   const syncRes = await withRetry(() =>
-    fetch(`${base}/api/v1/settings/jellyfin/library?sync=true`, { headers: authedHeaders }),
+    fetch(`${base}/api/v1/settings/jellyfin/library/sync`, {
+      method: "POST",
+      headers: authedHeaders,
+    }),
   );
-  if (!syncRes.ok) {
+  if (syncRes.ok) {
+    libs = (await syncRes.json()) as Library[];
+    seerrLibraryApi = true;
+  } else if (syncRes.status === 404 || syncRes.status === 400) {
+    const legacyRes = await withRetry(() =>
+      fetch(`${base}/api/v1/settings/jellyfin/library?sync=true`, { headers: authedHeaders }),
+    );
+    if (!legacyRes.ok) {
+      throw new Error(
+        `Jellyseerr library sync failed: HTTP ${legacyRes.status}\n${await readBody(legacyRes)}`,
+      );
+    }
+    libs = (await legacyRes.json()) as Library[];
+  } else {
     throw new Error(`Jellyseerr library sync failed: HTTP ${syncRes.status}\n${await readBody(syncRes)}`);
   }
-  const libs = (await syncRes.json()) as Library[];
 
   // 3. Enable every library (Movies, TV Shows, Music). Jellyseerr's library
   // flag is what the /setup wizard toggles at step 3 — without it, requests
   // can't be matched against media.
   if (libs.length > 0) {
-    const enableIds = libs.map((l) => l.id).join(",");
-    const enableRes = await withRetry(() =>
-      fetch(`${base}/api/v1/settings/jellyfin/library?enable=${enableIds}`, {
-        headers: authedHeaders,
-      }),
-    );
-    if (!enableRes.ok) {
-      throw new Error(`Jellyseerr enable libraries failed: HTTP ${enableRes.status}\n${await readBody(enableRes)}`);
+    if (seerrLibraryApi) {
+      // Seerr 3.x: PUT /library/:id { enabled: true }
+      for (const lib of libs) {
+        const enableRes = await withRetry(() =>
+          fetch(`${base}/api/v1/settings/jellyfin/library/${encodeURIComponent(lib.id)}`, {
+            method: "PUT",
+            headers: authedHeaders,
+            body: JSON.stringify({ enabled: true }),
+          }),
+        );
+        if (!enableRes.ok) {
+          throw new Error(
+            `Jellyseerr enable library "${lib.name}" failed: HTTP ${enableRes.status}\n${await readBody(enableRes)}`,
+          );
+        }
+      }
+    } else {
+      const enableIds = libs.map((l) => l.id).join(",");
+      const enableRes = await withRetry(() =>
+        fetch(`${base}/api/v1/settings/jellyfin/library?enable=${enableIds}`, {
+          headers: authedHeaders,
+        }),
+      );
+      if (!enableRes.ok) {
+        throw new Error(`Jellyseerr enable libraries failed: HTTP ${enableRes.status}\n${await readBody(enableRes)}`);
+      }
     }
 
-    // Kick off the one-time full media scan in the background.
+    // Kick off the one-time full media scan in the background. Seerr expects
+    // { start: true }; older Overseerr-derived builds also accept it.
     await fetch(`${base}/api/v1/settings/jellyfin/sync`, {
       method: "POST",
       headers: authedHeaders,
-      body: "{}",
+      body: JSON.stringify({ start: true }),
     }).catch(() => { /* scan is best-effort */ });
   }
 

@@ -2,6 +2,8 @@ import { test, expect } from "bun:test";
 import { spawnSync } from "bun";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cliPath = join(repoRoot, "src", "cli.ts");
@@ -25,6 +27,17 @@ test("--version prints a version number", () => {
 test("--help includes arrstack", () => {
   const { stdout } = runCli("--help");
   expect(stdout).toContain("arrstack");
+});
+
+test("install --yes without --resume fails with a clear error", () => {
+  const dir = mkdtempSync(join(tmpdir(), "arrstack-cli-test-"));
+  try {
+    const { stderr, exitCode } = runCli("install", "--yes", "--install-dir", dir);
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("--yes requires --resume");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("--help lists all subcommands", () => {

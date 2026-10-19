@@ -13,6 +13,9 @@ arrstack install
 
 # Resume a partially finished run
 arrstack install --resume
+
+# Finish it without the wizard (CI, remote shell, scripted recovery)
+arrstack install --resume --yes
 ```
 
 ## Supported systems
@@ -70,6 +73,7 @@ If you prefer not to pipe curl to bash, the script URL is plain text. Read it, t
 arrstack install          Run the TUI wizard
 arrstack install --fresh  Wipe state and start over
 arrstack install --resume Continue from last saved step
+arrstack install --resume --yes  Finish an existing install without the wizard
 arrstack doctor           Health check existing install
 arrstack update           Pull latest images and restart
 arrstack show-password    Print admin credentials
